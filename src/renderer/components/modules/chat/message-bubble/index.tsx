@@ -24,6 +24,12 @@ export interface MessageBubbleProps {
   attachmentsTotal?: number | null;
   /** Avatar node (left side for other-messages, right side for self). */
   avatar: React.ReactNode;
+  /** Sender display name (group chats); renders a coloured name line above the bubble. */
+  senderName?: string;
+  /** Accent colour for the sender name. */
+  senderColor?: string;
+  /** Show the `Admin` tag next to the sender name (the assistant). */
+  isAdmin?: boolean;
   /**
    * Render `content` as Markdown + KaTeX instead of plain pre-wrapped text.
    * Only free-form prose kinds opt in (`text`, `report`); system/structured
@@ -40,6 +46,9 @@ export function MessageBubble({
   attachments,
   attachmentsTotal,
   avatar,
+  senderName,
+  senderColor,
+  isAdmin = false,
   markdown = false,
 }: MessageBubbleProps): React.JSX.Element {
   const { data } = useApp();
@@ -75,7 +84,16 @@ export function MessageBubble({
   return (
     <div className={cls("imb-msg", self ? "imb-self" : "imb-other")}>
       {avatar}
-      <div className="imb-bubble">
+      <div className="imb-bubble-col">
+        {senderName !== undefined && (
+          <div className="imb-bubble-sender" style={{ color: senderColor }}>
+            <span className="imb-bubble-sender-name">{senderName}</span>
+            {isAdmin && (
+              <span className="imb-bubble-admin">{t("Admin")}</span>
+            )}
+          </div>
+        )}
+        <div className="imb-bubble">
         {hasAttachments && (
           <div className="imb-bubble-attachments">
             {visible.map((attachment, index) => {
@@ -130,6 +148,7 @@ export function MessageBubble({
             onMentionClick={handleMentionClick}
           />
         )}
+        </div>
       </div>
     </div>
   );

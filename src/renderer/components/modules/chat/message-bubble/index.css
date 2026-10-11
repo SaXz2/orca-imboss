@@ -9,6 +9,44 @@
   flex-direction: row-reverse;
 }
 
+/* Column holding the optional sender name line + the bubble. */
+.imb-bubble-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.imb-msg.imb-self .imb-bubble-col {
+  align-items: flex-end;
+}
+
+.imb-bubble-sender {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 2px;
+  font-size: var(--imb-text-xs);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.imb-bubble-sender-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.imb-bubble-admin {
+  flex: none;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 0 5px;
+  border-radius: var(--imb-radius-pill);
+  color: var(--imb-accent);
+  background: color-mix(in oklch, var(--imb-accent) 16%, transparent);
+}
+
 .imb-bubble {
   padding: 10px 14px;
   border-radius: var(--imb-radius-lg);

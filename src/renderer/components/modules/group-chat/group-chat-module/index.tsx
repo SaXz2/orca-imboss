@@ -113,6 +113,7 @@ export function GroupChatModule({
             <MessageItem
               key={`${message.chatId}-${message.id}`}
               message={message}
+              showSender
               readonly
             />
           ))

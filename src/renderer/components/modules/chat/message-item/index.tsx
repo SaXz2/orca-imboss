@@ -1,6 +1,8 @@
+import { ASSISTANT_ID } from "@shared/constants/employees";
+import { employeeColor } from "@shared/constants/employee-colors";
 import { t } from "@shared/l10n";
 import type { Message } from "@shared/types";
-import { appStore } from "../../../../app-store";
+import { appStore, useApp } from "../../../../app-store";
 import { EmployeeAvatar } from "../../../employee-avatar";
 import { AnswerCard } from "../answer-card";
 import { AskCard } from "../ask-card";
@@ -12,6 +14,8 @@ export interface MessageItemProps {
   message: Message;
   /** Read-only rendering (group-chat view): interactive cards are static. */
   readonly?: boolean;
+  /** Show the sender's name (with its accent colour) above the bubble. */
+  showSender?: boolean;
   /** Whether this is the latest progress card in the chat thread. */
   isLatestProgress?: boolean;
   /** Called after a successful ask-card answer (interactive mode only). */
@@ -27,17 +31,30 @@ export interface MessageItemProps {
 export function MessageItem({
   message,
   readonly = false,
+  showSender = false,
   isLatestProgress = true,
   onAnswered,
   askAnswer,
 }: MessageItemProps): React.JSX.Element {
+  const { data } = useApp();
   // Clicking an employee/assistant avatar opens that sender's agent session for
-  // this chat. The user (null sender) has no session avatar.
+  // this chat. The user (null sender) has no session session avatar.
   const sender = message.senderEmployeeId;
   const openSession =
     sender === null
       ? undefined
       : () => void appStore.openAgentSession(sender, message.chatId);
+
+  const senderEmployee =
+    sender === null
+      ? null
+      : (data.employees.items.find((e) => e.id === sender) ?? null);
+  const senderName =
+    showSender && sender !== null
+      ? senderEmployee?.name || senderEmployee?.role || `#${sender}`
+      : undefined;
+  const senderColor = sender === null ? undefined : employeeColor(sender);
+  const isAdmin = sender === ASSISTANT_ID;
 
   switch (message.kind) {
     case "ask":
@@ -85,6 +102,9 @@ export function MessageItem({
           content={t("ACK")}
           attachments={null}
           attachmentsTotal={null}
+          senderName={senderName}
+          senderColor={senderColor}
+          isAdmin={isAdmin}
           avatar={
             <EmployeeAvatar
               employeeId={message.senderEmployeeId}
@@ -104,6 +124,9 @@ export function MessageItem({
           attachments={message.attachments}
           attachmentsTotal={message.attachmentsTotal}
           markdown={message.kind === "text" || message.kind === "report"}
+          senderName={senderName}
+          senderColor={senderColor}
+          isAdmin={isAdmin}
           avatar={
             <EmployeeAvatar
               employeeId={message.senderEmployeeId}
