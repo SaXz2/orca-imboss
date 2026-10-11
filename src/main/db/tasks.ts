@@ -1,0 +1,153 @@
+import type { Task, TaskInput, TaskRow, TaskStatus } from "@shared/types";
+import { getDB } from "./index";
+import { parseNumberArray, stringifyArray } from "./json";
+
+/**
+ * Task-center persistence (kanban board). Plain CRUD over the `tasks` table;
+ * `assignees` is a JSON array column parsed defensively on read.
+ */
+
+const MAX_TITLE = 200;
+const MAX_TEXT = 4000;
+const MAX_CATEGORY = 60;
+const MAX_FLOW = 200;
+const MAX_ASSIGNEES = 50;
+
+function isStatus(value: unknown): value is TaskStatus {
+  return value === "pending" || value === "running" || value === "done";
+}
+
+function toTask(row: TaskRow): Task {
+  return {
+    id: row.id,
+    title: row.title,
+    detail: row.detail,
+    category: row.category,
+    flow: row.flow,
+    status: isStatus(row.status) ? row.status : "pending",
+    assignees: parseNumberArray(row.assignees),
+    sortOrder: row.sort_order,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function listTasks(): Task[] {
+  return (
+    getDB()
+      .prepare("SELECT * FROM tasks ORDER BY sort_order ASC, id ASC")
+      .all() as TaskRow[]
+  ).map(toTask);
+}
+
+export function getTask(id: number): Task | null {
+  const row = getDB().prepare("SELECT * FROM tasks WHERE id = ?").get(id) as
+    | TaskRow
+    | undefined;
+  return row ? toTask(row) : null;
+}
+
+function validateTitle(value: unknown): string {
+  const title = typeof value === "string" ? value.trim() : "";
+  if (title.length === 0) throw new Error("A task title is required.");
+  if (title.length > MAX_TITLE) throw new Error("Task title is too long.");
+  return title;
+}
+
+function cleanText(value: unknown, max: number): string {
+  return typeof value === "string" ? value.slice(0, max) : "";
+}
+
+function cleanAssignees(value: unknown): number[] {
+  if (!Array.isArray(value)) return [];
+  return [
+    ...new Set(
+      value
+        .filter((v): v is number => typeof v === "number" && Number.isSafeInteger(v) && v >= 0)
+        .slice(0, MAX_ASSIGNEES),
+    ),
+  ];
+}
+
+export function createTask(input: TaskInput): Task {
+  const db = getDB();
+  const title = validateTitle(input.title);
+  const status = isStatus(input.status) ? input.status : "pending";
+  const maxRow = db
+    .prepare("SELECT COALESCE(MAX(sort_order), 0) AS m FROM tasks WHERE status = ?")
+    .get(status) as { m: number };
+  const result = db
+    .prepare(
+      "INSERT INTO tasks (title, detail, category, flow, status, assignees, sort_order) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+    )
+    .run(
+      title,
+      cleanText(input.detail, MAX_TEXT),
+      cleanText(input.category, MAX_CATEGORY),
+      cleanText(input.flow, MAX_FLOW),
+      status,
+      stringifyArray(cleanAssignees(input.assignees)),
+      maxRow.m + 1,
+    );
+  const created = getTask(Number(result.lastInsertRowid));
+  if (!created) throw new Error("Failed to create task.");
+  return created;
+}
+
+export function updateTask(id: number, input: TaskInput): Task | null {
+  const current = getTask(id);
+  if (!current) return null;
+  const sets: string[] = [];
+  const values: unknown[] = [];
+  if (input.title !== undefined) {
+    sets.push("title = ?");
+    values.push(validateTitle(input.title));
+  }
+  if (input.detail !== undefined) {
+    sets.push("detail = ?");
+    values.push(cleanText(input.detail, MAX_TEXT));
+  }
+  if (input.category !== undefined) {
+    sets.push("category = ?");
+    values.push(cleanText(input.category, MAX_CATEGORY));
+  }
+  if (input.flow !== undefined) {
+    sets.push("flow = ?");
+    values.push(cleanText(input.flow, MAX_FLOW));
+  }
+  if (input.status !== undefined && isStatus(input.status)) {
+    sets.push("status = ?");
+    values.push(input.status);
+  }
+  if (input.assignees !== undefined) {
+    sets.push("assignees = ?");
+    values.push(stringifyArray(cleanAssignees(input.assignees)));
+  }
+  if (sets.length === 0) return current;
+  sets.push("updated_at = CAST(strftime('%s', 'now') AS INTEGER)");
+  values.push(id);
+  getDB()
+    .prepare(`UPDATE tasks SET ${sets.join(", ")} WHERE id = ?`)
+    .run(...values);
+  return getTask(id);
+}
+
+/** Move a task to a status column, placing it at the end of that column. */
+export function moveTask(id: number, status: TaskStatus): Task | null {
+  const current = getTask(id);
+  if (!current || !isStatus(status)) return null;
+  const db = getDB();
+  const maxRow = db
+    .prepare("SELECT COALESCE(MAX(sort_order), 0) AS m FROM tasks WHERE status = ?")
+    .get(status) as { m: number };
+  db.prepare(
+    "UPDATE tasks SET status = ?, sort_order = ?, " +
+      "updated_at = CAST(strftime('%s', 'now') AS INTEGER) WHERE id = ?",
+  ).run(status, maxRow.m + 1, id);
+  return getTask(id);
+}
+
+export function deleteTask(id: number): boolean {
+  return getDB().prepare("DELETE FROM tasks WHERE id = ?").run(id).changes > 0;
+}

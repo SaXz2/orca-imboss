@@ -137,6 +137,27 @@ const MIGRATIONS: Array<(db: Database) => void> = [
       );
     `);
   },
+
+  // 1 — task center (kanban board)
+  (db) => {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS tasks (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        title       TEXT NOT NULL,
+        detail      TEXT NOT NULL DEFAULT '',
+        category    TEXT NOT NULL DEFAULT '',
+        flow        TEXT NOT NULL DEFAULT '',
+        status      TEXT NOT NULL DEFAULT 'pending',
+        assignees   TEXT NOT NULL DEFAULT '[]',
+        sort_order  INTEGER NOT NULL DEFAULT 0,
+        created_at  INTEGER NOT NULL DEFAULT (CAST(strftime('%s', 'now') AS INTEGER)),
+        updated_at  INTEGER NOT NULL DEFAULT (CAST(strftime('%s', 'now') AS INTEGER))
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_tasks_status
+        ON tasks(status, sort_order);
+    `);
+  },
 ];
 
 export function migrate(db: Database): void {

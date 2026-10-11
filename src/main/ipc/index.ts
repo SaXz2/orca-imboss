@@ -11,6 +11,7 @@ import { registerProviderHandlers } from "./provider";
 import { registerSessionHandlers } from "./session";
 import { registerSettingsHandlers } from "./settings";
 import { registerSkillHandlers } from "./skill";
+import { registerTaskHandlers } from "./tasks";
 import { registerThemeHandlers } from "./theme";
 import { registerUpdaterHandlers } from "./updater";
 import { registerWindowHandlers } from "./window";
@@ -29,6 +30,7 @@ export function registerIpcHandlers(): void {
   registerMessageHandlers();
   registerProviderHandlers();
   registerSkillHandlers();
+  registerTaskHandlers();
   registerMcpHandlers();
   registerMiniAppHandlers();
   registerAgentSessionHandlers();

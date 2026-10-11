@@ -28,6 +28,7 @@ import { updateThemeState } from "./theme";
 export type AppModule =
   | "chat"
   | "employees"
+  | "tasks"
   | "providers"
   | "mcp"
   | "skills"
@@ -87,6 +88,7 @@ export const contentPaneRef = createRef<HTMLElement | null>();
 const VALID_MODULES: AppModule[] = [
   "chat",
   "employees",
+  "tasks",
   "providers",
   "mcp",
   "skills",

@@ -1,0 +1,252 @@
+/* Task Center — kanban board. */
+
+.imb-task-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--imb-space-3);
+}
+
+.imb-task-head-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.imb-task-sub {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+}
+
+.imb-board {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--imb-space-3);
+  padding: var(--imb-space-3) var(--imb-space-4) var(--imb-space-4);
+  overflow: hidden;
+}
+
+.imb-board-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--imb-surface);
+  border: 1px solid var(--imb-border-soft);
+  border-radius: var(--imb-radius-lg);
+  overflow: hidden;
+  transition: border-color var(--imb-motion-fast) var(--imb-ease-standard),
+    background var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-board-col.imb-is-drop {
+  border-color: var(--imb-accent);
+  background: color-mix(in oklch, var(--imb-accent) 6%, var(--imb-surface));
+}
+
+.imb-board-col-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 12px;
+  font-size: var(--imb-text-sm);
+  font-weight: 600;
+  border-bottom: 1px solid var(--imb-border-soft);
+}
+
+.imb-col-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.imb-col-dot.imb-pending {
+  background: var(--imb-muted);
+}
+.imb-col-dot.imb-running {
+  background: var(--imb-warn);
+  animation: imb-live-pulse 1.4s ease-in-out infinite;
+}
+.imb-col-dot.imb-done {
+  background: var(--imb-accent);
+}
+
+.imb-col-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.imb-col-count {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  background: var(--imb-bg);
+  border-radius: var(--imb-radius-pill);
+  padding: 1px 8px;
+}
+
+.imb-board-col-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--imb-space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--imb-space-2);
+}
+
+.imb-board-empty {
+  text-align: center;
+  color: var(--imb-muted);
+  font-size: var(--imb-text-xs);
+  padding: var(--imb-space-4) 0;
+}
+
+/* --- Card --- */
+.imb-task-card {
+  background: var(--imb-surface);
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-md);
+  padding: 10px 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: var(--imb-elev-flat, 0 1px 2px rgba(0, 0, 0, 0.04));
+  transition: border-color var(--imb-motion-fast) var(--imb-ease-standard),
+    transform var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-task-card:hover {
+  border-color: var(--imb-accent);
+}
+
+.imb-task-card.imb-is-dragging {
+  opacity: 0.5;
+}
+
+.imb-task-card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.imb-task-title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--imb-text-sm);
+  font-weight: 600;
+  color: var(--imb-fg);
+  overflow-wrap: anywhere;
+}
+
+.imb-task-edit {
+  flex: none;
+  color: var(--imb-muted);
+  opacity: 0;
+  display: inline-flex;
+  transition: opacity var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-task-edit svg {
+  width: 13px;
+  height: 13px;
+}
+
+.imb-task-card:hover .imb-task-edit {
+  opacity: 1;
+}
+
+.imb-task-category {
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: var(--imb-radius-pill);
+  background: color-mix(in oklch, var(--imb-accent) 14%, var(--imb-surface));
+  color: var(--imb-accent);
+}
+
+.imb-task-flow {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  overflow-wrap: anywhere;
+}
+
+.imb-task-card-people {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.imb-task-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--imb-text-xs);
+  color: var(--imb-text-2);
+  background: var(--imb-bg);
+  border-radius: var(--imb-radius-pill);
+  padding: 1px 8px 1px 2px;
+}
+
+.imb-task-person-name {
+  white-space: nowrap;
+}
+
+/* --- Editor --- */
+.imb-task-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--imb-space-4);
+}
+
+.imb-task-editor-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--imb-space-3);
+}
+
+.imb-task-assignees {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.imb-task-assignee {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 4px;
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-pill);
+  background: transparent;
+  color: var(--imb-text-2);
+  font-size: var(--imb-text-xs);
+  cursor: pointer;
+  transition: all var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-task-assignee:hover {
+  border-color: var(--imb-accent);
+}
+
+.imb-task-assignee.imb-is-on {
+  border-color: var(--imb-accent);
+  background: color-mix(in oklch, var(--imb-accent) 14%, var(--imb-surface));
+  color: var(--imb-accent);
+  font-weight: 600;
+}
+
+@keyframes imb-live-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}

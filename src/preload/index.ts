@@ -29,6 +29,9 @@ import type {
   ProviderInfo,
   ProviderModelsQuery,
   ProviderUpsert,
+  Task,
+  TaskInput,
+  TaskStatus,
   ThemeState,
   UpdaterState,
   WorkDirState,
@@ -327,6 +330,18 @@ const api = {
         employeeId,
         chatId,
       ) as Promise<boolean>,
+  },
+
+  tasks: {
+    list: () => ipcRenderer.invoke("tasks:list") as Promise<Task[]>,
+    create: (input: TaskInput) =>
+      ipcRenderer.invoke("tasks:create", input) as Promise<Task>,
+    update: (id: number, input: TaskInput) =>
+      ipcRenderer.invoke("tasks:update", id, input) as Promise<Task | null>,
+    move: (id: number, status: TaskStatus) =>
+      ipcRenderer.invoke("tasks:move", id, status) as Promise<Task | null>,
+    remove: (id: number) =>
+      ipcRenderer.invoke("tasks:delete", id) as Promise<boolean>,
   },
 
   providers: {
