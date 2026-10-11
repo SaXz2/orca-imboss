@@ -45,7 +45,8 @@ export type TaskEventKind =
   | "assigned"
   | "renamed"
   | "closed"
-  | "reopened";
+  | "reopened"
+  | "referenced";
 
 /** Event kinds a human/agent can author (as opposed to system-generated). */
 export const TASK_AUTHORED_KINDS: readonly TaskEventKind[] = [
@@ -170,11 +171,23 @@ export const EMPTY_REACTIONS: TaskReactions = {
 /** Where a board card comes from. */
 export type BoardSource = "task" | "chat";
 
+/** Edge kinds between tasks (only `references` is produced so far). */
+export type TaskLinkKind = "references" | "duplicates" | "blocks";
+
+/** A compact pointer to another task (for reference lists). */
+export interface TaskRef {
+  id: number;
+  title: string;
+  status: TaskStatus;
+}
+
 /** One round-trip payload for the detail view: the task, its timeline, feedback. */
 export interface TaskThread {
   task: Task | null;
   events: TaskEvent[];
   reactions: TaskReactions;
+  /** Outgoing references (this task mentions them) and incoming ones. */
+  references: { out: TaskRef[]; in: TaskRef[] };
 }
 
 /**

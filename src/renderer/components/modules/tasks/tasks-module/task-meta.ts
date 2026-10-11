@@ -54,6 +54,7 @@ export const EVENT_KIND_KEYS: Record<TaskEventKind, string> = {
   renamed: "Renamed",
   closed: "Closed",
   reopened: "Reopened",
+  referenced: "Referenced",
 };
 
 /** Kinds offered in the comment composer, in display order. */
@@ -111,6 +112,10 @@ export function describeEvent(
       const from = typeof meta["from"] === "string" ? meta["from"] : "";
       const to = typeof meta["to"] === "string" ? meta["to"] : "";
       return `${from} → ${to}`;
+    }
+    case "referenced": {
+      const from = meta["fromTaskId"];
+      return typeof from === "number" ? `#${from}` : "";
     }
     default:
       return "";

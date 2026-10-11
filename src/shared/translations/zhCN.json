@@ -397,6 +397,10 @@
   "Write a comment…": "写下评论…",
   "You": "你",
   "All": "全部",
+  "Referenced": "引用",
+  "References": "关联任务",
+  "Mentions": "引用了",
+  "Referenced by": "被引用",
   "Details": "详情",
   "Open session": "打开会话"
 }

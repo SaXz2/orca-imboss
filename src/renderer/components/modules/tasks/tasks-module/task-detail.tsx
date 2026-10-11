@@ -7,6 +7,7 @@ import {
   type TaskEvent,
   type TaskEventKind,
   type TaskReactions,
+  type TaskRef,
 } from "@shared/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { cls } from "reactutils";
@@ -55,18 +56,24 @@ export function TaskDetail({
   onBack,
   onEdit,
   onChanged,
+  onOpenTask,
 }: {
   taskId: number;
   employees: EmployeeList;
   onBack: () => void;
   onEdit: (task: Task) => void;
   onChanged: () => Promise<void>;
+  onOpenTask: (id: number) => void;
 }): React.JSX.Element {
   const [task, setTask] = useState<Task | null>(null);
   const [events, setEvents] = useState<TaskEvent[]>([]);
   const [reactions, setReactions] = useState<TaskReactions>({
     ...EMPTY_REACTIONS,
   });
+  const [references, setReferences] = useState<{
+    out: TaskRef[];
+    in: TaskRef[];
+  }>({ out: [], in: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [body, setBody] = useState("");
@@ -81,6 +88,7 @@ export function TaskDetail({
       setTask(thread.task);
       setEvents(thread.events);
       setReactions(thread.reactions);
+      setReferences(thread.references);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -255,7 +263,9 @@ export function TaskDetail({
           </div>
 
           {task.detail.trim().length > 0 && (
-            <p className="imb-task-detail-body">{task.detail}</p>
+            <p className="imb-task-detail-body">
+              <RefText text={task.detail} onOpen={onOpenTask} />
+            </p>
           )}
 
           <div className="imb-task-meta-grid">
@@ -299,6 +309,42 @@ export function TaskDetail({
             </MetaRow>
           </div>
 
+          {(references.out.length > 0 || references.in.length > 0) && (
+            <div className="imb-task-refs">
+              <div className="imb-task-timeline-head">{t("References")}</div>
+              {references.out.length > 0 && (
+                <div className="imb-task-ref-row">
+                  <span className="imb-task-ref-label">{t("Mentions")}</span>
+                  <span className="imb-task-ref-list">
+                    {references.out.map((ref) => (
+                      <RefChip
+                        key={ref.id}
+                        taskRef={ref}
+                        onOpen={onOpenTask}
+                      />
+                    ))}
+                  </span>
+                </div>
+              )}
+              {references.in.length > 0 && (
+                <div className="imb-task-ref-row">
+                  <span className="imb-task-ref-label">
+                    {t("Referenced by")}
+                  </span>
+                  <span className="imb-task-ref-list">
+                    {references.in.map((ref) => (
+                      <RefChip
+                        key={ref.id}
+                        taskRef={ref}
+                        onOpen={onOpenTask}
+                      />
+                    ))}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="imb-task-timeline">
             <div className="imb-task-timeline-head">{t("Timeline")}</div>
             {events.length === 0 ? (
@@ -309,6 +355,7 @@ export function TaskDetail({
                   key={event.id}
                   event={event}
                   employees={employees}
+                  onOpenTask={onOpenTask}
                 />
               ))
             )}
@@ -402,6 +449,55 @@ export function TaskDetail({
   );
 }
 
+/** Renders `#123` task references inside free text as clickable links. */
+function RefText({
+  text,
+  onOpen,
+}: {
+  text: string;
+  onOpen: (id: number) => void;
+}): React.JSX.Element {
+  return (
+    <>
+      {text.split(/(#\d+)/g).map((part, index) => {
+        const match = /^#(\d+)$/.exec(part);
+        if (!match) return <span key={index}>{part}</span>;
+        return (
+          <button
+            key={index}
+            type="button"
+            className="imb-ref-link"
+            onClick={() => onOpen(Number(match[1]))}
+          >
+            {part}
+          </button>
+        );
+      })}
+    </>
+  );
+}
+
+/** A chip for one referenced task (opens it). */
+function RefChip({
+  taskRef,
+  onOpen,
+}: {
+  taskRef: TaskRef;
+  onOpen: (id: number) => void;
+}): React.JSX.Element {
+  return (
+    <button
+      type="button"
+      className={cls("imb-task-ref-chip", `imb-is-${taskRef.status}`)}
+      onClick={() => onOpen(taskRef.id)}
+      title={taskRef.title}
+    >
+      <span className="imb-gh-ref">#{taskRef.id}</span>
+      <span className="imb-task-ref-title">{taskRef.title}</span>
+    </button>
+  );
+}
+
 function FeedbackButton({
   icon,
   label,
@@ -447,9 +543,11 @@ function MetaRow({
 function TimelineEntry({
   event,
   employees,
+  onOpenTask,
 }: {
   event: TaskEvent;
   employees: EmployeeList;
+  onOpenTask: (id: number) => void;
 }): React.JSX.Element {
   const authored = EVENT_KIND_KEYS[event.kind];
   const time = formatMessageTime(event.createdAt, getLocale());
@@ -468,7 +566,15 @@ function TimelineEntry({
         <span className="imb-tl-dot" aria-hidden="true" />
         <span className="imb-tl-sys-text">
           <span className="imb-tl-kind">{t(authored)}</span>
-          {summary && <span className="imb-tl-sys-extra">{summary}</span>}
+          {summary && (
+            <span className="imb-tl-sys-extra">
+              {event.kind === "referenced" ? (
+                <RefText text={summary} onOpen={onOpenTask} />
+              ) : (
+                summary
+              )}
+            </span>
+          )}
         </span>
         <span className="imb-tl-time">{time}</span>
       </div>
@@ -495,7 +601,9 @@ function TimelineEntry({
           <span className="imb-tl-kind">{t(authored)}</span>
           <span className="imb-tl-time">{time}</span>
         </div>
-        <p className="imb-tl-text">{event.body}</p>
+        <p className="imb-tl-text">
+          <RefText text={event.body} onOpen={onOpenTask} />
+        </p>
       </div>
     </div>
   );

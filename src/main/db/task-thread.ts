@@ -1,12 +1,16 @@
 import {
   EMPTY_REACTIONS,
   TASK_AUTHORED_KINDS,
+  TASK_STATUSES,
   type TaskCommentInput,
   type TaskEvent,
   type TaskEventKind,
   type TaskEventRow,
+  type TaskLinkKind,
   type TaskReactionKind,
   type TaskReactions,
+  type TaskRef,
+  type TaskStatus,
 } from "@shared/types";
 import { getDB } from "./index";
 import { parseJsonObject } from "./json";
@@ -30,7 +34,8 @@ function isEventKind(value: unknown): value is TaskEventKind {
     value === "assigned" ||
     value === "renamed" ||
     value === "closed" ||
-    value === "reopened"
+    value === "reopened" ||
+    value === "referenced"
   );
 }
 
@@ -111,7 +116,80 @@ export function addTaskComment(
     .prepare("SELECT * FROM task_events WHERE id = ?")
     .get(Number(result.lastInsertRowid)) as TaskEventRow | undefined;
   if (!row) throw new Error("Failed to add the comment.");
+  // `#id` mentions in the body become directed edges to those tasks.
+  for (const target of parseTaskRefs(body)) {
+    linkTasks(taskId, target, "references");
+  }
   return toEvent(row);
+}
+
+/** Task ids referenced as `#123` in a body of text, de-duplicated. */
+export function parseTaskRefs(body: string): number[] {
+  const ids = new Set<number>();
+  for (const match of body.matchAll(/#(\d+)(?![\d])/g)) {
+    const id = Number(match[1]);
+    if (Number.isSafeInteger(id) && id > 0) ids.add(id);
+  }
+  return [...ids];
+}
+
+/**
+ * Record a directed edge between two tasks, and (when the edge is new) append
+ * a `referenced` entry to the target's timeline — the GitHub cross-reference
+ * behaviour, in both directions of discovery.
+ */
+export function linkTasks(
+  fromTaskId: number,
+  toTaskId: number,
+  kind: TaskLinkKind = "references",
+): void {
+  if (fromTaskId === toTaskId) return;
+  const db = getDB();
+  // A dead reference (the target was deleted) is silently dropped.
+  const target = db.prepare("SELECT 1 FROM tasks WHERE id = ?").get(toTaskId);
+  if (!target) return;
+  const inserted = db
+    .prepare(
+      "INSERT OR IGNORE INTO task_links (from_task_id, to_task_id, kind) " +
+        "VALUES (?, ?, ?)",
+    )
+    .run(fromTaskId, toTaskId, kind);
+  if (inserted.changes > 0) {
+    logTaskEvent(toTaskId, "referenced", { meta: { fromTaskId } });
+  }
+}
+
+function toRef(row: { id: number; title: string; status: string }): TaskRef {
+  return {
+    id: row.id,
+    title: row.title,
+    status: TASK_STATUSES.includes(row.status as TaskStatus)
+      ? (row.status as TaskStatus)
+      : "pending",
+  };
+}
+
+/** Outgoing (this task mentions them) and incoming reference lists. */
+export function taskReferences(taskId: number): {
+  out: TaskRef[];
+  in: TaskRef[];
+} {
+  const db = getDB();
+  const out = db
+    .prepare(
+      "SELECT t.id, t.title, t.status FROM task_links l " +
+        "JOIN tasks t ON t.id = l.to_task_id " +
+        "WHERE l.from_task_id = ? AND l.kind = 'references' ORDER BY l.id DESC",
+    )
+    .all(taskId) as Array<{ id: number; title: string; status: string }>;
+  const incoming = db
+    .prepare(
+      "SELECT t.id, t.title, t.status FROM task_links l " +
+        "JOIN tasks t ON t.id = l.from_task_id " +
+        "WHERE l.to_task_id = ? AND l.kind = 'references' ORDER BY l.id DESC",
+    )
+    .all(taskId) as Array<{ id: number; title: string; status: string }>;
+  return { out: out.map(toRef), in: incoming.map(toRef) };
 }
 
 /** Authored-entry counts for many tasks at once (board card badges). */

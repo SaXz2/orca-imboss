@@ -194,6 +194,26 @@ const MIGRATIONS: Array<(db: Database) => void> = [
         ON task_reactions(task_id);
     `);
   },
+
+  // 3 — task references: `#id` mentions produce a directed edge between tasks
+  (db) => {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS task_links (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        from_task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+        to_task_id   INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+        kind         TEXT NOT NULL DEFAULT 'references',
+        created_at   INTEGER NOT NULL DEFAULT (CAST(strftime('%s', 'now') AS INTEGER)),
+        UNIQUE (from_task_id, to_task_id, kind)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_task_links_from
+        ON task_links(from_task_id, kind);
+
+      CREATE INDEX IF NOT EXISTS idx_task_links_to
+        ON task_links(to_task_id, kind);
+    `);
+  },
 ];
 
 export function migrate(db: Database): void {

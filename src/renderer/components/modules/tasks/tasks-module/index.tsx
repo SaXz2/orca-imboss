@@ -149,6 +149,7 @@ export function TasksModule(): React.JSX.Element {
   const content =
     detailId !== null ? (
       <TaskDetail
+        key={detailId}
         taskId={detailId}
         employees={employees}
         onBack={() => setDetailId(null)}
@@ -157,6 +158,7 @@ export function TasksModule(): React.JSX.Element {
           setEditorOpen(true);
         }}
         onChanged={reload}
+        onOpenTask={setDetailId}
       />
     ) : (
       <>
