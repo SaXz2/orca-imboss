@@ -20,7 +20,6 @@ export interface ProgressCardProps {
   steps: MessageStep[];
   chatId?: number;
   isLatest?: boolean;
-  onOpenSession?: (employeeId: number) => void;
 }
 
 export function ProgressCard({
@@ -28,7 +27,6 @@ export function ProgressCard({
   steps,
   chatId,
   isLatest = true,
-  onOpenSession,
 }: ProgressCardProps): React.JSX.Element {
   const { data } = useApp();
   const [interrupting, setInterrupting] = useState(false);
@@ -75,30 +73,13 @@ export function ProgressCard({
             (e.role && e.role.trim() === step.role.trim()),
         );
         const employeeId = step.employeeId ?? resolvedEmployee?.id ?? null;
-        const canOpen = employeeId !== null && onOpenSession !== undefined;
 
         return (
           <div key={`${step.name}-${index}`} className="imb-progress-row">
             <div className="imb-progress-actor">
-              {canOpen ? (
-                <button
-                  type="button"
-                  className="imb-progress-avatar-btn"
-                  title={t("Open session for ${name}", {
-                    name: employeeLabelInfo.label,
-                  })}
-                  aria-label={t("Open session for ${name}", {
-                    name: employeeLabelInfo.label,
-                  })}
-                  onClick={() => onOpenSession(employeeId)}
-                >
-                  <EmployeeAvatar employeeId={employeeId} size={24} />
-                </button>
-              ) : (
-                <div className="imb-progress-avatar-static">
-                  <EmployeeAvatar employeeId={employeeId} size={24} />
-                </div>
-              )}
+              <div className="imb-progress-avatar-static">
+                <EmployeeAvatar employeeId={employeeId} size={24} />
+              </div>
               <span className="imb-pname">
                 {employeeLabelInfo.label}
                 {employeeLabelInfo.badge && (

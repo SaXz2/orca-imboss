@@ -81,9 +81,6 @@ export function MessageItem({
             steps={message.steps ?? []}
             chatId={message.chatId}
             isLatest={isLatestProgress}
-            onOpenSession={(employeeId) =>
-              void appStore.openAgentSession(employeeId, message.chatId)
-            }
           />
         </div>
       );

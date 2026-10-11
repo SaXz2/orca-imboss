@@ -67,28 +67,6 @@
   flex: 1;
 }
 
-.imb-progress-avatar-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  border-radius: var(--imb-radius-full);
-  flex-shrink: 0;
-  transition: transform var(--imb-motion-fast) var(--imb-ease-standard);
-}
-
-.imb-progress-avatar-btn:hover {
-  transform: scale(1.12);
-}
-
-.imb-progress-avatar-btn:focus-visible {
-  outline: none;
-  box-shadow: var(--imb-focus-ring);
-}
-
 .imb-progress-avatar-static {
   display: inline-flex;
   align-items: center;
