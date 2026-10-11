@@ -181,6 +181,7 @@ function CodeBlock({ children }: { children?: ReactNode }): React.JSX.Element {
 function createComponents(
   inline: boolean,
   onMentionClick?: (employeeId: number) => void,
+  mentionColor?: (employeeId: number) => string | undefined,
 ): Components {
   const components: Components = {
     a({ href, title, children }) {
@@ -193,6 +194,7 @@ function createComponents(
           <button
             type="button"
             className="imb-mention-text-link"
+            style={mentionColor ? { color: mentionColor(empId) } : undefined}
             title={title ?? t("Open session")}
             onClick={(e) => {
               e.preventDefault();
@@ -254,6 +256,8 @@ export interface MarkdownProps {
   inline?: boolean;
   className?: string;
   onMentionClick?: (employeeId: number) => void;
+  /** Accent colour for an employee's mention link. */
+  mentionColor?: (employeeId: number) => string | undefined;
 }
 
 /**
@@ -265,10 +269,11 @@ export const Markdown = memo(function Markdown({
   inline = false,
   className,
   onMentionClick,
+  mentionColor,
 }: MarkdownProps): React.JSX.Element {
   const components = useMemo(
-    () => createComponents(inline, onMentionClick),
-    [inline, onMentionClick],
+    () => createComponents(inline, onMentionClick, mentionColor),
+    [inline, onMentionClick, mentionColor],
   );
   const Wrapper = inline ? "span" : "div";
   return (

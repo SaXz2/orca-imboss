@@ -111,44 +111,29 @@
   text-decoration: underline;
 }
 
+/* Mention link: colour comes from the employee's accent (inline style); this is
+   only the fallback when no colour is supplied. */
 .imb-mention-text-link {
   display: inline;
   padding: 0;
   margin: 0;
   background: transparent;
   border: none;
-  color: #e8740c;
-  font-weight: 700;
+  color: var(--imb-accent);
+  font-weight: 600;
   font-size: inherit;
   font-family: inherit;
   line-height: inherit;
   vertical-align: baseline;
   cursor: pointer;
   text-decoration: none;
-  transition: color var(--imb-motion-fast) var(--imb-ease-standard);
+  transition: opacity var(--imb-motion-fast) var(--imb-ease-standard);
   user-select: text;
 }
 
 .imb-mention-text-link:hover {
-  color: #b85500;
   text-decoration: underline;
-}
-
-.imb-self .imb-mention-text-link {
-  color: #9a4b00;
-}
-
-.imb-self .imb-mention-text-link:hover {
-  color: #7a3800;
-  text-decoration: underline;
-}
-
-[data-theme-mode="dark"] .imb-mention-text-link {
-  color: #ffb454;
-}
-
-[data-theme-mode="dark"] .imb-mention-text-link:hover {
-  color: #ffc97a;
+  opacity: 0.85;
 }
 
 [data-theme-mode="dark"] .imb-self .imb-mention-text-link {

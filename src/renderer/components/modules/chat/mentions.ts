@@ -5,10 +5,11 @@ export interface MentionableEmployee {
 }
 
 /**
- * 把聊天文本中的员工提及渲染为可点击的 Markdown 链接。
- *
- * 采用“最原始”的 `@工牌号+姓名` 写法：保留原文，不做姓名替换，只把匹配到的
- * 原文（如 `@12 桃夭` 或单独的 `@12` / `@桃夭`）包成跳转链接，由样式统一染成橙色。
+ * Render employee mentions as clickable Markdown links, using ONE canonical
+ * form everywhere: `@<工号> <名称>`. The model (and users) write mentions in
+ * inconsistent ways (`@12`, `@桃夭`, `@12 桃夭`); this normalises them all so the
+ * transcript never mixes forms. The link colour is supplied per employee by the
+ * renderer (`mentionColor`), so each person keeps their own accent.
  */
 export function formatMentionsToMarkdown(
   text: string,
@@ -16,7 +17,7 @@ export function formatMentionsToMarkdown(
 ): string {
   if (!text || text.indexOf("@") === -1) return text;
 
-  // 1. 保护代码块与行内代码，防止误伤代码块中的内容。
+  // 1. Protect code blocks / inline code from mention rewriting.
   const codeBlocks: string[] = [];
   let processed = text.replace(/(`{1,3})[\s\S]*?\1/g, (match) => {
     const placeholder = `\x00CODE_${codeBlocks.length}\x00`;
@@ -24,24 +25,26 @@ export function formatMentionsToMarkdown(
     return placeholder;
   });
 
-  // 2. `@工牌号 [姓名]`：工牌号命中员工时，把它（以及紧跟在后的同名）整体作为链接。
+  const byId = new Map(employees.map((e) => [e.id, e]));
+  const nameOf = (e: MentionableEmployee | undefined): string =>
+    (e?.name || e?.role || "").trim();
+
+  // 2. `@<工号> [名称]` → `@<工号> <名称>` (name appended / trailing duplicate consumed).
   processed = processed.replace(
     /(^|[^\w])@(\d+)(?:([ \t]*)([^\s@\[\]()，。、！？；：“”‘’《》（）【】,.!?;:]+))?/g,
     (match, prefix, idStr, gap, token) => {
       const id = parseInt(idStr, 10);
-      const employee = employees.find((e) => e.id === id);
+      const employee = byId.get(id);
       if (!employee) return match;
-      const name = employee.name?.trim();
-      // 紧跟的整词正好是该员工姓名时，合并为 `@工牌号 姓名` 一起高亮。
-      if (token && name && token === name) {
-        return `${prefix}[@${idStr} ${token}](mention:${id})`;
-      }
-      // 否则仅高亮工牌号，并把原样文本还原回去。
-      return `${prefix}[@${idStr}](mention:${id})${gap ?? ""}${token ?? ""}`;
+      const name = nameOf(employee);
+      const label = name ? `@${idStr} ${name}` : `@${idStr}`;
+      // Consume a trailing token only when it is exactly this employee's name.
+      const consumed = token && name && token === name;
+      return `${prefix}[${label}](mention:${id})${consumed ? "" : `${gap ?? ""}${token ?? ""}`}`;
     },
   );
 
-  // 3. `@姓名` / `@角色`：按长度降序优先匹配较长的名字，避免前缀误判。
+  // 3. `@<名称>` / `@<角色>` → `@<工号> <名称>` (longest terms first).
   const candidates = employees
     .flatMap((e) => [
       e.name ? { term: e.name.trim(), id: e.id } : null,
@@ -53,19 +56,18 @@ export function formatMentionsToMarkdown(
     .sort((a, b) => b.term.length - a.term.length);
 
   for (const { term, id } of candidates) {
-    const escaped = escapeRegExp(term);
+    const name = nameOf(byId.get(id));
+    const label = name ? `@${id} ${name}` : `@${id}`;
     const regex = new RegExp(
-      `(^|[^\\w\\[])@(${escaped})(?=$|[^\\w\\]\\)])`,
+      `(^|[^\\w\\[])@(${escapeRegExp(term)})(?=$|[^\\w\\]\\)])`,
       "g",
     );
-    processed = processed.replace(
-      regex,
-      (match, prefix, matchedTerm) =>
-        `${prefix}[@${matchedTerm}](mention:${id})`,
-    );
+    processed = processed.replace(regex, (match, prefix) => {
+      return `${prefix}[${label}](mention:${id})`;
+    });
   }
 
-  // 4. 还原保护的代码块。
+  // 4. Restore protected code blocks.
   return processed.replace(/\x00CODE_(\d+)\x00/g, (_match, indexStr) => {
     const index = parseInt(indexStr, 10);
     return codeBlocks[index] ?? "";

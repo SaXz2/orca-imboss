@@ -3,6 +3,7 @@ import { t } from "@shared/l10n";
 import type { MessageAttachment } from "@shared/types";
 import { useMemo, useState } from "react";
 import { cls } from "reactutils";
+import { employeeColor } from "@shared/constants/employee-colors";
 import { appStore, useApp } from "../../../../app-store";
 import { IconFile } from "../../../icons";
 import { Markdown } from "../../../markdown";
@@ -146,6 +147,7 @@ export function MessageBubble({
             content={formattedContent}
             inline={!markdown}
             onMentionClick={handleMentionClick}
+            mentionColor={employeeColor}
           />
         )}
         </div>
