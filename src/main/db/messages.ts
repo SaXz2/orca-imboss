@@ -433,6 +433,39 @@ function validateSteps(
   return result;
 }
 
+/** Return the latest progress message in a chat, or null. */
+export function getLatestProgressMessage(chatId: number): Message | null {
+  const row = getDB()
+    .prepare(
+      "SELECT * FROM messages WHERE chat_id = ? AND kind = 'progress' ORDER BY id DESC LIMIT 1",
+    )
+    .get(chatId) as MessageRow | undefined;
+  return row ? toMessage(row) : null;
+}
+
+/** Update content and steps on an existing progress message and return it. */
+export function updateProgressMessage(
+  messageId: number,
+  content: string,
+  steps: MessageStep[],
+): Message | null {
+  const current = getMessageById(messageId);
+  if (!current || current.kind !== "progress") return null;
+  const validated = validateSteps(steps);
+  getDB()
+    .prepare("UPDATE messages SET content = ?, steps = ? WHERE id = ?")
+    .run(
+      content,
+      validated !== undefined ? JSON.stringify({ steps: validated }) : null,
+      messageId,
+    );
+  const updated = getMessageById(messageId);
+  if (updated) {
+    emitMessageAppended(updated);
+  }
+  return updated;
+}
+
 /** Update steps on an existing progress message and return the updated message. */
 export function updateMessageSteps(
   messageId: number,

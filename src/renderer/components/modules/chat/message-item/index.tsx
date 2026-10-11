@@ -12,6 +12,8 @@ export interface MessageItemProps {
   message: Message;
   /** Read-only rendering (group-chat view): interactive cards are static. */
   readonly?: boolean;
+  /** Whether this is the latest progress card in the chat thread. */
+  isLatestProgress?: boolean;
   /** Called after a successful ask-card answer (interactive mode only). */
   onAnswered?: () => void;
   /** The answer message folded into this ask card, when one exists. */
@@ -25,6 +27,7 @@ export interface MessageItemProps {
 export function MessageItem({
   message,
   readonly = false,
+  isLatestProgress = true,
   onAnswered,
   askAnswer,
 }: MessageItemProps): React.JSX.Element {
@@ -62,6 +65,7 @@ export function MessageItem({
             steps={message.steps ?? []}
             chatId={message.chatId}
             messageId={message.id}
+            isLatest={isLatestProgress}
             onOpenSession={(employeeId) =>
               void appStore.openAgentSession(employeeId, message.chatId)
             }

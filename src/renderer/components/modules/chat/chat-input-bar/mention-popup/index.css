@@ -45,6 +45,26 @@
   flex: 1;
 }
 
+.imb-mention-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.imb-mention-badge {
+  font-size: var(--imb-text-xs);
+  font-family: var(--imb-font-mono);
+  font-weight: 600;
+  color: var(--imb-muted);
+  background: var(--imb-bg);
+  border: 1px solid var(--imb-border-soft);
+  border-radius: var(--imb-radius-sm);
+  padding: 0 4px;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
 .imb-mention-name {
   font-size: var(--imb-text-sm);
   font-weight: 500;

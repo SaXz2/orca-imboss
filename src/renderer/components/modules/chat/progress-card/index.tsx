@@ -21,6 +21,7 @@ export interface ProgressCardProps {
   steps: MessageStep[];
   chatId?: number;
   messageId?: number;
+  isLatest?: boolean;
   onOpenSession?: (employeeId: number) => void;
 }
 
@@ -29,6 +30,7 @@ export function ProgressCard({
   steps,
   chatId,
   messageId,
+  isLatest = true,
   onOpenSession,
 }: ProgressCardProps): React.JSX.Element {
   const { data } = useApp();
@@ -36,7 +38,7 @@ export function ProgressCard({
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [editStep, setEditStep] = useState<MessageStep | null>(null);
   const employees = data.employees.items;
-  const hasBusyStep = steps.some((s) => s.status === "busy");
+  const hasBusyStep = isLatest && steps.some((s) => s.status === "busy");
 
   const handleInterrupt = async (): Promise<void> => {
     if (!chatId || interrupting) return;
@@ -89,6 +91,8 @@ export function ProgressCard({
         );
         const employeeId = step.employeeId ?? resolvedEmployee?.id ?? null;
         const canOpen = employeeId !== null && onOpenSession !== undefined;
+        const effectiveStatus: StepStatus =
+          !isLatest && step.status === "busy" ? "done" : step.status;
 
         return (
           <div key={`${step.name}-${index}`} className="imb-progress-row">
@@ -116,11 +120,13 @@ export function ProgressCard({
               </span>
             </div>
             <div className="imb-progress-status-wrap">
-              <span className={cls("imb-progress-tag", `imb-${step.status}`)}>
+              <span
+                className={cls("imb-progress-tag", `imb-${effectiveStatus}`)}
+              >
                 <span className="imb-status-dot" aria-hidden="true" />
-                {t(STEP_LABEL_KEYS[step.status] ?? step.status)}
+                {t(STEP_LABEL_KEYS[effectiveStatus] ?? effectiveStatus)}
               </span>
-              {chatId !== undefined && messageId !== undefined && (
+              {isLatest && chatId !== undefined && messageId !== undefined && (
                 <button
                   type="button"
                   className="imb-progress-edit-btn"

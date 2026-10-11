@@ -70,7 +70,10 @@ export function MentionPopup({
               <EmployeeAvatar employeeId={emp.id} size={28} />
             </div>
             <div className="imb-mention-info">
-              <span className="imb-mention-name">{displayName}</span>
+              <div className="imb-mention-row-head">
+                <span className="imb-mention-name">{displayName}</span>
+                <span className="imb-mention-badge">#{emp.id}</span>
+              </div>
               {emp.role && <span className="imb-mention-role">{emp.role}</span>}
             </div>
           </button>

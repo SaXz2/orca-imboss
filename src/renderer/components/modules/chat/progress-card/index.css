@@ -28,8 +28,16 @@
   border-radius: var(--imb-radius-sm);
   padding: 1px 8px;
   cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
   transition: all var(--imb-motion-fast) var(--imb-ease-standard);
   line-height: 1.5;
+}
+
+.imb-progress-card:hover .imb-progress-interrupt-btn,
+.imb-progress-interrupt-btn:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .imb-progress-interrupt-btn:hover:not(:disabled) {

@@ -425,6 +425,17 @@ export function ChatModule(): React.JSX.Element {
     [messages, pairing],
   );
 
+  // Find the latest progress card in the thread. Only the latest progress
+  // card in a chat is active (can be interrupted or reflects current in-flight state).
+  const latestProgressId = useMemo(() => {
+    for (let i = visibleMessages.length - 1; i >= 0; i--) {
+      if (visibleMessages[i].kind === "progress") {
+        return visibleMessages[i].id;
+      }
+    }
+    return null;
+  }, [visibleMessages]);
+
   // Auto-scroll to the newest message, but only while the user is pinned to
   // the bottom. Incoming messages/run events must not yank a user who scrolled
   // up to read history. A restored (non-pinned) position wins once, after that
@@ -721,6 +732,7 @@ export function ChatModule(): React.JSX.Element {
           <MessageItem
             key={`${message.chatId}-${message.id}`}
             message={message}
+            isLatestProgress={message.id === latestProgressId}
             onAnswered={() => void loadMessages(message.chatId)}
             askAnswer={pairing.answerByAskId.get(message.id)}
           />

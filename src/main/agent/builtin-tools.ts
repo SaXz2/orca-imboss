@@ -566,6 +566,30 @@ function progressTool(env: AgentEnvironment): AnyPiTool {
         content: string;
         steps: MessageStep[];
       };
+
+      // Check if there is an existing latest progress message in this chat that
+      // is not fully done yet or belongs to the same title. If so, update it
+      // in-place instead of creating obsolete duplicate cards in the thread.
+      const latest = dbMessages.getLatestProgressMessage(input.chatId);
+      const isUnfinished = latest?.steps?.some(
+        (s) =>
+          s.status === "busy" ||
+          s.status === "pending" ||
+          s.status === "interrupted",
+      );
+
+      if (latest && (isUnfinished || latest.content === input.content)) {
+        const updated = dbMessages.updateProgressMessage(
+          latest.id,
+          input.content,
+          input.steps,
+        );
+        if (updated) {
+          sendToRenderer("messages:changed", { chatId: input.chatId });
+          return toolResult({ id: updated.id });
+        }
+      }
+
       const message = await performSendMessage(env, {
         senderEmployeeId: ASSISTANT_ID,
         chatId: input.chatId,
