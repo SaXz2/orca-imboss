@@ -85,6 +85,8 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
   } = useApp();
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [chatDragId, setChatDragId] = useState<number | null>(null);
+  const [sessionDragKey, setSessionDragKey] = useState<string | null>(null);
 
   const main = NAV_ITEMS.filter((i) => i.section === "main");
   const bottom = NAV_ITEMS.filter((i) => i.section === "bottom");
@@ -148,7 +150,16 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
                     chat={chat}
                     collapsed={collapsed}
                     active={module === "group-chat" && activeChatId === chat.id}
+                    dragging={chatDragId === chat.id}
                     onClick={() => appStore.activateChat(chat.id)}
+                    onDragStart={() => setChatDragId(chat.id)}
+                    onDragEnd={() => setChatDragId(null)}
+                    onDrop={() => {
+                      if (chatDragId !== null) {
+                        appStore.reorderOpenedChats(chatDragId, chat.id);
+                      }
+                      setChatDragId(null);
+                    }}
                     onContextMenu={(e) => {
                       e.preventDefault();
                       setCtxMenu({
@@ -190,7 +201,16 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
                       active={
                         module === "agent-session" && activeSessionKey === key
                       }
+                      dragging={sessionDragKey === key}
                       onClick={() => appStore.activateSession(key)}
+                      onDragStart={() => setSessionDragKey(key)}
+                      onDragEnd={() => setSessionDragKey(null)}
+                      onDrop={() => {
+                        if (sessionDragKey !== null) {
+                          appStore.reorderOpenedSessions(sessionDragKey, key);
+                        }
+                        setSessionDragKey(null);
+                      }}
                       onContextMenu={(e) => {
                         e.preventDefault();
                         setCtxMenu({
@@ -278,7 +298,11 @@ type NavChatButtonProps = {
   chat: NavChat;
   collapsed: boolean;
   active: boolean;
+  dragging: boolean;
   onClick: () => void;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+  onDrop: () => void;
   onContextMenu: (event: React.MouseEvent) => void;
 };
 
@@ -287,17 +311,30 @@ function NavChatButton({
   chat,
   collapsed,
   active,
+  dragging,
   onClick,
+  onDragStart,
+  onDragEnd,
+  onDrop,
   onContextMenu,
 }: NavChatButtonProps): React.JSX.Element {
   return (
     <Tooltip content={chat.title} placement="right">
       <button
         type="button"
-        className={cls("imb-nav-item", active && "imb-is-active")}
+        className={cls(
+          "imb-nav-item",
+          active && "imb-is-active",
+          dragging && "imb-is-dragging",
+        )}
         aria-current={active ? "page" : undefined}
         aria-label={collapsed ? chat.title : undefined}
+        draggable
         onClick={onClick}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={onDrop}
         onContextMenu={onContextMenu}
       >
         <GroupAvatar participants={chat.participants} size={24} />
@@ -313,17 +350,30 @@ function NavSessionButton({
   label,
   collapsed,
   active,
+  dragging,
   onClick,
+  onDragStart,
+  onDragEnd,
+  onDrop,
   onContextMenu,
 }: NavSessionButtonProps): React.JSX.Element {
   return (
     <Tooltip content={label} placement="right">
       <button
         type="button"
-        className={cls("imb-nav-item", active && "imb-is-active")}
+        className={cls(
+          "imb-nav-item",
+          active && "imb-is-active",
+          dragging && "imb-is-dragging",
+        )}
         aria-current={active ? "page" : undefined}
         aria-label={collapsed ? label : undefined}
+        draggable
         onClick={onClick}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={onDrop}
         onContextMenu={onContextMenu}
       >
         <EmployeeAvatar employeeId={employeeId} size={24} />
@@ -338,7 +388,11 @@ type NavSessionButtonProps = {
   label: string;
   collapsed: boolean;
   active: boolean;
+  dragging: boolean;
   onClick: () => void;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+  onDrop: () => void;
   onContextMenu: (event: React.MouseEvent) => void;
 };
 
