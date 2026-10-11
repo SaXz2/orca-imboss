@@ -177,7 +177,7 @@
   background: currentColor;
 }
 
-.imb-progress-tag.imb-busy .imb-status-dot {
+.imb-progress-card.imb-is-latest .imb-progress-tag.imb-busy .imb-status-dot {
   animation: status-pulse 1.2s ease-in-out infinite;
 }
 

@@ -66,10 +66,10 @@ export function ProgressCard({
   };
 
   return (
-    <div className="imb-progress-card">
+    <div className={cls("imb-progress-card", isLatest && "imb-is-latest")}>
       <div className="imb-progress-header">
         <div className="imb-progress-card-title">{title}</div>
-        {hasBusyStep && chatId !== undefined && (
+        {hasBusyStep && chatId !== undefined && isLatest && (
           <button
             type="button"
             className="imb-progress-interrupt-btn"
@@ -91,8 +91,6 @@ export function ProgressCard({
         );
         const employeeId = step.employeeId ?? resolvedEmployee?.id ?? null;
         const canOpen = employeeId !== null && onOpenSession !== undefined;
-        const effectiveStatus: StepStatus =
-          !isLatest && step.status === "busy" ? "done" : step.status;
 
         return (
           <div key={`${step.name}-${index}`} className="imb-progress-row">
@@ -121,10 +119,10 @@ export function ProgressCard({
             </div>
             <div className="imb-progress-status-wrap">
               <span
-                className={cls("imb-progress-tag", `imb-${effectiveStatus}`)}
+                className={cls("imb-progress-tag", `imb-${step.status}`)}
               >
                 <span className="imb-status-dot" aria-hidden="true" />
-                {t(STEP_LABEL_KEYS[effectiveStatus] ?? effectiveStatus)}
+                {t(STEP_LABEL_KEYS[step.status] ?? step.status)}
               </span>
               {isLatest && chatId !== undefined && messageId !== undefined && (
                 <button
