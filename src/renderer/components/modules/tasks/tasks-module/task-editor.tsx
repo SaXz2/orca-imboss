@@ -1,5 +1,5 @@
 import { t } from "@shared/l10n";
-import type { BoardCard, TaskInput, TaskStatus } from "@shared/types";
+import type { TaskInput, TaskStatus } from "@shared/types";
 import { useEffect, useState } from "react";
 import { cls } from "reactutils";
 import { useApp } from "../../../../app-store";
@@ -11,6 +11,18 @@ import { Modal } from "../../../modal";
 import { Select } from "../../../select";
 import { Textarea } from "../../../textarea";
 
+/** The editable fields of a task, accepted from either a board card or the
+ * detail view's loaded task. */
+export interface EditableTask {
+  id: number;
+  title: string;
+  detail: string;
+  category: string;
+  flow: string;
+  status: TaskStatus;
+  assignees: number[];
+}
+
 /** Statuses offered by the editor; "closed" is reserved for the close action. */
 const EDITOR_STATUSES: Array<{ status: TaskStatus; labelKey: string }> = [
   { status: "pending", labelKey: "Pending" },
@@ -21,14 +33,14 @@ const EDITOR_STATUSES: Array<{ status: TaskStatus; labelKey: string }> = [
 /** Create / edit a task's own fields (the timeline lives in the detail view). */
 export function TaskEditor({
   open,
-  card,
+  task,
   initialStatus,
   onClose,
   onSave,
   onDelete,
 }: {
   open: boolean;
-  card: BoardCard | null;
+  task: EditableTask | null;
   initialStatus: TaskStatus;
   onClose: () => void;
   onSave: (input: TaskInput) => Promise<void>;
@@ -48,15 +60,15 @@ export function TaskEditor({
 
   useEffect(() => {
     if (!open) return;
-    setTitle(card?.title ?? "");
-    setDetail(card?.detail ?? "");
-    setCategory(card?.category ?? "");
-    setFlow(card?.flow ?? "");
-    const initial = card?.status ?? initialStatus;
+    setTitle(task?.title ?? "");
+    setDetail(task?.detail ?? "");
+    setCategory(task?.category ?? "");
+    setFlow(task?.flow ?? "");
+    const initial = task?.status ?? initialStatus;
     setStatus(initial === "closed" ? "pending" : initial);
-    setAssignees(card ? [...card.assignees] : []);
+    setAssignees(task ? [...task.assignees] : []);
     setError(null);
-  }, [open, card, initialStatus]);
+  }, [open, task, initialStatus]);
 
   if (!open) return null;
 
@@ -94,15 +106,15 @@ export function TaskEditor({
       open={open}
       onClose={onClose}
       size="lg"
-      title={card ? t("Edit task") : t("New task")}
+      title={task ? t("Edit task") : t("New task")}
       sub={t("Group, assign and set the flow of a task.")}
       error={error}
       actions={
         <>
-          {card && (
+          {task && (
             <Button
               variant="danger"
-              onClick={() => void onDelete(card.refId)}
+              onClick={() => void onDelete(task.id)}
               disabled={saving}
             >
               {t("Delete")}
