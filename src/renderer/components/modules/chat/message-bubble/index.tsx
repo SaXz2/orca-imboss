@@ -1,10 +1,12 @@
 import { MAX_VISIBLE_ATTACHMENTS } from "@shared/constants/attachments";
 import { t } from "@shared/l10n";
 import type { MessageAttachment } from "@shared/types";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { cls } from "reactutils";
+import { appStore, useApp } from "../../../../app-store";
 import { IconFile } from "../../../icons";
 import { Markdown } from "../../../markdown";
+import { formatMentionsToMarkdown } from "../mentions";
 import "./index.css";
 
 export interface MessageBubbleProps {
@@ -12,6 +14,7 @@ export interface MessageBubbleProps {
   self: boolean;
   /** Global message id; the reveal IPC resolves the stored path from it. */
   messageId: number;
+  chatId?: number;
   content: string;
   attachments: MessageAttachment[] | null;
   /**
@@ -32,13 +35,28 @@ export interface MessageBubbleProps {
 export function MessageBubble({
   self,
   messageId,
+  chatId,
   content,
   attachments,
   attachmentsTotal,
   avatar,
   markdown = false,
 }: MessageBubbleProps): React.JSX.Element {
+  const { data } = useApp();
+  const employees = data.employees.items;
   const [revealError, setRevealError] = useState<string | null>(null);
+
+  const formattedContent = useMemo(
+    () => formatMentionsToMarkdown(content, employees),
+    [content, employees],
+  );
+
+  const handleMentionClick = (employeeId: number): void => {
+    if (chatId !== undefined) {
+      void appStore.openAgentSession(employeeId, chatId);
+    }
+  };
+
   const all = attachments ?? [];
   const hasAttachments = all.length > 0;
   const visible = all.slice(0, MAX_VISIBLE_ATTACHMENTS);
@@ -105,12 +123,13 @@ export function MessageBubble({
         {revealError !== null && (
           <div className="imb-bubble-attachment-error">{revealError}</div>
         )}
-        {content.length > 0 &&
-          (markdown ? (
-            <Markdown content={content} />
-          ) : (
-            <span className="imb-bubble-text">{content}</span>
-          ))}
+        {content.length > 0 && (
+          <Markdown
+            content={formattedContent}
+            inline={!markdown}
+            onMentionClick={handleMentionClick}
+          />
+        )}
       </div>
     </div>
   );

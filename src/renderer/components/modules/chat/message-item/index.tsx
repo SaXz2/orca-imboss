@@ -81,6 +81,7 @@ export function MessageItem({
         <MessageBubble
           self={false}
           messageId={message.id}
+          chatId={message.chatId}
           content={t("ACK")}
           attachments={null}
           attachmentsTotal={null}
@@ -98,6 +99,7 @@ export function MessageItem({
         <MessageBubble
           self={message.senderEmployeeId === null}
           messageId={message.id}
+          chatId={message.chatId}
           content={message.content}
           attachments={message.attachments}
           attachmentsTotal={message.attachmentsTotal}

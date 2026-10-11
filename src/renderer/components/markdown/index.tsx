@@ -42,7 +42,7 @@ import "./index.css";
 const REMARK_PLUGINS: PluggableList = [remarkGfm, remarkMath];
 const REHYPE_PLUGINS: PluggableList = [[rehypeKatex, { strict: "ignore" }]];
 
-const SAFE_HREF_SCHEMES = new Set(["http:", "https:", "mailto:"]);
+const SAFE_HREF_SCHEMES = new Set(["http:", "https:", "mailto:", "mention:"]);
 
 /**
  * Restrict processed URLs. react-markdown applies this to every URL attribute
@@ -178,11 +178,33 @@ function CodeBlock({ children }: { children?: ReactNode }): React.JSX.Element {
  * Build the element overrides. `inline` adds a paragraph unwrapper so the
  * output stays phrasing content and can be embedded in labels/table cells.
  */
-function createComponents(inline: boolean): Components {
+function createComponents(
+  inline: boolean,
+  onMentionClick?: (employeeId: number) => void,
+): Components {
   const components: Components = {
     a({ href, title, children }) {
       if (typeof href !== "string" || href.length === 0) {
         return <span className="imb-md-link-inert">{children}</span>;
+      }
+      if (href.startsWith("mention:")) {
+        const empId = parseInt(href.replace(/^mention:\/*/, ""), 10);
+        return (
+          <button
+            type="button"
+            className="imb-mention-text-link"
+            title={title ?? t("Open session")}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!isNaN(empId) && onMentionClick) {
+                onMentionClick(empId);
+              }
+            }}
+          >
+            {children}
+          </button>
+        );
       }
       return (
         <a href={href} title={title} target="_blank" rel="noreferrer noopener">
@@ -231,6 +253,7 @@ export interface MarkdownProps {
   /** Render as phrasing content (no block wrapper); for labels and table cells. */
   inline?: boolean;
   className?: string;
+  onMentionClick?: (employeeId: number) => void;
 }
 
 /**
@@ -241,8 +264,12 @@ export const Markdown = memo(function Markdown({
   content,
   inline = false,
   className,
+  onMentionClick,
 }: MarkdownProps): React.JSX.Element {
-  const components = useMemo(() => createComponents(inline), [inline]);
+  const components = useMemo(
+    () => createComponents(inline, onMentionClick),
+    [inline, onMentionClick],
+  );
   const Wrapper = inline ? "span" : "div";
   return (
     <Wrapper
