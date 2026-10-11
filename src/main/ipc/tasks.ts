@@ -44,6 +44,16 @@ export function registerTaskHandlers(): void {
     dbTaskThread.listTaskEvents(assertInteger(id, "task id")),
   );
 
+  // One round-trip for the detail view: task + timeline + feedback rollup.
+  ipcMain.handle("tasks:thread", (_event, id: unknown) => {
+    const taskId = assertInteger(id, "task id");
+    return {
+      task: dbTasks.getTask(taskId),
+      events: dbTaskThread.listTaskEvents(taskId),
+      reactions: dbTaskThread.getTaskReactions(taskId),
+    };
+  });
+
   ipcMain.handle("tasks:comment", (_event, id: unknown, input: unknown) => {
     const taskId = assertInteger(id, "task id");
     const event = dbTaskThread.addTaskComment(taskId, input as TaskCommentInput);

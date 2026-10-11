@@ -37,6 +37,7 @@ import type {
   TaskReactionKind,
   TaskReactions,
   TaskStatus,
+  TaskThread,
   ThemeState,
   UpdaterState,
   WorkDirState,
@@ -149,6 +150,10 @@ const api = {
         ext,
         data,
       ) as Promise<Employee | null>,
+    getMemory: (id: number) =>
+      ipcRenderer.invoke("employees:getMemory", id) as Promise<string>,
+    setMemory: (id: number, text: string) =>
+      ipcRenderer.invoke("employees:setMemory", id, text) as Promise<string>,
     /** Fired when main creates/updates/deletes an employee (e.g. the agent's
      *  `imb_set_employees`), so the renderer cache can re-fetch. */
     onChanged: (cb: (payload: { ids: number[] }) => void) =>
@@ -352,6 +357,8 @@ const api = {
       ipcRenderer.invoke("tasks:delete", id) as Promise<boolean>,
     timeline: (id: number) =>
       ipcRenderer.invoke("tasks:timeline", id) as Promise<TaskEvent[]>,
+    thread: (id: number) =>
+      ipcRenderer.invoke("tasks:thread", id) as Promise<TaskThread>,
     comment: (id: number, input: TaskCommentInput) =>
       ipcRenderer.invoke("tasks:comment", id, input) as Promise<TaskEvent>,
     react: (id: number, kind: TaskReactionKind) =>

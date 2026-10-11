@@ -170,6 +170,13 @@ export const EMPTY_REACTIONS: TaskReactions = {
 /** Where a board card comes from. */
 export type BoardSource = "task" | "chat";
 
+/** One round-trip payload for the detail view: the task, its timeline, feedback. */
+export interface TaskThread {
+  task: Task | null;
+  events: TaskEvent[];
+  reactions: TaskReactions;
+}
+
 /**
  * One task board card. `task` cards are the persistent, editable cards;
  * `chat` cards are derived from real task conversations (group chats / bridged
