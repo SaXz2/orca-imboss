@@ -300,11 +300,17 @@ export function ChatInputBar({
     }
   };
 
-  const onTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
-    const val = e.target.value;
-    const cursor = e.target.selectionStart ?? val.length;
+  const syncDraftText = (val: string, cursor?: number): void => {
     appStore.setChatDraftText(chatId, val);
-    checkMentionTrigger(val, cursor);
+    const pos = cursor ?? textareaRef.current?.selectionStart ?? val.length;
+    checkMentionTrigger(val, pos);
+  };
+
+  const onTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
+    syncDraftText(
+      e.target.value,
+      e.target.selectionStart ?? e.target.value.length,
+    );
   };
 
   const onTextSelect = (): void => {
@@ -391,7 +397,11 @@ export function ChatInputBar({
           placeholder={t("What are your instructions?")}
           disabled={disabled}
           minHeight={0}
+          onInput={(e) =>
+            syncDraftText(e.currentTarget.value, e.currentTarget.selectionStart)
+          }
           onChange={onTextChange}
+          onValueCommit={(val) => syncDraftText(val)}
           onSelect={onTextSelect}
           onKeyDown={onKeyDown}
         />
