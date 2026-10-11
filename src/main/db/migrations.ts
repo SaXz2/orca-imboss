@@ -158,6 +158,42 @@ const MIGRATIONS: Array<(db: Database) => void> = [
         ON tasks(status, sort_order);
     `);
   },
+
+  // 2 — task thread: timeline events, reactions, close reason
+  (db) => {
+    db.exec(`
+      -- Why a task was closed (NULL unless status = 'closed').
+      ALTER TABLE tasks ADD COLUMN close_reason TEXT;
+
+      -- Append-only task timeline. Authored entries (comment/request/reject/
+      -- approve/improvement) carry a body; lifecycle entries (created/status/
+      -- assigned/renamed/closed/reopened) carry a JSON meta payload.
+      CREATE TABLE IF NOT EXISTS task_events (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        task_id    INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+        actor      TEXT NOT NULL DEFAULT 'system',
+        kind       TEXT NOT NULL,
+        body       TEXT NOT NULL DEFAULT '',
+        meta       TEXT NOT NULL DEFAULT '{}',
+        created_at INTEGER NOT NULL DEFAULT (CAST(strftime('%s', 'now') AS INTEGER))
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_task_events_task
+        ON task_events(task_id, id);
+
+      -- Feedback on a task: one row per (task, actor, kind).
+      CREATE TABLE IF NOT EXISTS task_reactions (
+        task_id    INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+        actor      TEXT NOT NULL,
+        kind       TEXT NOT NULL,
+        created_at INTEGER NOT NULL DEFAULT (CAST(strftime('%s', 'now') AS INTEGER)),
+        PRIMARY KEY (task_id, actor, kind)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_task_reactions_task
+        ON task_reactions(task_id);
+    `);
+  },
 ];
 
 export function migrate(db: Database): void {

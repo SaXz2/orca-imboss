@@ -31,7 +31,11 @@ import type {
   ProviderUpsert,
   BoardCard,
   Task,
+  TaskCommentInput,
+  TaskEvent,
   TaskInput,
+  TaskReactionKind,
+  TaskReactions,
   TaskStatus,
   ThemeState,
   UpdaterState,
@@ -336,6 +340,8 @@ const api = {
   tasks: {
     list: () => ipcRenderer.invoke("tasks:list") as Promise<Task[]>,
     board: () => ipcRenderer.invoke("tasks:board") as Promise<BoardCard[]>,
+    get: (id: number) =>
+      ipcRenderer.invoke("tasks:get", id) as Promise<Task | null>,
     create: (input: TaskInput) =>
       ipcRenderer.invoke("tasks:create", input) as Promise<Task>,
     update: (id: number, input: TaskInput) =>
@@ -344,6 +350,16 @@ const api = {
       ipcRenderer.invoke("tasks:move", id, status) as Promise<Task | null>,
     remove: (id: number) =>
       ipcRenderer.invoke("tasks:delete", id) as Promise<boolean>,
+    timeline: (id: number) =>
+      ipcRenderer.invoke("tasks:timeline", id) as Promise<TaskEvent[]>,
+    comment: (id: number, input: TaskCommentInput) =>
+      ipcRenderer.invoke("tasks:comment", id, input) as Promise<TaskEvent>,
+    react: (id: number, kind: TaskReactionKind) =>
+      ipcRenderer.invoke("tasks:react", id, kind) as Promise<TaskReactions>,
+    close: (id: number, reason: string) =>
+      ipcRenderer.invoke("tasks:close", id, reason) as Promise<Task | null>,
+    reopen: (id: number) =>
+      ipcRenderer.invoke("tasks:reopen", id) as Promise<Task | null>,
   },
 
   providers: {

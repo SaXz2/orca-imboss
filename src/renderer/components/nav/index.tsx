@@ -16,6 +16,7 @@ import {
   IconMcp,
   IconSkills,
   IconTasks,
+  IconUsage,
 } from "../icons";
 import { Tooltip } from "../tooltip";
 import "./index.css";
@@ -44,6 +45,12 @@ const NAV_ITEMS: NavItem[] = [
     module: "tasks",
     labelKey: "Tasks",
     icon: IconTasks,
+    section: "main",
+  },
+  {
+    module: "usage",
+    labelKey: "Usage",
+    icon: IconUsage,
     section: "main",
   },
   { module: "mcp", labelKey: "MCP", icon: IconMcp, section: "main" },

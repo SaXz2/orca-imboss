@@ -19,6 +19,7 @@ const COLUMNS: Array<{ status: TaskStatus; labelKey: string }> = [
   { status: "pending", labelKey: "Pending" },
   { status: "running", labelKey: "In progress" },
   { status: "done", labelKey: "Done" },
+  { status: "closed", labelKey: "Closed" },
 ];
 
 const STATUS_OPTIONS = COLUMNS.map((c) => ({
@@ -83,6 +84,7 @@ export function TasksModule(): React.JSX.Element {
       pending: [],
       running: [],
       done: [],
+      closed: [],
     };
     for (const card of cards) map[card.status].push(card);
     return map;

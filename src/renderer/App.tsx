@@ -10,10 +10,12 @@ import { MiniAppModule } from "./components/modules/miniapp/miniapp-module";
 import { SettingsModule } from "./components/modules/settings/settings-module";
 import { SkillsModule } from "./components/modules/skills/skills-module";
 import { TasksModule } from "./components/modules/tasks/tasks-module";
+import { UsageModule } from "./components/modules/usage/usage-module";
 
 const MODULE_VIEWS: Partial<Record<AppModule, () => React.JSX.Element>> = {
   chat: ChatModule,
   tasks: TasksModule,
+  usage: UsageModule,
   mcp: McpModule,
   skills: SkillsModule,
   employees: EmployeesModule,

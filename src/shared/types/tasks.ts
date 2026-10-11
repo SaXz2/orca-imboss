@@ -1,10 +1,59 @@
+/**
+ * Task-center (kanban board) domain types.
+ *
+ * A task is modelled as a *thread*: a persistent entity plus an append-only
+ * timeline of events (comments, status changes, assignment, closing), plus
+ * reactions on the thread. This mirrors how issue trackers treat state — a
+ * status is not just a field, changing it appends an event.
+ */
+
 /** Kanban column / lifecycle stage of a task. */
-export type TaskStatus = "pending" | "running" | "done";
+export type TaskStatus = "pending" | "running" | "done" | "closed";
 
 export const TASK_STATUSES: readonly TaskStatus[] = [
   "pending",
   "running",
   "done",
+  "closed",
+];
+
+/** Why a task was closed (issue-tracker style close reasons). */
+export type TaskCloseReason = "completed" | "rejected" | "duplicate" | "wontfix";
+
+export const TASK_CLOSE_REASONS: readonly TaskCloseReason[] = [
+  "completed",
+  "rejected",
+  "duplicate",
+  "wontfix",
+];
+
+/**
+ * Timeline entry kinds.
+ *
+ * `comment`/`request`/`reject`/`approve`/`improvement` are authored entries
+ * (discussion, demands, rejections, approvals, improvement proposals);
+ * the rest are system entries appended by the lifecycle itself.
+ */
+export type TaskEventKind =
+  | "created"
+  | "comment"
+  | "request"
+  | "reject"
+  | "approve"
+  | "improvement"
+  | "status"
+  | "assigned"
+  | "renamed"
+  | "closed"
+  | "reopened";
+
+/** Event kinds a human/agent can author (as opposed to system-generated). */
+export const TASK_AUTHORED_KINDS: readonly TaskEventKind[] = [
+  "comment",
+  "request",
+  "reject",
+  "approve",
+  "improvement",
 ];
 
 /** Row of the `tasks` table (task center). */
@@ -17,6 +66,8 @@ export interface Task {
   /** Human-readable flow description (e.g. "调研 → 写作 → 审核"). */
   flow: string;
   status: TaskStatus;
+  /** Set only while `status` is `closed`. */
+  closeReason: TaskCloseReason | null;
   /** Assigned employee ids. */
   assignees: number[];
   /** Manual ordering within a column (ascending). */
@@ -33,6 +84,7 @@ export interface TaskRow {
   category: string;
   flow: string;
   status: string;
+  close_reason: string | null;
   assignees: string;
   sort_order: number;
   created_at: number;
@@ -46,15 +98,80 @@ export interface TaskInput {
   category?: string;
   flow?: string;
   status?: TaskStatus;
+  closeReason?: TaskCloseReason | null;
   assignees?: number[];
   sortOrder?: number;
 }
+
+/**
+ * One entry on a task's timeline.
+ *
+ * `actor` is `"user"` for the local user or `"employee:<id>"` for an AI
+ * employee, so agents can participate in a task's discussion later without a
+ * schema change.
+ */
+export interface TaskEvent {
+  id: number;
+  taskId: number;
+  actor: string;
+  kind: TaskEventKind;
+  body: string;
+  /** Kind-specific payload (e.g. `{ status, closeReason }` for `closed`). */
+  meta: Record<string, unknown>;
+  createdAt: number;
+}
+
+/** Raw DB row (JSON columns unparsed). */
+export interface TaskEventRow {
+  id: number;
+  task_id: number;
+  actor: string;
+  kind: string;
+  body: string;
+  meta: string;
+  created_at: number;
+}
+
+/** Authored timeline entry (discussion / demand / rejection / proposal). */
+export interface TaskCommentInput {
+  body: string;
+  kind?: TaskEventKind;
+  actor?: string;
+}
+
+/** Feedback primitives on a task (Muse's 赞 / 收藏 / 关注). */
+export type TaskReactionKind = "like" | "bookmark" | "follow";
+
+export const TASK_REACTION_KINDS: readonly TaskReactionKind[] = [
+  "like",
+  "bookmark",
+  "follow",
+];
+
+/** Reaction rollup for one task: counts plus the local user's own state. */
+export interface TaskReactions {
+  like: number;
+  bookmark: number;
+  follow: number;
+  liked: boolean;
+  bookmarked: boolean;
+  following: boolean;
+}
+
+export const EMPTY_REACTIONS: TaskReactions = {
+  like: 0,
+  bookmark: 0,
+  follow: 0,
+  liked: false,
+  bookmarked: false,
+  following: false,
+};
 
 /** Where a board card comes from. */
 export type BoardSource = "task" | "chat";
 
 /**
- * One Task Center board card. `task` cards are the persistent, editable cards;
+ * One task board card. `task` cards are the persistent, editable cards;
  * `chat` cards are derived from real task conversations (group chats / bridged
  * chats), so the board reflects the company's actual work — read-only, and
  * clicking one opens that conversation.
@@ -69,10 +186,16 @@ export interface BoardCard {
   category: string;
   flow: string;
   status: TaskStatus;
+  /** Set only while `status` is `closed` (task cards only). */
+  closeReason: TaskCloseReason | null;
   assignees: number[];
   updatedAt: number;
   /** Latest progress steps (chat cards only; for a compact stepper). */
   steps: import("./messages").MessageStep[];
   /** Chat id to open (chat cards only). */
   chatId: number | null;
+  /** Authored timeline entries (task cards only). */
+  commentCount: number;
+  /** Feedback rollup (task cards only; chat cards report zeros). */
+  reactions: TaskReactions;
 }

@@ -22,7 +22,7 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--imb-space-3);
   padding: var(--imb-space-3) var(--imb-space-4) var(--imb-space-4);
   overflow: hidden;
@@ -70,6 +70,10 @@
 }
 .imb-col-dot.imb-done {
   background: var(--imb-accent);
+}
+
+.imb-col-dot.imb-closed {
+  background: #8250df;
 }
 
 .imb-col-name {

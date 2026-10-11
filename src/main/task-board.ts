@@ -1,7 +1,13 @@
 import { t } from "@shared/l10n";
-import type { BoardCard, MessageStep, TaskStatus } from "@shared/types";
+import {
+  EMPTY_REACTIONS,
+  type BoardCard,
+  type MessageStep,
+  type TaskStatus,
+} from "@shared/types";
 import { getDB } from "./db";
 import { parseJsonObject, parseNumberArray } from "./db/json";
+import { authoredCounts, reactionsFor } from "./db/task-thread";
 import { listTasks } from "./db/tasks";
 
 /**
@@ -69,7 +75,12 @@ interface ChatTaskRow {
 export function listBoardCards(): BoardCard[] {
   const cards: BoardCard[] = [];
 
-  for (const task of listTasks()) {
+  const tasks = listTasks();
+  const taskIds = tasks.map((task) => task.id);
+  const counts = authoredCounts(taskIds);
+  const reactions = reactionsFor(taskIds);
+
+  for (const task of tasks) {
     cards.push({
       key: `task:${task.id}`,
       source: "task",
@@ -79,10 +90,13 @@ export function listBoardCards(): BoardCard[] {
       category: task.category,
       flow: task.flow,
       status: task.status,
+      closeReason: task.closeReason,
       assignees: task.assignees,
       updatedAt: task.updatedAt,
       steps: [],
       chatId: null,
+      commentCount: counts.get(task.id) ?? 0,
+      reactions: reactions.get(task.id) ?? { ...EMPTY_REACTIONS },
     });
   }
 
@@ -116,10 +130,13 @@ export function listBoardCards(): BoardCard[] {
         : t("Group"),
       flow: steps.map((s) => s.name).join(" → "),
       status: statusFromSteps(steps),
+      closeReason: null,
       assignees: parseNumberArray(row.participants).filter((id) => id !== 0),
       updatedAt: row.last_message_at,
       steps,
       chatId: row.id,
+      commentCount: 0,
+      reactions: { ...EMPTY_REACTIONS },
     });
   }
 
@@ -131,15 +148,18 @@ export interface EmployeeTaskCounts {
   pending: number;
   running: number;
   done: number;
+  closed: number;
 }
 
 export function employeeTaskCounts(): Map<number, EmployeeTaskCounts> {
   const map = new Map<number, EmployeeTaskCounts>();
   for (const card of listBoardCards()) {
+    // Closed cards are archived, not workload — leave them out of the summary.
+    if (card.status === "closed") continue;
     for (const id of card.assignees) {
       let entry = map.get(id);
       if (!entry) {
-        entry = { pending: 0, running: 0, done: 0 };
+        entry = { pending: 0, running: 0, done: 0, closed: 0 };
         map.set(id, entry);
       }
       entry[card.status] += 1;

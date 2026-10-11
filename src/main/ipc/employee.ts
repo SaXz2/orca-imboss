@@ -47,6 +47,7 @@ export function registerEmployeeHandlers(): void {
           pending: 0,
           running: 0,
           done: 0,
+          closed: 0,
         },
       };
     });

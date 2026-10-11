@@ -104,11 +104,11 @@ src/
 - `components/modules/`：业务功能页面，每一个模块独立成文件夹：
   - `chat/`：仿微信沉浸式消息流、输入框、气泡渲染、卡片（Ask 卡片、Progress 卡片、Chat 链接卡片）。
   - `employees/`：AI 员工档案、招聘向导、系统提示词与 Cron 任务编排。
-  - `providers/`：大模型供应商配置、API 密钥加密管理与模型拉取。
+  - `providers/`：大模型供应商的复用组件（新增弹窗、配置字段、详情面板）；供应商列表本身已并入 `settings/settings-providers/`。
   - `mcp/`：MCP 服务的注册、连接测试与工具探测。
   - `skills/`：基于 `SKILL.md` 的本地技能管理。
   - `miniapp/`：保持持久化挂载的本地微应用展示容器。
-  - `settings/`：通用偏好、外观颜色、多端集成配置与版本更新。
+  - `settings/`：通用偏好、外观颜色、资源与集成配置；含模型供应商管理（`settings-providers/`，内嵌列表＋详情）。
 - `components/[atomic-ui]/`：原子和基础复合组件（`button`, `input`, `modal`, `avatar`, `virtual-list` 等）。每个组件自带 `index.tsx` 和 `index.css`。
 
 ---

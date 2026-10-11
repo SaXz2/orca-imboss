@@ -29,6 +29,7 @@ export type AppModule =
   | "chat"
   | "employees"
   | "tasks"
+  | "usage"
   | "mcp"
   | "skills"
   | "settings"
@@ -93,6 +94,7 @@ const VALID_MODULES: AppModule[] = [
   "chat",
   "employees",
   "tasks",
+  "usage",
   "mcp",
   "skills",
   "settings",

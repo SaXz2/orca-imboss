@@ -52,48 +52,8 @@
   flex: none;
 }
 
-/* GitHub-style state summary: done / in progress / pending counts. */
-.imb-emp-state {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  flex: none;
-  font-weight: 600;
-}
-
-.imb-emp-state .imb-icon {
-  width: 12px;
-  height: 12px;
-}
-
-.imb-state-done {
-  color: var(--imb-accent);
-}
-
-.imb-state-running {
-  color: #c98a00;
-}
-
-.imb-state-running::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-.imb-state-pending {
-  color: var(--imb-muted);
-}
-
-.imb-state-pending::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  border: 1.5px solid currentColor;
-}
-
+/* `.imb-emp-state*` state chips live in `module-common.css` (shared with the
+   usage ledger). */
 .imb-emp-hours {
   color: var(--imb-muted);
 }

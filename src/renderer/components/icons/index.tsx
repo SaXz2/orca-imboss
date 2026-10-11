@@ -263,12 +263,91 @@ export function IconPencil(props: IconProps): React.JSX.Element {
 }
 
 /** Kanban board / task center icon. */
+export function IconUsage(props: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(props)}>
+      <path d="M4 20h16" />
+      <path d="M7.5 20v-5" />
+      <path d="M12 20v-9" />
+      <path d="M16.5 20v-13" />
+    </svg>
+  );
+}
+
 export function IconTasks(props: IconProps): React.JSX.Element {
   return (
     <svg {...base(props)} strokeWidth={1.7}>
       <rect x="3.5" y="4" width="4.6" height="16" rx="1.2" />
       <rect x="9.7" y="4" width="4.6" height="16" rx="1.2" />
       <rect x="15.9" y="4" width="4.6" height="16" rx="1.2" />
+    </svg>
+  );
+}
+
+/** Thumbs-up — "like" feedback on a task. */
+export function IconLike(props: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(props)} strokeWidth={1.7}>
+      <path d="M7 10.5v9.5H4.5a1.5 1.5 0 0 1-1.5-1.5v-6.5A1.5 1.5 0 0 1 4.5 10.5H7Z" />
+      <path d="M7 10.5 11 3.5a2.5 2.5 0 0 1 2.4 2.5V9.5h4.3a2 2 0 0 1 2 2.35l-1.1 6a2 2 0 0 1-2 1.65H7" />
+    </svg>
+  );
+}
+
+/** Bookmark — "save / 收藏" a task. */
+export function IconBookmark(props: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(props)} strokeWidth={1.7}>
+      <path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4.5L5 21V4.5a1 1 0 0 1 1-1Z" />
+    </svg>
+  );
+}
+
+/** Bell — "follow / 关注" a task for updates. */
+export function IconFollow(props: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(props)} strokeWidth={1.7}>
+      <path d="M18 8.5a6 6 0 1 0-12 0c0 5-2 6.5-2 6.5h16s-2-1.5-2-6.5Z" />
+      <path d="M10 19a2 2 0 0 0 4 0" />
+    </svg>
+  );
+}
+
+/** Speech bubble — comment count. */
+export function IconComment(props: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(props)} strokeWidth={1.7}>
+      <path d="M20 12a7.5 7.5 0 0 1-10.9 6.7L4 20l1.3-4.3A7.5 7.5 0 1 1 20 12Z" />
+    </svg>
+  );
+}
+
+/** Circle-slash — "closed" state. */
+export function IconClosed(props: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(props)} strokeWidth={1.7}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M8.5 15.5 15.5 8.5" />
+    </svg>
+  );
+}
+
+/** Rotate counter-clockwise — reopen a closed task. */
+export function IconReopen(props: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(props)} strokeWidth={1.7}>
+      <path d="M3 5v5h5" />
+      <path d="M3.5 14a8.5 8.5 0 1 0 1.6-6.6L3 10" />
+    </svg>
+  );
+}
+
+/** Arrow-left — back to the board. */
+export function IconBack(props: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(props)} strokeWidth={1.9}>
+      <line x1="19" y1="12" x2="5" y2="12" />
+      <polyline points="12 19 5 12 12 5" />
     </svg>
   );
 }

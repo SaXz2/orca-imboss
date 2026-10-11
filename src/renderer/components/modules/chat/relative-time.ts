@@ -1,7 +1,8 @@
 /**
- * Relative chat timestamp formatting (prototype list times):
- * today → "HH:mm"; yesterday → 昨天/“Yesterday”; within a week → 周X / Tue;
- * else yyyy/M/d.
+ * Time and duration formatting shared by list / board views:
+ * relative chat timestamps (today → "HH:mm"; yesterday → 昨天/“Yesterday”;
+ * within a week → 周X / Tue; else yyyy/M/d), absolute message stamps,
+ * compact durations (45s / 12m / 1h20m) and plain-text list previews.
  */
 
 import { toPlainText } from "../../markdown/plain-text";
@@ -66,4 +67,13 @@ export function previewText(content: string, max = 80): string {
   // math source do not leak into the list.
   const collapsed = toPlainText(content).replace(/\s+/g, " ").trim();
   return collapsed.length > max ? `${collapsed.slice(0, max)}…` : collapsed;
+}
+
+/** Compact duration label: 45s / 12m / 1h20m. */
+export function formatDuration(ms: number): string {
+  const secs = Math.max(0, Math.floor(ms / 1000));
+  if (secs < 60) return `${secs}s`;
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m`;
+  return `${Math.floor(mins / 60)}h${mins % 60}m`;
 }

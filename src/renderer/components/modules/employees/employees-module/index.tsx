@@ -7,7 +7,7 @@ import type { Employee, EmployeeInput, EmployeeMetric } from "@shared/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { appStore, useApp } from "../../../../app-store";
 import { useMultiSelect } from "../../../../hooks/use-multi-select";
-import { formatChatTime, previewText } from "../../chat/relative-time";
+import { formatChatTime, formatDuration, previewText } from "../../chat/relative-time";
 import { ModuleView } from "../../../app-shell";
 import { Button } from "../../../button";
 import {
@@ -27,15 +27,6 @@ import type { MultiSelectOption } from "../../../multi-select";
 import { SearchInput } from "../../../search-input";
 import { EmployeeDetail } from "../employee-detail";
 import { EmployeeRecruitModal } from "../employee-recruit-modal";
-
-/** Compact duration label: 45s / 12m / 1h20m. */
-function formatDuration(ms: number): string {
-  const secs = Math.max(0, Math.floor(ms / 1000));
-  if (secs < 60) return `${secs}s`;
-  const mins = Math.floor(secs / 60);
-  if (mins < 60) return `${mins}m`;
-  return `${Math.floor(mins / 60)}h${mins % 60}m`;
-}
 
 export function EmployeesModule(): React.JSX.Element {
   const [selectedId, setSelectedId] = useState<number | null>(null);
