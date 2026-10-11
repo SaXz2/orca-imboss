@@ -13,6 +13,7 @@ import { IconChevronDown } from "../../../icons";
 import { Markdown } from "../../../markdown";
 import { useMentionResolver } from "../../../markdown/use-mention";
 import "../../chat/thread.css";
+import { describeToolActivity } from "./tool-activity";
 import "./index.css";
 
 export interface AgentSessionModuleProps {
@@ -460,7 +461,7 @@ function ThinkingBlock({
   );
 }
 
-/** A tool call: name, a compact argument summary, and expandable args detail. */
+/** A tool call rendered as a friendly "activity row" with optional avatars. */
 function ToolBlock({
   name,
   status,
@@ -473,23 +474,29 @@ function ToolBlock({
   detail?: string;
 }): React.JSX.Element {
   const [open, setOpen] = useState(false);
+  const { label, employeeIds } = describeToolActivity(name, detail);
   const expandable = detail !== undefined && detail.length > 0;
   const row = (
     <>
       <span className="imb-session-tool-dot" aria-hidden="true" />
-      <span className="imb-session-tool-name">{name}</span>
+      <span className="imb-session-tool-name">{label}</span>
+      {employeeIds.length > 0 && (
+        <span className="imb-session-tool-people">
+          {employeeIds.slice(0, 6).map((id) => (
+            <EmployeeAvatar key={id} employeeId={id} size={16} />
+          ))}
+        </span>
+      )}
       {summary !== undefined && summary.length > 0 && (
         <span className="imb-session-tool-args" title={summary}>
           {summary}
         </span>
       )}
-      <span className="imb-session-tool-status">
-        {status === "running"
-          ? t("Running")
-          : status === "error"
-            ? t("Failed")
-            : t("Done")}
-      </span>
+      {status !== "ok" && (
+        <span className="imb-session-tool-status">
+          {status === "running" ? t("Running") : t("Failed")}
+        </span>
+      )}
     </>
   );
   return (

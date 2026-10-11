@@ -105,20 +105,38 @@
   word-break: break-word;
 }
 
-/* Tool call: name + compact argument summary + expandable args detail. */
+/* Tool call rendered as a centered "activity row" (label + inline avatars). */
 .imb-session-tool {
   flex: none;
-  align-self: flex-start;
+  align-self: center;
   display: inline-flex;
   flex-direction: column;
   align-items: stretch;
   max-width: 82%;
-  border: 1px solid var(--imb-border);
+  border: 1px solid var(--imb-border-soft);
   border-radius: var(--imb-radius-pill);
-  background: var(--imb-surface);
+  background: color-mix(in oklch, var(--imb-fg) 4%, var(--imb-surface));
   font-size: var(--imb-text-xs);
   color: var(--imb-fg-2);
   overflow: hidden;
+}
+
+.imb-session-tool-people {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}
+
+.imb-session-tool-people .imb-avatar {
+  width: 16px;
+  height: 16px;
+  font-size: 9px;
+  border: 1px solid var(--imb-surface);
+  margin-left: -6px;
+}
+
+.imb-session-tool-people .imb-avatar:first-child {
+  margin-left: 0;
 }
 
 .imb-session-tool.imb-is-open {
