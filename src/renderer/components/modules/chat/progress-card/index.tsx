@@ -3,6 +3,7 @@ import type { MessageStep, StepStatus } from "@shared/types";
 import { useState } from "react";
 import { cls } from "reactutils";
 import { useApp } from "../../../../app-store";
+import { resolveEmployeeLabel } from "../../../../employee-label";
 import { EmployeeAvatar } from "../../../employee-avatar";
 import { IconPencil } from "../../../icons";
 import { StepEditModal } from "./step-edit-modal";
@@ -83,6 +84,11 @@ export function ProgressCard({
         )}
       </div>
       {steps.map((step, index) => {
+        const employeeLabelInfo = resolveEmployeeLabel(
+          step.name,
+          employees,
+          step.employeeId,
+        );
         const resolvedEmployee = employees.find(
           (e) =>
             (step.employeeId !== undefined && e.id === step.employeeId) ||
@@ -99,8 +105,12 @@ export function ProgressCard({
                 <button
                   type="button"
                   className="imb-progress-avatar-btn"
-                  title={t("Open session for ${name}", { name: step.name })}
-                  aria-label={t("Open session for ${name}", { name: step.name })}
+                  title={t("Open session for ${name}", {
+                    name: employeeLabelInfo.label,
+                  })}
+                  aria-label={t("Open session for ${name}", {
+                    name: employeeLabelInfo.label,
+                  })}
                   onClick={() => onOpenSession(employeeId)}
                 >
                   <EmployeeAvatar employeeId={employeeId} size={24} />
@@ -111,8 +121,13 @@ export function ProgressCard({
                 </div>
               )}
               <span className="imb-pname">
-                {step.name}
-                {step.role && (
+                {employeeLabelInfo.label}
+                {employeeLabelInfo.badge && (
+                  <span className="imb-pname-id">
+                    {employeeLabelInfo.badge}
+                  </span>
+                )}
+                {step.role && step.role.trim() !== employeeLabelInfo.label && (
                   <span className="imb-pname-role"> · {step.role}</span>
                 )}
               </span>

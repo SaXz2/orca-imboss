@@ -110,6 +110,19 @@
   font-weight: 400;
 }
 
+.imb-progress-row .imb-pname-id {
+  margin-left: 5px;
+  font-family: var(--imb-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--imb-muted);
+  background: var(--imb-bg);
+  border: 1px solid var(--imb-border-soft);
+  border-radius: var(--imb-radius-sm);
+  padding: 0 4px;
+  vertical-align: 1px;
+}
+
 .imb-progress-status-wrap {
   display: flex;
   align-items: center;
