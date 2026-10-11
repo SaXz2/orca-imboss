@@ -12,6 +12,51 @@
   min-height: 0;
 }
 
+/* Pill variant: the current object of the view (chat / group / employee) as a
+   centred capsule that floats above the conversation once it is scrolled. */
+.imb-chat-header.imb-is-pill {
+  justify-content: center;
+  padding: 10px var(--imb-space-4) 8px;
+  background: var(--imb-bg);
+  border-bottom: none;
+  position: relative;
+  z-index: 2;
+  transition:
+    background var(--imb-motion-fast) var(--imb-ease-standard),
+    box-shadow var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-chat-header.imb-is-pill.imb-is-scrolled {
+  background: color-mix(in oklch, var(--imb-bg) 78%, transparent);
+  backdrop-filter: blur(12px) saturate(1.3);
+  box-shadow: 0 1px 0 var(--imb-border-soft);
+}
+
+.imb-chat-header-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 5px 14px 5px 6px;
+  border-radius: var(--imb-radius-pill);
+  background: var(--imb-surface);
+  border: 1px solid var(--imb-border);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition:
+    box-shadow var(--imb-motion-fast) var(--imb-ease-standard),
+    border-color var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-chat-header.imb-is-pill.imb-is-scrolled .imb-chat-header-pill {
+  border-color: color-mix(in oklch, var(--imb-fg) 16%, transparent);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.imb-chat-header-pill .imb-chat-title {
+  font-size: var(--imb-text-lg);
+}
+
 .imb-chat-header-avatar {
   width: 36px;
   height: 36px;

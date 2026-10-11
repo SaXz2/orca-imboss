@@ -77,6 +77,7 @@ export function AgentSessionModule({
   const [version, bump] = useReducer((n: number) => n + 1, 0);
 
   const sessionKeyStr = `${employeeId}/${chatId}`;
+  const [headerScrolled, setHeaderScrolled] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
   const pinnedRef = useRef(true);
   const restoreScrollRef = useRef<{ key: string; scrollTop: number } | null>(
@@ -343,6 +344,8 @@ export function AgentSessionModule({
   const handleScroll = useCallback((): void => {
     const el = threadRef.current;
     if (!el) return;
+    const scrolled = el.scrollTop > 6;
+    setHeaderScrolled((prev) => (prev === scrolled ? prev : scrolled));
     const pinned =
       el.scrollHeight - el.scrollTop - el.clientHeight <= PIN_THRESHOLD;
     pinnedRef.current = pinned;
@@ -359,13 +362,17 @@ export function AgentSessionModule({
 
   const content = (
     <>
-      <div className="imb-chat-header">
-        <div className="imb-chat-header-avatar">
-          <EmployeeAvatar employeeId={employeeId} size={36} />
-        </div>
-        <div className="imb-session-heading">
-          <div className="imb-chat-title">{employeeName}</div>
-          <div className="imb-session-subtitle">{chatTitle}</div>
+      <div
+        className={`imb-chat-header imb-is-pill${headerScrolled ? " imb-is-scrolled" : ""}`}
+      >
+        <div className="imb-chat-header-pill">
+          <div className="imb-chat-header-avatar">
+            <EmployeeAvatar employeeId={employeeId} size={36} />
+          </div>
+          <div className="imb-session-heading">
+            <div className="imb-chat-title">{employeeName}</div>
+            <div className="imb-session-subtitle">{chatTitle}</div>
+          </div>
         </div>
       </div>
       <div

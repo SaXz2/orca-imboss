@@ -81,9 +81,13 @@ export function GroupChatModule({
     if (pinnedRef.current) el.scrollTop = el.scrollHeight;
   }, [messages, chatId]);
 
+  const [headerScrolled, setHeaderScrolled] = useState(false);
+
   const handleScroll = useCallback((): void => {
     const el = threadRef.current;
     if (!el) return;
+    const scrolled = el.scrollTop > 6;
+    setHeaderScrolled((prev) => (prev === scrolled ? prev : scrolled));
     const pinned =
       el.scrollHeight - el.scrollTop - el.clientHeight <= PIN_THRESHOLD;
     pinnedRef.current = pinned;
@@ -95,15 +99,21 @@ export function GroupChatModule({
 
   const content = (
     <>
-      <div className="imb-chat-header">
-        <div className="imb-chat-header-avatar">
-          <GroupAvatar
-            participants={chat?.participants ?? []}
-            size={36}
-            title={chat?.title}
-          />
+      <div
+        className={`imb-chat-header imb-is-pill${headerScrolled ? " imb-is-scrolled" : ""}`}
+      >
+        <div className="imb-chat-header-pill">
+          <div className="imb-chat-header-avatar">
+            <GroupAvatar
+              participants={chat?.participants ?? []}
+              size={36}
+              title={chat?.title}
+            />
+          </div>
+          <div className="imb-chat-title">
+            {chat?.title ?? t("Conversation")}
+          </div>
         </div>
-        <div className="imb-chat-title">{chat?.title ?? t("Conversation")}</div>
       </div>
       <div className="imb-thread" ref={threadRef} onScroll={handleScroll}>
         {messages.length === 0 ? (

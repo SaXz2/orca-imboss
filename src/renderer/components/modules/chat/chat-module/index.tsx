@@ -452,9 +452,13 @@ export function ChatModule(): React.JSX.Element {
     if (pinnedRef.current) el.scrollTop = el.scrollHeight;
   }, [messages, selectedRunStatus]);
 
+  const [headerScrolled, setHeaderScrolled] = useState(false);
+
   const handleThreadScroll = useCallback((): void => {
     const el = threadRef.current;
     if (!el) return;
+    const scrolled = el.scrollTop > 6;
+    setHeaderScrolled((prev) => (prev === scrolled ? prev : scrolled));
     const pinned =
       el.scrollHeight - el.scrollTop - el.clientHeight <= PIN_THRESHOLD;
     pinnedRef.current = pinned;
@@ -684,48 +688,52 @@ export function ChatModule(): React.JSX.Element {
 
   const detail = selected ? (
     <>
-      <div className="imb-chat-header">
-        <div className="imb-chat-header-avatar">
-          <EmployeeAvatar employeeId={0} size={36} />
-        </div>
-        {editingTitle ? (
-          <Input
-            className="imb-chat-title-input"
-            value={titleDraft}
-            maxLength={200}
-            autoFocus
-            aria-label={t("Double-click to rename chat")}
-            onChange={(event) => setTitleDraft(event.target.value)}
-            onFocus={(event) => event.currentTarget.select()}
-            onBlur={() => void commitTitleEdit()}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                void commitTitleEdit();
-              } else if (event.key === "Escape") {
-                event.preventDefault();
-                cancelTitleEdit();
-              }
-            }}
-          />
-        ) : (
-          <Tooltip
-            placement="bottom"
-            content={t("Double-click to rename chat")}
-          >
-            <div
-              className="imb-chat-title imb-chat-title-editable"
-              onDoubleClick={beginTitleEdit}
+      <div
+        className={`imb-chat-header imb-is-pill${headerScrolled ? " imb-is-scrolled" : ""}`}
+      >
+        <div className="imb-chat-header-pill">
+          <div className="imb-chat-header-avatar">
+            <EmployeeAvatar employeeId={0} size={36} />
+          </div>
+          {editingTitle ? (
+            <Input
+              className="imb-chat-title-input"
+              value={titleDraft}
+              maxLength={200}
+              autoFocus
+              aria-label={t("Double-click to rename chat")}
+              onChange={(event) => setTitleDraft(event.target.value)}
+              onFocus={(event) => event.currentTarget.select()}
+              onBlur={() => void commitTitleEdit()}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  void commitTitleEdit();
+                } else if (event.key === "Escape") {
+                  event.preventDefault();
+                  cancelTitleEdit();
+                }
+              }}
+            />
+          ) : (
+            <Tooltip
+              placement="bottom"
+              content={t("Double-click to rename chat")}
             >
-              {selectedTitle}
-            </div>
-          </Tooltip>
-        )}
-        {selected.source && (
-          <span className="imb-chat-source">
-            {t(INTEGRATION_LABEL_KEYS[selected.source])}
-          </span>
-        )}
+              <div
+                className="imb-chat-title imb-chat-title-editable"
+                onDoubleClick={beginTitleEdit}
+              >
+                {selectedTitle}
+              </div>
+            </Tooltip>
+          )}
+          {selected.source && (
+            <span className="imb-chat-source">
+              {t(INTEGRATION_LABEL_KEYS[selected.source])}
+            </span>
+          )}
+        </div>
       </div>
       <div className="imb-thread" ref={threadRef} onScroll={handleThreadScroll}>
         {visibleMessages.map((message) => (
