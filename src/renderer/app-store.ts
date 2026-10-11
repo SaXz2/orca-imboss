@@ -762,6 +762,16 @@ export const appStore = proxy({
     appStore.module = "group-chat";
   },
 
+  /** Move an opened chat within the Nav list (drag reorder). */
+  reorderOpenedChats(fromId: number, toId: number): void {
+    const list = appStore.openedChats;
+    const from = list.findIndex((c) => c.id === fromId);
+    const to = list.findIndex((c) => c.id === toId);
+    if (from < 0 || to < 0 || from === to) return;
+    const [moved] = list.splice(from, 1);
+    list.splice(to, 0, moved);
+  },
+
   /** Close an opened group chat; fall back to a neighbour or the chat module. */
   closeChat(id: number): void {
     const index = appStore.openedChats.findIndex((c) => c.id === id);
@@ -853,6 +863,18 @@ export const appStore = proxy({
       appStore.activeSessionKey = null;
       appStore.module = "chat";
     }
+  },
+
+  /** Move an opened agent session within the Nav list (drag reorder). */
+  reorderOpenedSessions(fromKey: string, toKey: string): void {
+    const list = appStore.openedSessions;
+    const indexOf = (k: string): number =>
+      list.findIndex((s) => sessionKey(s.employeeId, s.chatId) === k);
+    const from = indexOf(fromKey);
+    const to = indexOf(toKey);
+    if (from < 0 || to < 0 || from === to) return;
+    const [moved] = list.splice(from, 1);
+    list.splice(to, 0, moved);
   },
 });
 
