@@ -66,7 +66,27 @@ export function formatMentionsToMarkdown(
     });
   }
 
-  // 5. 还原保护的代码块
+  // 5. 折叠“工牌号 + 紧跟同名”造成的重复。
+  //    例如原文 `@12 桃夭` 会先被渲染成 `@桃夭`，而原句里的“桃夭”仍在，
+  //    于是显示为 `@桃夭 桃夭`。仅当后面紧跟的整词与该员工姓名/角色完全相同时
+  //    才移除它，避免误伤正常的语句（如 `@0 桃夭收到...` 中“桃夭”是发言人）。
+  processed = processed.replace(
+    /\[@([^\]]+)\]\(mention:(\d+)\)[ \t]*([^\s@\[\]()，。、！？；：“”‘’《》（）【】,.!?;:]+)/g,
+    (match, label, idStr, token) => {
+      const id = parseInt(idStr, 10);
+      const employee = employees.find((e) => e.id === id);
+      if (!employee) return match;
+      const terms = [employee.name?.trim(), employee.role?.trim()].filter(
+        (t): t is string => !!t,
+      );
+      if (terms.includes(token)) {
+        return `[@${label}](mention:${idStr})`;
+      }
+      return match;
+    },
+  );
+
+  // 6. 还原保护的代码块
   return processed.replace(/\x00CODE_(\d+)\x00/g, (_match, indexStr) => {
     const index = parseInt(indexStr, 10);
     return codeBlocks[index] ?? "";
