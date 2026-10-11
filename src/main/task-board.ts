@@ -125,3 +125,25 @@ export function listBoardCards(): BoardCard[] {
 
   return cards.sort((a, b) => b.updatedAt - a.updatedAt);
 }
+
+/** Per-employee task counts by board column (GitHub-style state summary). */
+export interface EmployeeTaskCounts {
+  pending: number;
+  running: number;
+  done: number;
+}
+
+export function employeeTaskCounts(): Map<number, EmployeeTaskCounts> {
+  const map = new Map<number, EmployeeTaskCounts>();
+  for (const card of listBoardCards()) {
+    for (const id of card.assignees) {
+      let entry = map.get(id);
+      if (!entry) {
+        entry = { pending: 0, running: 0, done: 0 };
+        map.set(id, entry);
+      }
+      entry[card.status] += 1;
+    }
+  }
+  return map;
+}

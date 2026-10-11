@@ -9,6 +9,7 @@ import { deleteAvatarFiles, saveAvatar } from "../avatars";
 import * as cron from "../cron";
 import * as dbEmployees from "../db/employees";
 import { listEmployeeMessageMetrics } from "../db/metrics";
+import { employeeTaskCounts } from "../task-board";
 import { listByEmployee, unlinkSessionFile } from "../db/sessions";
 import { sendToRenderer } from "../notifications";
 import { assertInteger, assertString, parsePageQuery } from "./helpers";
@@ -28,6 +29,7 @@ export function registerEmployeeHandlers(): void {
       listEmployeeMessageMetrics().map((m) => [m.employeeId, m]),
     );
     const totals = getRuntimeTotals();
+    const taskCounts = employeeTaskCounts();
     const now = Date.now();
     return dbEmployees.listEmployees().map((employee) => {
       const m = byId.get(employee.id);
@@ -41,6 +43,11 @@ export function registerEmployeeHandlers(): void {
         reports: m?.reports ?? 0,
         lastText: m?.lastText ?? null,
         lastAt: m?.lastAt ?? null,
+        tasks: taskCounts.get(employee.id) ?? {
+          pending: 0,
+          running: 0,
+          done: 0,
+        },
       };
     });
   });

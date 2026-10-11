@@ -141,6 +141,7 @@
   "Headers": "请求头",
   "High": "高",
   "How to connect": "接入说明",
+  "Hours: ${time}": "工时 ${time}",
   "https://mcp.example.com/mcp": "https://mcp.example.com/mcp",
   "Image": "图片",
   "Import Skills": "导入技能",

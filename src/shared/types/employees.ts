@@ -41,6 +41,8 @@ export interface EmployeeMetric {
   lastText: string | null;
   /** Latest message epoch seconds authored by the employee. */
   lastAt: number | null;
+  /** Board cards assigned to the employee, by column (GitHub-style summary). */
+  tasks: { pending: number; running: number; done: number };
 }
 
 /** Input for creating/updating an employee (fields optional → untouched). */

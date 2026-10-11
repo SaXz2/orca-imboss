@@ -16,6 +16,7 @@ import {
   type ContextMenuState,
 } from "../../../context-menu";
 import { EmployeeAvatar } from "../../../employee-avatar";
+import { IconCheck } from "../../../icons";
 import { ItemList } from "../../../item-list";
 import { ListPane } from "../../../list-pane";
 import { ListRow } from "../../../list-row";
@@ -299,17 +300,31 @@ export function EmployeesModule(): React.JSX.Element {
             extra={
               metric ? (
                 <span className="imb-emp-stats">
-                  <span className="imb-emp-stat">
-                    {working && metric.currentRunMs > 0
-                      ? t("Working for ${time}", {
-                          time: formatDuration(metric.currentRunMs),
-                        })
-                      : t("Ran ${time}", {
-                          time: formatDuration(metric.totalRunMs),
-                        })}
+                  <span
+                    className="imb-emp-state imb-state-done"
+                    title={t("Done")}
+                  >
+                    <IconCheck className="imb-icon imb-xs" />
+                    {metric.tasks.done}
                   </span>
-                  <span className="imb-emp-stat">
-                    {t("${count} done", { count: String(metric.reports) })}
+                  <span
+                    className="imb-emp-state imb-state-running"
+                    title={t("In progress")}
+                  >
+                    {metric.tasks.running}
+                  </span>
+                  <span
+                    className="imb-emp-state imb-state-pending"
+                    title={t("Pending")}
+                  >
+                    {metric.tasks.pending}
+                  </span>
+                  <span className="imb-emp-stat imb-emp-hours">
+                    {t("Hours: ${time}", {
+                      time: formatDuration(
+                        working ? metric.currentRunMs : metric.totalRunMs,
+                      ),
+                    })}
                   </span>
                   {metric.lastAt !== null && (
                     <span
@@ -318,7 +333,7 @@ export function EmployeesModule(): React.JSX.Element {
                     >
                       {formatChatTime(metric.lastAt, locale)}
                       {metric.lastText
-                        ? ` · ${previewText(metric.lastText, 20)}`
+                        ? ` · ${previewText(metric.lastText, 18)}`
                         : ""}
                     </span>
                   )}
