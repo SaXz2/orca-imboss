@@ -5,8 +5,10 @@ import {
   type MessageStep,
   type TaskStatus,
 } from "@shared/types";
+import { getActiveSince } from "./agent/session-queue";
 import { getDB } from "./db";
-import { parseJsonObject, parseNumberArray } from "./db/json";
+import * as dbEmployees from "./db/employees";
+import { parseJsonObject } from "./db/json";
 import { authoredCounts, reactionsFor } from "./db/task-thread";
 import { listTasks } from "./db/tasks";
 
@@ -15,16 +17,10 @@ import { listTasks } from "./db/tasks";
  *
  * Merges two sources into one board so it reflects the company's real work:
  * - persistent, editable `task` cards (the `tasks` table);
- * - `chat` cards derived from actual task conversations (assistant-created
- *   group chats and bridged platform chats), read-only, opening the chat.
+ * - `progress` cards derived from the assistant's task-progress messages: one
+ *   card per task, whose steps are the per-employee sub-tasks ("清子 assigned
+ *   this to 陆子衡 and 崔敏行"). A conversation is never a task by itself.
  */
-
-/** Display label per integration platform (falls back to the raw id). */
-const PLATFORM_LABELS: Record<string, string> = {
-  wechat: "WeChat",
-  qq: "QQ",
-  telegram: "Telegram",
-};
 
 function parseSteps(raw: string | null | undefined): MessageStep[] {
   const obj = parseJsonObject(raw ?? undefined);
@@ -62,14 +58,12 @@ function statusFromSteps(steps: MessageStep[]): TaskStatus {
   return "pending";
 }
 
-interface ChatTaskRow {
+interface ProgressRow {
   id: number;
-  title: string;
-  participants: string | null;
-  last_message_at: number;
-  source: string | null;
-  p_content: string | null;
-  p_steps: string | null;
+  chat_id: number;
+  content: string | null;
+  steps: string | null;
+  created_at: number;
 }
 
 export function listBoardCards(): BoardCard[] {
@@ -100,41 +94,73 @@ export function listBoardCards(): BoardCard[] {
     });
   }
 
+  // Each progress card the assistant posts is one task; its steps are the
+  // per-employee sub-tasks. The assistant re-posts a card as work advances, so
+  // only the newest card per (chat, title) is kept — otherwise one task would
+  // show up several times. Live session activity overlays the stored status so
+  // the board reflects what is actually running right now.
   const rows = getDB()
     .prepare(
-      `SELECT c.id, c.title, c.participants, c.last_message_at, c.source,
-              (SELECT content FROM messages
-                 WHERE chat_id = c.id AND kind = 'progress'
-                 ORDER BY id DESC LIMIT 1) AS p_content,
-              (SELECT steps FROM messages
-                 WHERE chat_id = c.id AND kind = 'progress'
-                 ORDER BY id DESC LIMIT 1) AS p_steps
-         FROM chats c
-        WHERE c.from_chat_id IS NOT NULL OR c.source IS NOT NULL
-        ORDER BY c.last_message_at DESC`,
+      `SELECT id, chat_id, content, steps, created_at
+         FROM messages
+        WHERE kind = 'progress'
+        ORDER BY id DESC
+        LIMIT 400`,
     )
-    .all() as ChatTaskRow[];
+    .all() as ProgressRow[];
+
+  const people = dbEmployees.listEmployees();
+  const seen = new Set<string>();
 
   for (const row of rows) {
-    const steps = parseSteps(row.p_steps);
-    const title = row.title.trim() || (row.p_content ?? "").trim();
-    if (title.length === 0 && steps.length === 0) continue; // nothing to show yet
+    const steps = parseSteps(row.steps);
+    const title = (row.content ?? "").trim();
+    if (title.length === 0 && steps.length === 0) continue;
+
+    // Newest card wins for a given task in a given conversation.
+    const groupKey = `${row.chat_id}\u0000${title}`;
+    if (seen.has(groupKey)) continue;
+    seen.add(groupKey);
+
+    // Owner names may arrive without an id (older cards); resolve them once so
+    // the board, the steps view and the per-employee tallies all agree.
+    const owned = steps.map((step) => {
+      if (step.employeeId !== undefined) return step;
+      const person = people.find(
+        (candidate) =>
+          (candidate.name && candidate.name.trim() === step.name.trim()) ||
+          (candidate.role && candidate.role.trim() === step.role.trim()),
+      );
+      return person ? { ...step, employeeId: person.id } : step;
+    });
+
+    const assignees = [
+      ...new Set(
+        owned
+          .map((step) => step.employeeId)
+          .filter((id): id is number => typeof id === "number"),
+      ),
+    ];
+    const live = owned.some(
+      (step) =>
+        step.employeeId !== undefined &&
+        getActiveSince(step.employeeId) !== null,
+    );
+
     cards.push({
-      key: `chat:${row.id}`,
-      source: "chat",
+      key: `progress:${row.id}`,
+      source: "progress",
       refId: row.id,
       title: title || t("Untitled"),
       detail: "",
-      category: row.source
-        ? t(PLATFORM_LABELS[row.source] ?? row.source)
-        : t("Group"),
-      flow: steps.map((s) => s.name).join(" → "),
-      status: statusFromSteps(steps),
+      category: "",
+      flow: owned.map((step) => step.name).join(" → "),
+      status: live ? "running" : statusFromSteps(owned),
       closeReason: null,
-      assignees: parseNumberArray(row.participants).filter((id) => id !== 0),
-      updatedAt: row.last_message_at,
-      steps,
-      chatId: row.id,
+      assignees,
+      updatedAt: row.created_at,
+      steps: owned,
+      chatId: row.chat_id,
       commentCount: 0,
       reactions: { ...EMPTY_REACTIONS },
     });

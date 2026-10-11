@@ -8,15 +8,15 @@ import { Button } from "../../../button";
 import { IconPlus } from "../../../icons";
 import { TaskCard } from "./task-card";
 import { TaskDetail } from "./task-detail";
+import { TaskStepsDetail } from "./task-steps-detail";
 import { type EditableTask, TaskEditor } from "./task-editor";
 import { COLUMNS, labelColor } from "./task-meta";
 import "./index.css";
 
 /**
- * Tasks — a GitHub-Projects-style board merging the company's manual
- * tasks and its real task conversations. Selecting a task card opens its
- * thread (timeline + discussion + feedback); conversation-derived cards open
- * the underlying chat instead.
+ * Tasks — a GitHub-Projects-style board of the company's work. Manual tasks are
+ * editable cards; tasks the assistant posts as progress cards are read-only and
+ * open their per-person steps, where each name leads to that employee's session.
  */
 export function TasksModule(): React.JSX.Element {
   const { data } = useApp();
@@ -31,6 +31,7 @@ export function TasksModule(): React.JSX.Element {
   const [editing, setEditing] = useState<EditableTask | null>(null);
   const [createStatus, setCreateStatus] = useState<TaskStatus>("pending");
   const [detailId, setDetailId] = useState<number | null>(null);
+  const [progressCard, setProgressCard] = useState<BoardCard | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
   const reload = useCallback(async (): Promise<void> => {
@@ -98,18 +99,9 @@ export function TasksModule(): React.JSX.Element {
   };
 
   const openEdit = (card: BoardCard): void => {
-    if (card.source === "chat") return;
+    if (card.source !== "task") return;
     setEditing(editableFromCard(card));
     setEditorOpen(true);
-  };
-
-  const openChat = async (chatId: number): Promise<void> => {
-    try {
-      const summary = await imb.chats.summary(chatId);
-      if (summary) appStore.openChat(summary);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    }
   };
 
   const handleDrop = async (status: TaskStatus): Promise<void> => {
@@ -146,8 +138,14 @@ export function TasksModule(): React.JSX.Element {
     await reload();
   };
 
-  const content =
-    detailId !== null ? (
+  const content = progressCard ? (
+    <TaskStepsDetail
+      key={progressCard.key}
+      card={progressCard}
+      employees={employees}
+      onBack={() => setProgressCard(null)}
+    />
+  ) : detailId !== null ? (
       <TaskDetail
         key={detailId}
         taskId={detailId}
@@ -264,8 +262,8 @@ export function TasksModule(): React.JSX.Element {
                       setOverStatus(null);
                     }}
                     onOpen={() =>
-                      card.source === "chat" && card.chatId !== null
-                        ? void openChat(card.chatId)
+                      card.source === "progress"
+                        ? setProgressCard(card)
                         : setDetailId(card.refId)
                     }
                     onEdit={() => openEdit(card)}

@@ -210,7 +210,8 @@
 }
 
 /* Conversation-derived card: read-only, marked by a left accent rail. */
-.imb-gh-card.imb-is-chat {
+/* Progress-derived task: read-only, marked by an accent rail. */
+.imb-gh-card.imb-is-progress {
   border-left: 3px solid var(--imb-accent);
 }
 
@@ -837,4 +838,78 @@
     opacity: 1;
     transform: scale(1.15);
   }
+}
+
+/* --- A task's per-person sub-tasks --- */
+.imb-task-steps-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: var(--imb-text-xs);
+  font-weight: 600;
+  color: var(--imb-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.imb-task-steps-count {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.imb-task-steps {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--imb-border-soft);
+  border-radius: var(--imb-radius-lg);
+  overflow: hidden;
+}
+
+.imb-task-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--imb-border-soft);
+}
+
+.imb-task-step:last-child {
+  border-bottom: none;
+}
+
+.imb-task-step-id {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.imb-task-step-name {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: var(--imb-text-sm);
+  font-weight: 600;
+  color: var(--imb-fg);
+  cursor: pointer;
+  text-align: left;
+}
+
+.imb-task-step-name:hover {
+  text-decoration: underline;
+}
+
+span.imb-task-step-name {
+  cursor: default;
+}
+
+.imb-task-step-role {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

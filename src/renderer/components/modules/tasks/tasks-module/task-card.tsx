@@ -17,7 +17,7 @@ type EmployeeList = readonly {
 
 /**
  * One board card. Task cards are draggable and clickable (open the thread);
- * conversation-derived cards are read-only and open their chat instead.
+ * progress-derived cards are read-only and open their per-person step view.
  */
 export function TaskCard({
   card,
@@ -36,7 +36,7 @@ export function TaskCard({
   onOpen: () => void;
   onEdit: () => void;
 }): React.JSX.Element {
-  const isChat = card.source === "chat";
+  const isProgress = card.source === "progress";
   const closed = card.status === "closed";
   const doneSteps = card.steps.filter((s) => s.status === "done").length;
   const totalSteps = card.steps.length;
@@ -48,13 +48,13 @@ export function TaskCard({
     <div
       className={cls(
         "imb-gh-card",
-        isChat && "imb-is-chat",
+        isProgress && "imb-is-progress",
         closed && "imb-is-closed",
         dragging && "imb-is-dragging",
       )}
-      draggable={!isChat}
-      onDragStart={isChat ? undefined : onDragStart}
-      onDragEnd={isChat ? undefined : onDragEnd}
+      draggable={!isProgress}
+      onDragStart={isProgress ? undefined : onDragStart}
+      onDragEnd={isProgress ? undefined : onDragEnd}
       onClick={onOpen}
       role="button"
       tabIndex={0}
@@ -98,9 +98,9 @@ export function TaskCard({
       )}
 
       <div className="imb-gh-card-foot">
-        <span className="imb-gh-ref">
-          {isChat ? t("Conversation") : `#${card.refId}`}
-        </span>
+        {!isProgress && (
+          <span className="imb-gh-ref">{`#${card.refId}`}</span>
+        )}
         {card.commentCount > 0 && (
           <span className="imb-gh-stat" title={t("Comments")}>
             <IconComment />
@@ -121,7 +121,7 @@ export function TaskCard({
           ))}
           {extra > 0 && <span className="imb-gh-more">{`+${extra}`}</span>}
         </span>
-        {!isChat && (
+        {!isProgress && (
           <button
             type="button"
             className="imb-gh-edit"

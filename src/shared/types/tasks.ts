@@ -169,7 +169,7 @@ export const EMPTY_REACTIONS: TaskReactions = {
 };
 
 /** Where a board card comes from. */
-export type BoardSource = "task" | "chat";
+export type BoardSource = "task" | "progress";
 
 /** Edge kinds between tasks (only `references` is produced so far). */
 export type TaskLinkKind = "references" | "duplicates" | "blocks";
@@ -192,12 +192,12 @@ export interface TaskThread {
 
 /**
  * One task board card. `task` cards are the persistent, editable cards;
- * `chat` cards are derived from real task conversations (group chats / bridged
- * chats), so the board reflects the company's actual work — read-only, and
- * clicking one opens that conversation.
+ * `progress` cards are derived from the assistant's task-progress messages —
+ * one card per task, whose steps are the per-employee sub-tasks. A conversation
+ * on its own is never a task.
  */
 export interface BoardCard {
-  /** Stable key: `task:<id>` or `chat:<id>`. */
+  /** Stable key: `task:<id>` or `progress:<messageId>`. */
   key: string;
   source: BoardSource;
   refId: number;
@@ -210,9 +210,9 @@ export interface BoardCard {
   closeReason: TaskCloseReason | null;
   assignees: number[];
   updatedAt: number;
-  /** Latest progress steps (chat cards only; for a compact stepper). */
+  /** Latest progress steps (progress cards only; for a compact stepper). */
   steps: import("./messages").MessageStep[];
-  /** Chat id to open (chat cards only). */
+  /** Chat the task lives in (progress cards only; to open the conversation). */
   chatId: number | null;
   /** Authored timeline entries (task cards only). */
   commentCount: number;
