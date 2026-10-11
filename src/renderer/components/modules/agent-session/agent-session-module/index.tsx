@@ -118,8 +118,11 @@ export function AgentSessionModule({
       if (disposedRef.current) return;
       setEntries(next);
       // The projection now contains any just-persisted message; drop the
-      // tentative live tail so nothing is rendered twice.
-      if (liveRef.current === liveAtRequest) liveRef.current = null;
+      // tentative live tail so nothing is rendered twice, but only if that
+      // live message has finalized (persisted). An in-flight turn keeps streaming.
+      if (liveRef.current === liveAtRequest && liveRef.current?.finalized) {
+        liveRef.current = null;
+      }
       setError(null);
       bump();
     } catch (err) {
@@ -304,11 +307,25 @@ export function AgentSessionModule({
     [employeeId, chatId, applyMessageUpdate, applyToolStatus, scheduleRefresh],
   );
 
-  // Bind the session so its events reach this window, and subscribe once to the
-  // global event stream (routing by key). Only the mounted view binds.
+  // Bind the session so its events reach this window, restore any in-flight
+  // active blocks so opening mid-turn immediately shows running thinking /
+  // tool calls, and subscribe to the global stream.
   useEffect(() => {
-    void imb.agentSession.bind(employeeId, chatId);
+    let cancelled = false;
+    void imb.agentSession.bind(employeeId, chatId).then((activeBlocks) => {
+      if (cancelled) return;
+      if (activeBlocks && activeBlocks.length > 0 && !liveRef.current) {
+        liveSeqRef.current += 1;
+        liveRef.current = {
+          seq: liveSeqRef.current,
+          finalized: false,
+          blocks: activeBlocks.map((b) => ({ ...b })),
+        };
+        bump();
+      }
+    });
     return () => {
+      cancelled = true;
       void imb.agentSession.unbind(employeeId, chatId);
     };
   }, [employeeId, chatId]);

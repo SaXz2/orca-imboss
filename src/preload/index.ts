@@ -1,5 +1,6 @@
 import { DEFAULT_LOCALE } from "@shared/constants/locales";
 import type {
+  ActiveLiveBlock,
   AgentSessionViewEntry,
   AgentStreamPayload,
   Chat,
@@ -300,7 +301,7 @@ const api = {
         "agentSession:bind",
         employeeId,
         chatId,
-      ) as Promise<void>,
+      ) as Promise<ActiveLiveBlock[]>,
     unbind: (employeeId: number, chatId: number) =>
       ipcRenderer.invoke(
         "agentSession:unbind",

@@ -1,6 +1,7 @@
 import type { AgentSessionEvent } from "@earendil-works/pi-coding-agent";
 import { ASSISTANT_ID } from "@shared/constants/employees";
 import { readChatPrompt } from "@shared/constants/prompts";
+import type { ActiveLiveBlock, AgentStreamEvent } from "@shared/types";
 import type { WebContents } from "electron";
 import * as dbChats from "../db/chats";
 import { errorEvent, sendEventTo, toStreamEvent } from "./agent-events";
@@ -41,6 +42,8 @@ interface QueueState {
   boundSenders: Set<WebContents>;
   /** Set by lifecycle teardown so an in-flight drain stops cleanly. */
   disposed: boolean;
+  /** Active live blocks of the currently running turn (restores live view). */
+  activeBlocks: ActiveLiveBlock[];
 }
 
 const states = new Map<string, QueueState>();
@@ -104,16 +107,20 @@ export function bind(
   employeeId: number,
   chatId: number,
   sender: WebContents,
-): void {
+): ActiveLiveBlock[] {
   const state = getOrCreateState(employeeId, chatId);
   clearIdleTimer(state);
-  if (state.boundSenders.has(sender)) return;
-  state.boundSenders.add(sender);
-  const onDestroyed = (): void => {
-    sender.removeListener("destroyed", onDestroyed);
-    unbind(employeeId, chatId, sender);
-  };
-  sender.once("destroyed", onDestroyed);
+  if (!state.boundSenders.has(sender)) {
+    state.boundSenders.add(sender);
+    const onDestroyed = (): void => {
+      sender.removeListener("destroyed", onDestroyed);
+      unbind(employeeId, chatId, sender);
+    };
+    sender.once("destroyed", onDestroyed);
+  }
+  return state.activeBlocks
+    ? state.activeBlocks.filter(Boolean).map((b) => ({ ...b }))
+    : [];
 }
 
 /** Remove a window's binding; drop the entry once fully idle. */
@@ -221,6 +228,7 @@ function getOrCreateState(employeeId: number, chatId: number): QueueState {
       queue: [],
       boundSenders: new Set(),
       disposed: false,
+      activeBlocks: [],
     };
     states.set(key, state);
   }
@@ -294,7 +302,116 @@ async function disposeSessionOf(state: QueueState): Promise<void> {
 function forwardEvent(state: QueueState, event: AgentSessionEvent): void {
   const dto = toStreamEvent(event);
   if (dto) {
+    updateActiveSnapshot(state, dto);
     sendEventTo(state.boundSenders, state.employeeId, state.chatId, dto);
+  }
+}
+
+/** Update in-memory active blocks for mid-turn window restores. */
+function updateActiveSnapshot(
+  state: QueueState,
+  event: AgentStreamEvent,
+): void {
+  switch (event.type) {
+    case "message_update": {
+      const index = event.contentIndex ?? 0;
+      let block = state.activeBlocks[index];
+      switch (event.subType) {
+        case "thinking_start":
+          state.activeBlocks[index] = {
+            key: `active:${index}`,
+            kind: "thinking",
+            text: "",
+          };
+          break;
+        case "thinking_delta":
+          if (!block || block.kind !== "thinking") {
+            block = { key: `active:${index}`, kind: "thinking", text: "" };
+            state.activeBlocks[index] = block;
+          }
+          block.text += event.delta ?? "";
+          break;
+        case "thinking_end":
+          if (block && block.kind === "thinking") {
+            block.done = true;
+          }
+          break;
+        case "text_start":
+          state.activeBlocks[index] = {
+            key: `active:${index}`,
+            kind: "text",
+            text: "",
+          };
+          break;
+        case "text_delta":
+          if (!block || block.kind !== "text") {
+            block = { key: `active:${index}`, kind: "text", text: "" };
+            state.activeBlocks[index] = block;
+          }
+          block.text += event.delta ?? "";
+          break;
+        case "toolcall_start":
+          state.activeBlocks[index] = {
+            key: `active:${index}`,
+            kind: "tool",
+            text: "",
+            status: "running",
+          };
+          break;
+        case "toolcall_end":
+          if (!block || block.kind !== "tool") {
+            block = {
+              key: `active:${index}`,
+              kind: "tool",
+              text: "",
+              status: "running",
+            };
+            state.activeBlocks[index] = block;
+          }
+          if (event.toolCallId !== undefined) block.toolCallId = event.toolCallId;
+          if (event.toolName !== undefined) block.name = event.toolName;
+          if (event.toolArgsSummary !== undefined) {
+            block.argsSummary = event.toolArgsSummary;
+          }
+          if (event.toolArgsDetail !== undefined) {
+            block.argsDetail = event.toolArgsDetail;
+          }
+          block.status = "running";
+          break;
+        default:
+          break;
+      }
+      break;
+    }
+    case "tool_execution_start": {
+      const block = state.activeBlocks.find(
+        (b) => b && b.kind === "tool" && b.toolCallId === event.toolCallId,
+      );
+      if (block) {
+        block.status = "running";
+        if (event.toolName && !block.name) block.name = event.toolName;
+      }
+      break;
+    }
+    case "tool_execution_end": {
+      const block = state.activeBlocks.find(
+        (b) => b && b.kind === "tool" && b.toolCallId === event.toolCallId,
+      );
+      if (block) {
+        block.status = event.isError ? "error" : "ok";
+      }
+      break;
+    }
+    case "agent_start":
+      state.activeBlocks = [];
+      break;
+    case "agent_end":
+    case "message_end":
+    case "error":
+      state.activeBlocks = [];
+      break;
+    default:
+      break;
   }
 }
 
