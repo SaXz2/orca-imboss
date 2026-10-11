@@ -35,6 +35,50 @@
   gap: 2px;
 }
 
+/* Labelled group inside the scroll area (Apps / Chats / Sessions). */
+.imb-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.imb-nav-group + .imb-nav-group {
+  margin-top: 14px;
+}
+
+.imb-nav-section {
+  padding: 2px 12px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--imb-muted);
+}
+
+/* Two-line nav row text column (title + subtitle). */
+.imb-nav-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.imb-nav-item .imb-nav-text > .imb-nav-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.imb-nav-sub {
+  font-size: var(--imb-text-xs);
+  font-weight: 400;
+  color: var(--imb-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .imb-nav-item {
   display: flex;
   align-items: center;
@@ -164,6 +208,8 @@
 }
 
 .imb-nav.imb-is-collapsed .imb-nav-item .imb-nav-label,
+.imb-nav.imb-is-collapsed .imb-nav-sub,
+.imb-nav.imb-is-collapsed .imb-nav-section,
 .imb-nav.imb-is-collapsed .imb-nav-brandname {
   display: none;
 }

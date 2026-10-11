@@ -128,28 +128,31 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
         <div className="imb-nav-divider" />
         <div className="imb-scroll">
           {miniApps.length > 0 && (
-            <div className="imb-nav-items">
-              {miniApps.map((app) => (
-                <NavMiniAppButton
-                  key={app.id}
-                  app={app}
-                  collapsed={collapsed}
-                  active={module === "miniapp" && activeMiniAppId === app.id}
-                  dragging={dragId === app.id}
-                  onClick={() => appStore.openMiniApp(app.id)}
-                  onDragStart={() => setDragId(app.id)}
-                  onDragEnd={() => setDragId(null)}
-                  onDrop={() => {
-                    if (dragId) reorderMiniApps(dragId, app.id);
-                    setDragId(null);
-                  }}
-                />
-              ))}
+            <div className="imb-nav-group">
+              <div className="imb-nav-section">{t("Apps")}</div>
+              <div className="imb-nav-items">
+                {miniApps.map((app) => (
+                  <NavMiniAppButton
+                    key={app.id}
+                    app={app}
+                    collapsed={collapsed}
+                    active={module === "miniapp" && activeMiniAppId === app.id}
+                    dragging={dragId === app.id}
+                    onClick={() => appStore.openMiniApp(app.id)}
+                    onDragStart={() => setDragId(app.id)}
+                    onDragEnd={() => setDragId(null)}
+                    onDrop={() => {
+                      if (dragId) reorderMiniApps(dragId, app.id);
+                      setDragId(null);
+                    }}
+                  />
+                ))}
+              </div>
             </div>
           )}
           {openedChats.length > 0 && (
-            <>
-              {miniApps.length > 0 && <div className="imb-nav-divider" />}
+            <div className="imb-nav-group">
+              <div className="imb-nav-section">{t("Chats")}</div>
               <div className="imb-nav-items">
                 {openedChats.map((chat) => (
                   <NavChatButton
@@ -184,13 +187,11 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
                   />
                 ))}
               </div>
-            </>
+            </div>
           )}
           {openedSessions.length > 0 && (
-            <>
-              {(miniApps.length > 0 || openedChats.length > 0) && (
-                <div className="imb-nav-divider" />
-              )}
+            <div className="imb-nav-group">
+              <div className="imb-nav-section">{t("Sessions")}</div>
               <div className="imb-nav-items">
                 {openedSessions.map((session) => {
                   const key = sessionKey(session.employeeId, session.chatId);
@@ -198,12 +199,12 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
                     (e) => e.id === session.employeeId,
                   );
                   const name = employee?.name ?? t("Unnamed");
-                  const label = `${name} · ${session.chatTitle}`;
                   return (
                     <NavSessionButton
                       key={key}
                       employeeId={session.employeeId}
-                      label={label}
+                      label={name}
+                      sub={session.chatTitle}
                       collapsed={collapsed}
                       active={
                         module === "agent-session" && activeSessionKey === key
@@ -236,7 +237,7 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
                   );
                 })}
               </div>
-            </>
+            </div>
           )}
         </div>
         <div className="imb-nav-spacer" />
@@ -345,7 +346,14 @@ function NavChatButton({
         onContextMenu={onContextMenu}
       >
         <GroupAvatar participants={chat.participants} size={24} />
-        <span className="imb-nav-label">{chat.title}</span>
+        <span className="imb-nav-text">
+          <span className="imb-nav-label">{chat.title}</span>
+          <span className="imb-nav-sub">
+            {t("${count} members", {
+              count: String(chat.participants.length),
+            })}
+          </span>
+        </span>
       </button>
     </Tooltip>
   );
@@ -355,6 +363,7 @@ function NavChatButton({
 function NavSessionButton({
   employeeId,
   label,
+  sub,
   collapsed,
   active,
   dragging,
@@ -384,7 +393,10 @@ function NavSessionButton({
         onContextMenu={onContextMenu}
       >
         <EmployeeAvatar employeeId={employeeId} size={24} />
-        <span className="imb-nav-label">{label}</span>
+        <span className="imb-nav-text">
+          <span className="imb-nav-label">{label}</span>
+          {sub && <span className="imb-nav-sub">{sub}</span>}
+        </span>
       </button>
     </Tooltip>
   );
@@ -393,6 +405,7 @@ function NavSessionButton({
 type NavSessionButtonProps = {
   employeeId: number;
   label: string;
+  sub?: string;
   collapsed: boolean;
   active: boolean;
   dragging: boolean;
