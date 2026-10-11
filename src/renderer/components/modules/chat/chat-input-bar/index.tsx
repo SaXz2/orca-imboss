@@ -333,7 +333,9 @@ export function ChatInputBar({
     name?: string;
     role?: string;
   }): void => {
-    const mentionTag = `@${employee.name || employee.role || employee.id} `;
+    const label = employee.name || employee.role || `#${employee.id}`;
+    // “最原始”的工牌号+姓名写法，便于模型解析 (消息体含 @ID) 且显示醒目。
+    const mentionTag = `@${employee.id} ${label} `;
     const prevText = text;
     const nextText =
       prevText.slice(0, mentionCaret.start) +

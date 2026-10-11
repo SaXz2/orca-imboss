@@ -117,8 +117,8 @@
   margin: 0;
   background: transparent;
   border: none;
-  color: #1677ff;
-  font-weight: 600;
+  color: #e8740c;
+  font-weight: 700;
   font-size: inherit;
   font-family: inherit;
   line-height: inherit;
@@ -130,25 +130,25 @@
 }
 
 .imb-mention-text-link:hover {
-  color: #0958d9;
+  color: #b85500;
   text-decoration: underline;
 }
 
 .imb-self .imb-mention-text-link {
-  color: #003eb3;
+  color: #9a4b00;
 }
 
 .imb-self .imb-mention-text-link:hover {
-  color: #002c80;
+  color: #7a3800;
   text-decoration: underline;
 }
 
 [data-theme-mode="dark"] .imb-mention-text-link {
-  color: #69b1ff;
+  color: #ffb454;
 }
 
 [data-theme-mode="dark"] .imb-mention-text-link:hover {
-  color: #85a5ff;
+  color: #ffc97a;
 }
 
 [data-theme-mode="dark"] .imb-self .imb-mention-text-link {
