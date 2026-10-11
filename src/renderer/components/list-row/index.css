@@ -107,3 +107,15 @@
   font-weight: 600;
   white-space: nowrap;
 }
+
+/* Optional compact third line for list rows (live stats). */
+.imb-list-row-extra {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  min-width: 0;
+  overflow: hidden;
+}

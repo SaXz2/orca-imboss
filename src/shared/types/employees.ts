@@ -24,6 +24,25 @@ export interface Employee {
 /** Result of an employee delete: hard-deleted, disabled (still a chat participant), or missing. */
 export type EmployeeDeleteResult = "deleted" | "disabled" | null;
 
+/** Live dashboard metrics for one employee (employees list). */
+export interface EmployeeMetric {
+  employeeId: number;
+  /** An agent turn is currently running for this employee. */
+  working: boolean;
+  /** Elapsed ms of the current run (0 when idle). */
+  currentRunMs: number;
+  /** Accumulated run time (ms) since the app launched. */
+  totalRunMs: number;
+  /** Non-ack messages authored by the employee. */
+  messages: number;
+  /** Completed deliverables (report-kind messages). */
+  reports: number;
+  /** Latest message content authored by the employee. */
+  lastText: string | null;
+  /** Latest message epoch seconds authored by the employee. */
+  lastAt: number | null;
+}
+
 /** Input for creating/updating an employee (fields optional → untouched). */
 export interface EmployeeInput {
   name?: string;

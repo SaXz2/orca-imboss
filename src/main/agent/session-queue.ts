@@ -4,6 +4,7 @@ import { readChatPrompt } from "@shared/constants/prompts";
 import type { ActiveLiveBlock, AgentStreamEvent } from "@shared/types";
 import type { WebContents } from "electron";
 import * as dbChats from "../db/chats";
+import { sendToRenderer } from "../notifications";
 import { errorEvent, sendEventTo, toStreamEvent } from "./agent-events";
 import { getAgentEnvironment } from "./environment";
 import type { AgentSession as AppAgentSession } from "./session";
@@ -48,6 +49,38 @@ interface QueueState {
 
 const states = new Map<string, QueueState>();
 
+/** Run-tracking for the employees dashboard: key → run start timestamp. */
+const activeSince = new Map<string, number>();
+/** Accumulated run time per employee (ms) since this app launch. */
+const runtimeTotals = new Map<number, number>();
+
+/** Employee ids currently running an agent turn. */
+export function getActiveEmployeeIds(): number[] {
+  return [...new Set([...activeSince.keys()].map((k) => Number(k.split("/")[0])))];
+}
+
+/** Run start timestamp (ms) for an employee's current run, or null when idle. */
+export function getActiveSince(employeeId: number): number | null {
+  for (const [key, at] of activeSince) {
+    if (Number(key.split("/")[0]) === employeeId) return at;
+  }
+  return null;
+}
+
+/** Accumulated run time (ms) per employee since launch. */
+export function getRuntimeTotals(): ReadonlyMap<number, number> {
+  return runtimeTotals;
+}
+
+/** Notify renderers that agent activity (busy/idle) changed. */
+function notifyActivity(): void {
+  try {
+    sendToRenderer("agents:activity", {});
+  } catch {
+    // Best-effort: activity notifications must never break a run.
+  }
+}
+
 /**
  * Schedule a message for an agent session, serialized per (employee, chat).
  *
@@ -65,6 +98,9 @@ export async function deliver(
   state.queue.push(text);
   if (state.busy) return;
   state.busy = true;
+  const key = keyFor(employeeId, chatId);
+  if (!activeSince.has(key)) activeSince.set(key, Date.now());
+  notifyActivity();
   void drain(state);
 }
 
@@ -207,6 +243,17 @@ async function drain(state: QueueState): Promise<void> {
       void drain(state);
     } else {
       scheduleIdleDispose(state);
+      // The busy episode ended: accumulate its run time for the dashboard.
+      const key = keyFor(state.employeeId, state.chatId);
+      const started = activeSince.get(key);
+      if (started !== undefined) {
+        runtimeTotals.set(
+          state.employeeId,
+          (runtimeTotals.get(state.employeeId) ?? 0) + (Date.now() - started),
+        );
+        activeSince.delete(key);
+        notifyActivity();
+      }
     }
   }
 }

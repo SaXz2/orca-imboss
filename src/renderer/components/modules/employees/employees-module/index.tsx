@@ -2,11 +2,12 @@ import {
   BUILTIN_REMOVE_CRON_MARKER,
   BUILTIN_SET_CRON_MARKER,
 } from "@shared/constants/agent_tools";
-import { t } from "@shared/l10n";
-import type { Employee, EmployeeInput } from "@shared/types";
+import { getLocale, t } from "@shared/l10n";
+import type { Employee, EmployeeInput, EmployeeMetric } from "@shared/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { appStore, useApp } from "../../../../app-store";
 import { useMultiSelect } from "../../../../hooks/use-multi-select";
+import { formatChatTime, previewText } from "../../chat/relative-time";
 import { ModuleView } from "../../../app-shell";
 import { Button } from "../../../button";
 import {
@@ -26,6 +27,15 @@ import { SearchInput } from "../../../search-input";
 import { EmployeeDetail } from "../employee-detail";
 import { EmployeeRecruitModal } from "../employee-recruit-modal";
 
+/** Compact duration label: 45s / 12m / 1h20m. */
+function formatDuration(ms: number): string {
+  const secs = Math.max(0, Math.floor(ms / 1000));
+  if (secs < 60) return `${secs}s`;
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m`;
+  return `${Math.floor(mins / 60)}h${mins % 60}m`;
+}
+
 export function EmployeesModule(): React.JSX.Element {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [query, setQuery] = useState("");
@@ -38,6 +48,31 @@ export function EmployeesModule(): React.JSX.Element {
   const { data } = useApp();
   const loading = data.employees.loading;
   const listError = data.employees.error;
+  const locale = getLocale();
+
+  // Live per-employee metrics (working status, run time, activity, output).
+  const [metrics, setMetrics] = useState<Map<number, EmployeeMetric>>(
+    () => new Map(),
+  );
+  const reloadMetrics = useCallback(async (): Promise<void> => {
+    try {
+      const list = await imb.employees.metrics();
+      setMetrics(new Map(list.map((m) => [m.employeeId, m])));
+    } catch {
+      // Best-effort: metrics are non-critical; keep the last snapshot.
+    }
+  }, []);
+
+  useEffect(() => {
+    void reloadMetrics();
+    const off = imb.employees.onActivity(() => void reloadMetrics());
+    // Poll while mounted so the live "elapsed" time keeps ticking.
+    const timer = window.setInterval(() => void reloadMetrics(), 5000);
+    return () => {
+      off();
+      window.clearInterval(timer);
+    };
+  }, [reloadMetrics]);
 
   // Centralized in appStore (loaded once at startup); filter client-side.
   const employees = useMemo((): Employee[] => {
@@ -229,7 +264,10 @@ export function EmployeesModule(): React.JSX.Element {
         onItemClick={(employee, index, mods) =>
           multi.onItemClick(employee, index, mods)
         }
-        renderItem={(employee, { selected: isSelectedRow }) => (
+        renderItem={(employee, { selected: isSelectedRow }) => {
+          const metric = metrics.get(employee.id);
+          const working = metric?.working ?? false;
+          return (
           <ListRow
             active={employee.id === selectedId}
             selected={isSelectedRow}
@@ -249,8 +287,42 @@ export function EmployeesModule(): React.JSX.Element {
             meta={`#${employee.id}`}
             sub={employee.role || "—"}
             badge={
-              employee.id === 0 ? (
+              working ? (
+                <span className="imb-badge imb-badge-live">
+                  <span className="imb-live-dot" aria-hidden="true" />
+                  {t("Working")}
+                </span>
+              ) : employee.id === 0 ? (
                 <span className="imb-badge">{t("Built-in")}</span>
+              ) : undefined
+            }
+            extra={
+              metric ? (
+                <span className="imb-emp-stats">
+                  <span className="imb-emp-stat">
+                    {working && metric.currentRunMs > 0
+                      ? t("Working for ${time}", {
+                          time: formatDuration(metric.currentRunMs),
+                        })
+                      : t("Ran ${time}", {
+                          time: formatDuration(metric.totalRunMs),
+                        })}
+                  </span>
+                  <span className="imb-emp-stat">
+                    {t("${count} done", { count: String(metric.reports) })}
+                  </span>
+                  {metric.lastAt !== null && (
+                    <span
+                      className="imb-emp-stat imb-emp-last"
+                      title={metric.lastText ?? ""}
+                    >
+                      {formatChatTime(metric.lastAt, locale)}
+                      {metric.lastText
+                        ? ` · ${previewText(metric.lastText, 20)}`
+                        : ""}
+                    </span>
+                  )}
+                </span>
               ) : undefined
             }
             onContextMenu={(e) => {
@@ -289,7 +361,8 @@ export function EmployeesModule(): React.JSX.Element {
               setCtxMenu({ x: e.clientX, y: e.clientY, items });
             }}
           />
-        )}
+          );
+        }}
       />
     </ListPane>
   );

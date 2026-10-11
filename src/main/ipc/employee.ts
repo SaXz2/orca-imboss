@@ -1,9 +1,14 @@
-import type { Employee, EmployeeInput } from "@shared/types";
+import type { Employee, EmployeeInput, EmployeeMetric } from "@shared/types";
 import { ipcMain } from "electron";
-import { disposeForEmployee } from "../agent/session-queue";
+import {
+  disposeForEmployee,
+  getActiveSince,
+  getRuntimeTotals,
+} from "../agent/session-queue";
 import { deleteAvatarFiles, saveAvatar } from "../avatars";
 import * as cron from "../cron";
 import * as dbEmployees from "../db/employees";
+import { listEmployeeMessageMetrics } from "../db/metrics";
 import { listByEmployee, unlinkSessionFile } from "../db/sessions";
 import { sendToRenderer } from "../notifications";
 import { assertInteger, assertString, parsePageQuery } from "./helpers";
@@ -15,6 +20,30 @@ function notifyEmployeesChanged(ids: number[]): void {
 
 export function registerEmployeeHandlers(): void {
   ipcMain.handle("employees:list", () => dbEmployees.listEmployees());
+
+  // Live dashboard metrics for the employees list (working status, run time,
+  // recent activity, completed deliverables).
+  ipcMain.handle("employees:metrics", (): EmployeeMetric[] => {
+    const byId = new Map(
+      listEmployeeMessageMetrics().map((m) => [m.employeeId, m]),
+    );
+    const totals = getRuntimeTotals();
+    const now = Date.now();
+    return dbEmployees.listEmployees().map((employee) => {
+      const m = byId.get(employee.id);
+      const since = getActiveSince(employee.id);
+      return {
+        employeeId: employee.id,
+        working: since !== null,
+        currentRunMs: since !== null ? now - since : 0,
+        totalRunMs: totals.get(employee.id) ?? 0,
+        messages: m?.messages ?? 0,
+        reports: m?.reports ?? 0,
+        lastText: m?.lastText ?? null,
+        lastAt: m?.lastAt ?? null,
+      };
+    });
+  });
 
   ipcMain.handle("employees:listPage", (_event, page: unknown) =>
     dbEmployees.listEmployeesPage(parsePageQuery(page)),

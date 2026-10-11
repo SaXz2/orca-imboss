@@ -10,6 +10,7 @@ import type {
   Employee,
   EmployeeDeleteResult,
   EmployeeInput,
+  EmployeeMetric,
   EmployeeSession,
   InstalledSkill,
   IntegrationConfigPatch,
@@ -144,6 +145,11 @@ const api = {
      *  `imb_set_employees`), so the renderer cache can re-fetch. */
     onChanged: (cb: (payload: { ids: number[] }) => void) =>
       on<{ ids: number[] }>("employees:changed", cb),
+    /** Live per-employee dashboard metrics (working status, run time, activity). */
+    metrics: () =>
+      ipcRenderer.invoke("employees:metrics") as Promise<EmployeeMetric[]>,
+    /** Fired when any agent turn starts or stops (busy/idle changed). */
+    onActivity: (cb: () => void) => on<unknown>("agents:activity", () => cb()),
   },
 
   cron: {

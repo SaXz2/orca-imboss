@@ -1,6 +1,7 @@
 {
   "(empty message)": "（空消息）",
   "${count} attachments in total": "共 ${count} 个附件",
+  "${count} done": "完成 ${count}",
   "A new version of imboss is available": "imboss 有新版本可用",
   "A new version v${version} is available.": "新版本 v${version} 已发布。",
   "About": "关于",
@@ -221,6 +222,7 @@
   "Restart and update": "重启并更新",
   "Restart to apply the update.": "重启以应用更新。",
   "Responding…": "组织语言中…",
+  "Ran ${time}": "累计运行 ${time}",
   "Rewrite step": "改写步骤",
   "Rewrite task step": "改写任务步骤",
   "Retry": "重试",
@@ -311,7 +313,9 @@
   "WeChat": "微信",
   "What are your instructions?": "您有什么吩咐？",
   "Working directory": "工作目录",
+  "Working for ${time}": "运行中 ${time}",
   "Working…": "处理中…",
+  "Working": "工作中",
   "XHigh": "很高",
   "You're up to date.": "已是最新版本。",
   "Zoom": "缩放"

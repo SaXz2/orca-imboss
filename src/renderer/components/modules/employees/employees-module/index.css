@@ -4,3 +4,58 @@
   flex-shrink: 0;
   cursor: pointer;
 }
+
+/* Live "working" pill with a pulsing dot. */
+.imb-badge-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: color-mix(in oklch, var(--imb-warn) 22%, var(--imb-surface));
+  color: #b26a00;
+}
+
+[data-theme-mode="dark"] .imb-badge-live {
+  color: #ffcb6b;
+}
+
+.imb-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+  animation: imb-live-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes imb-live-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+/* Compact live stats line under the role. */
+.imb-emp-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.imb-emp-stat {
+  white-space: nowrap;
+  flex: none;
+}
+
+.imb-emp-last {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--imb-muted);
+}
