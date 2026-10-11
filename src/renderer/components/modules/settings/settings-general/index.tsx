@@ -7,7 +7,7 @@ import {
 import { t } from "@shared/l10n";
 import type { WorkDirState } from "@shared/types";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useApp } from "../../../../app-store";
+import { appStore, useApp } from "../../../../app-store";
 import { setLocale } from "../../../../locale";
 import { DetailBody } from "../../../detail-pane/detail-body";
 import { DetailHead } from "../../../detail-pane/detail-head";
@@ -32,6 +32,10 @@ export function SettingsGeneral(): React.JSX.Element {
   const [modelOptions, setModelOptions] = useState<string[]>([]);
   const [workdir, setWorkdir] = useState<WorkDirState | null>(null);
   const [workdirError, setWorkdirError] = useState<string | null>(null);
+  const [brandNameDraft, setBrandNameDraft] = useState("");
+  const [brandLogoDraft, setBrandLogoDraft] = useState<string | null>(null);
+  const [brandError, setBrandError] = useState<string | null>(null);
+  const brandLogoInputRef = useRef<HTMLInputElement>(null);
   const envTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const persistEnv = useCallback((next: EnvVar[]): void => {
@@ -50,12 +54,16 @@ export function SettingsGeneral(): React.JSX.Element {
         envStored,
         models,
         workDir,
+        brandNameStored,
+        brandLogoStored,
       ] = await Promise.all([
         imb.settings.get(SettingKeys.DefaultModel),
         imb.settings.get(SettingKeys.DefaultThinkingLevel),
         imb.settings.get(SettingKeys.UserEnv),
         imb.models.list(),
         imb.workdir.get(),
+        imb.settings.get(SettingKeys.BrandName),
+        imb.settings.get(SettingKeys.BrandLogo),
       ]);
       if (!alive) return;
       setDefaultModel(defaultModelStored ?? "");
@@ -63,6 +71,8 @@ export function SettingsGeneral(): React.JSX.Element {
       setEnvVars(parseEnv(envStored));
       setModelOptions(models.map((m) => `${m.provider}/${m.id}`));
       setWorkdir(workDir);
+      setBrandNameDraft(brandNameStored ?? "");
+      setBrandLogoDraft(brandLogoStored ? brandLogoStored : null);
     })();
     return () => {
       alive = false;
@@ -109,6 +119,33 @@ export function SettingsGeneral(): React.JSX.Element {
     updateEnv(envVars.filter((_, i) => i !== index));
   }
 
+  function onBrandNameChange(value: string): void {
+    setBrandNameDraft(value);
+    appStore.setBrand(value, brandLogoDraft);
+  }
+
+  function onBrandLogoPicked(file: File | undefined): void {
+    if (!file) return;
+    if (file.size > 1024 * 1024) {
+      setBrandError(t("Image is too large (max 1 MB)."));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const url = typeof reader.result === "string" ? reader.result : null;
+      setBrandLogoDraft(url);
+      appStore.setBrand(brandNameDraft, url);
+      setBrandError(null);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearBrandLogo(): void {
+    setBrandLogoDraft(null);
+    appStore.setBrand(brandNameDraft, null);
+    setBrandError(null);
+  }
+
   return (
     <>
       <DetailHead
@@ -117,6 +154,59 @@ export function SettingsGeneral(): React.JSX.Element {
         sub={t("App language and basic settings")}
       />
       <DetailBody>
+        <Field
+          label={t("App name")}
+          htmlFor="settings-brand-name"
+          hint={t("Shown at the top of the sidebar. Leave empty for \"imboss\".")}
+        >
+          <Input
+            id="settings-brand-name"
+            value={brandNameDraft}
+            maxLength={40}
+            placeholder="imboss"
+            onChange={(e) => onBrandNameChange(e.target.value)}
+          />
+        </Field>
+
+        <Field
+          label={t("App avatar")}
+          hint={t("Upload a logo image (PNG/SVG, max 1 MB).")}
+          error={brandError ?? undefined}
+        >
+          <div className="imb-brand-logo-row">
+            {brandLogoDraft ? (
+              <img className="imb-brand-logo-preview" src={brandLogoDraft} alt="" />
+            ) : (
+              <span className="imb-brand-logo-empty">{t("Default")}</span>
+            )}
+            <button
+              type="button"
+              className="imb-env-add-btn"
+              onClick={() => brandLogoInputRef.current?.click()}
+            >
+              {t("Change avatar")}
+            </button>
+            {brandLogoDraft && (
+              <button
+                type="button"
+                className="imb-env-add-btn"
+                onClick={clearBrandLogo}
+              >
+                {t("Remove")}
+              </button>
+            )}
+            <input
+              ref={brandLogoInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => {
+                onBrandLogoPicked(e.target.files?.[0]);
+                e.target.value = "";
+              }}
+            />
+          </div>
+        </Field>
         <Field
           label={t("App language")}
           hint={t(

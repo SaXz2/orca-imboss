@@ -24,6 +24,15 @@
   white-space: nowrap;
 }
 
+/* Custom brand logo (replaces the built-in mark when set). */
+.imb-nav-brandlogo {
+  width: 41px;
+  height: 41px;
+  flex: none;
+  border-radius: var(--imb-radius-md);
+  object-fit: contain;
+}
+
 .imb-scroll {
   overflow-y: scroll;
   scrollbar-width: none;

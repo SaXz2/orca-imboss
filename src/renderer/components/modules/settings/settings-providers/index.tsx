@@ -4,19 +4,26 @@ import { type ProviderInfo, type ProviderUpsert } from "@shared/types";
 import { useCallback, useEffect, useState } from "react";
 import { appStore, useApp } from "../../../../app-store";
 import { useMultiSelect } from "../../../../hooks/use-multi-select";
-import { ModuleView } from "../../../app-shell";
 import { Avatar } from "../../../avatar";
 import { Button } from "../../../button";
 import { ContextMenu, type ContextMenuState } from "../../../context-menu";
+import { EmptyState } from "../../../empty-state";
 import { ItemList } from "../../../item-list";
 import { ListPane } from "../../../list-pane";
 import { ListRow } from "../../../list-row";
 import { Modal } from "../../../modal";
 import "../../module-common.css";
-import { ProviderAddModal } from "../provider-add-modal";
-import { ProviderDetail } from "../provider-detail";
+import { ProviderAddModal } from "../../providers/provider-add-modal";
+import { ProviderDetail } from "../../providers/provider-detail";
+import "./index.css";
 
-export function ProvidersModule(): React.JSX.Element {
+/**
+ * Settings › Model Providers — the provider manager, embedded in the Settings
+ * detail pane as a nested master/detail split (provider list + selected
+ * provider's configuration). Moved out of the top-level nav so all
+ * configuration lives under Settings.
+ */
+export function SettingsProviders(): React.JSX.Element {
   const { data } = useApp();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
@@ -109,81 +116,88 @@ export function ProvidersModule(): React.JSX.Element {
   const selected =
     providers.find((provider) => provider.id === selectedId) ?? null;
 
-  const listPane = (
-    <ListPane
-      title={t("Model Providers")}
-      footer={
-        <Button block onClick={() => setAddOpen(true)}>
-          {t("Add Provider")}
-        </Button>
-      }
-    >
-      <ItemList
-        items={providers}
-        getItemKey={(provider) => provider.id}
-        loading={loading}
-        loadError={listError}
-        selectable
-        selectedKeys={multi.selectedKeys}
-        onItemClick={(provider, index, mods) =>
-          multi.onItemClick(provider, index, mods)
-        }
-        renderItem={(provider, { selected: isSelectedRow }) => (
-          <ListRow
-            active={provider.id === selectedId}
-            selected={isSelectedRow}
-            avatar={
-              <Avatar letter={provider.id.slice(0, 1)} name={provider.id} alt />
-            }
-            name={CURATED_PROVIDERS_LABELS[provider.id] ?? provider.id}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              setCtxMenu({
-                x: e.clientX,
-                y: e.clientY,
-                items: [
-                  {
-                    key: "select-all",
-                    label: t("Select all"),
-                    onSelect: toggleSelectAll,
-                  },
-                  {
-                    key: "delete",
-                    label: t("Delete"),
-                    danger: true,
-                    onSelect: () => {
-                      // Selection-aware: a right-click on an already-selected
-                      // row deletes the whole selection; otherwise only the
-                      // right-clicked provider (never a hidden select-all).
-                      setDeleteIds(
-                        multi.selectedKeys.has(provider.id)
-                          ? [...multi.selectedKeys]
-                          : [provider.id],
-                      );
-                      setDeleteOpen(true);
-                    },
-                  },
-                ],
-              });
-            }}
-          />
-        )}
-      />
-    </ListPane>
-  );
-
-  const detail = selected ? (
-    <ProviderDetail
-      key={`${selected.kind}:${selected.id}`}
-      provider={selected}
-      onSave={save}
-      onRemove={() => void remove(selected.id)}
-    />
-  ) : null;
-
   return (
-    <>
-      <ModuleView list={listPane} detail={detail} />
+    <div className="imb-settings-providers">
+      <div className="imb-settings-providers-list">
+        <ListPane
+          title={t("Model Providers")}
+          footer={
+            <Button block onClick={() => setAddOpen(true)}>
+              {t("Add Provider")}
+            </Button>
+          }
+        >
+          <ItemList
+            items={providers}
+            getItemKey={(provider) => provider.id}
+            loading={loading}
+            loadError={listError}
+            selectable
+            selectedKeys={multi.selectedKeys}
+            onItemClick={(provider, index, mods) =>
+              multi.onItemClick(provider, index, mods)
+            }
+            renderItem={(provider, { selected: isSelectedRow }) => (
+              <ListRow
+                active={provider.id === selectedId}
+                selected={isSelectedRow}
+                avatar={
+                  <Avatar
+                    letter={provider.id.slice(0, 1)}
+                    name={provider.id}
+                    alt
+                  />
+                }
+                name={CURATED_PROVIDERS_LABELS[provider.id] ?? provider.id}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setCtxMenu({
+                    x: e.clientX,
+                    y: e.clientY,
+                    items: [
+                      {
+                        key: "select-all",
+                        label: t("Select all"),
+                        onSelect: toggleSelectAll,
+                      },
+                      {
+                        key: "delete",
+                        label: t("Delete"),
+                        danger: true,
+                        onSelect: () => {
+                          // Selection-aware: a right-click on an already-
+                          // selected row deletes the whole selection;
+                          // otherwise only the right-clicked provider.
+                          setDeleteIds(
+                            multi.selectedKeys.has(provider.id)
+                              ? [...multi.selectedKeys]
+                              : [provider.id],
+                          );
+                          setDeleteOpen(true);
+                        },
+                      },
+                    ],
+                  });
+                }}
+              />
+            )}
+          />
+        </ListPane>
+      </div>
+
+      <div className="imb-settings-providers-detail">
+        {selected ? (
+          <ProviderDetail
+            key={`${selected.kind}:${selected.id}`}
+            provider={selected}
+            onSave={save}
+            onRemove={() => void remove(selected.id)}
+          />
+        ) : (
+          <EmptyState>{t("Select a provider to configure it.")}</EmptyState>
+        )}
+      </div>
+
       <ContextMenu state={ctxMenu} onClose={() => setCtxMenu(null)} />
       <Modal
         open={deleteOpen}
@@ -212,6 +226,6 @@ export function ProvidersModule(): React.JSX.Element {
       {error !== null && (
         <p className="imb-error-text imb-module-error">{error}</p>
       )}
-    </>
+    </div>
   );
 }

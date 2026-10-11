@@ -29,7 +29,6 @@ export type AppModule =
   | "chat"
   | "employees"
   | "tasks"
-  | "providers"
   | "mcp"
   | "skills"
   | "settings"
@@ -72,7 +71,12 @@ export function parseSessionKey(
 
 /** Sections of the Settings module. Lifted here so main can deep-link to one. */
 export type SettingsSection =
-  "general" | "theme" | "integrations" | "network" | "about";
+  | "general"
+  | "theme"
+  | "providers"
+  | "integrations"
+  | "network"
+  | "about";
 
 /** True when running on macOS (native traffic lights stay, no custom buttons). */
 export const IS_MAC = imb.platform === "darwin";
@@ -89,7 +93,6 @@ const VALID_MODULES: AppModule[] = [
   "chat",
   "employees",
   "tasks",
-  "providers",
   "mcp",
   "skills",
   "settings",
@@ -101,6 +104,10 @@ export const appStore = proxy({
   locale: imb.initialLocale,
   theme: { mode: "system", color: "#07C160" } as ThemeState,
   navCollapsed: false,
+  /** Custom brand name shown in the sidebar (empty = the built-in "imboss"). */
+  brandName: "",
+  /** Custom brand logo image data URL (null = the built-in logo). */
+  brandLogo: null as string | null,
   module: "chat" as AppModule,
 
   /** Folder id of the mini app currently open in `module === "miniapp"`. */
@@ -878,6 +885,14 @@ export const appStore = proxy({
     const [moved] = list.splice(from, 1);
     list.splice(to, 0, moved);
   },
+
+  /** Set the sidebar brand name and logo ("" / null restore the defaults). */
+  setBrand(name: string, logo: string | null): void {
+    appStore.brandName = name;
+    appStore.brandLogo = logo;
+    void imb.settings.set(SettingKeys.BrandName, name);
+    void imb.settings.set(SettingKeys.BrandLogo, logo ?? "");
+  },
 });
 
 /** One-time app-state bootstrap (theme/locale subscriptions + persisted prefs). */
@@ -891,7 +906,9 @@ export async function initAppStore(): Promise<void> {
     imb.settings.get(SettingKeys.NavCollapse),
     imb.settings.get(SettingKeys.Module),
     imb.settings.get(SettingKeys.MiniAppActive),
-  ]).then(([theme, collapsed, storedModule, storedMiniApp]) => {
+    imb.settings.get(SettingKeys.BrandName),
+    imb.settings.get(SettingKeys.BrandLogo),
+  ]).then(([theme, collapsed, storedModule, storedMiniApp, brandName, brandLogo]) => {
     updateThemeState(theme);
     if (collapsed === "1") {
       appStore.navCollapsed = true;
@@ -900,6 +917,8 @@ export async function initAppStore(): Promise<void> {
       appStore.module = storedModule as AppModule;
     }
     appStore.activeMiniAppId = storedMiniApp;
+    appStore.brandName = brandName ?? "";
+    appStore.brandLogo = brandLogo ?? null;
   });
   imb.onLocaleChanged(updateLocale);
   imb.theme.onChanged(updateThemeState);

@@ -14,5 +14,9 @@ export const SettingKeys = {
   WindowState: "ui.window",
   /** Folder id of the last opened mini app (restored on next launch). */
   MiniAppActive: "ui.miniAppActive",
+  /** Custom app/brand name shown in the sidebar (empty = "imboss"). */
+  BrandName: "ui.brand.name",
+  /** Custom brand logo image as a data URL (empty = built-in logo). */
+  BrandLogo: "ui.brand.logo",
   UpdateNotifiedVersion: "app.updateNotifiedVersion",
 };

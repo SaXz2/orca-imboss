@@ -45,7 +45,7 @@ function labelColor(text: string): string {
 }
 
 /**
- * Task Center — a GitHub-Projects-style board merging the company's manual
+ * Tasks — a GitHub-Projects-style board merging the company's manual
  * tasks and its real task conversations (assistant group chats and bridged
  * platform chats), so the board is a live view of what is being worked on.
  */
@@ -146,7 +146,7 @@ export function TasksModule(): React.JSX.Element {
     <>
       <div className="imb-chat-header imb-task-head">
         <div className="imb-task-head-text">
-          <div className="imb-chat-title">{t("Task Center")}</div>
+          <div className="imb-chat-title">{t("Tasks")}</div>
           <div className="imb-task-sub">
             {t("${count} tasks", { count: String(cards.length) })}
           </div>

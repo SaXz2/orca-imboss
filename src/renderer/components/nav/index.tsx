@@ -14,7 +14,6 @@ import {
   IconEmployees,
   IconGear,
   IconMcp,
-  IconModels,
   IconSkills,
   IconTasks,
 } from "../icons";
@@ -43,14 +42,8 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     module: "tasks",
-    labelKey: "Task Center",
+    labelKey: "Tasks",
     icon: IconTasks,
-    section: "main",
-  },
-  {
-    module: "providers",
-    labelKey: "Providers",
-    icon: IconModels,
     section: "main",
   },
   { module: "mcp", labelKey: "MCP", icon: IconMcp, section: "main" },
@@ -88,6 +81,8 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
     activeChatId,
     activeSessionKey,
     activeMiniAppId,
+    brandName,
+    brandLogo,
     data,
   } = useApp();
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState | null>(null);
@@ -117,8 +112,17 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
         aria-label="Modules"
       >
         <div className="imb-nav-brand">
-          <BrandLogo style={{ maxWidth: "41px" }} />
-          <span className="imb-nav-brandname">imboss</span>
+          {brandLogo ? (
+            <img
+              className="imb-nav-brandlogo"
+              src={brandLogo}
+              alt=""
+              draggable={false}
+            />
+          ) : (
+            <BrandLogo style={{ maxWidth: "41px" }} />
+          )}
+          <span className="imb-nav-brandname">{brandName || "imboss"}</span>
         </div>
         <div className="imb-nav-items">
           {main.map((item) => (
