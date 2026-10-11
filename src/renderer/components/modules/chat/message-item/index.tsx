@@ -61,6 +61,7 @@ export function MessageItem({
             title={message.content}
             steps={message.steps ?? []}
             chatId={message.chatId}
+            messageId={message.id}
             onOpenSession={(employeeId) =>
               void appStore.openAgentSession(employeeId, message.chatId)
             }
