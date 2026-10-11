@@ -130,34 +130,6 @@
   flex-shrink: 0;
 }
 
-.imb-progress-edit-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  padding: 3px;
-  cursor: pointer;
-  color: var(--imb-muted);
-  border-radius: var(--imb-radius-sm);
-  transition: all var(--imb-motion-fast) var(--imb-ease-standard);
-  opacity: 0.6;
-}
-
-.imb-progress-row:hover .imb-progress-edit-btn {
-  opacity: 1;
-}
-
-.imb-progress-edit-btn:hover {
-  color: var(--imb-fg);
-  background: var(--imb-border-soft);
-}
-
-.imb-progress-edit-btn svg {
-  width: 13px;
-  height: 13px;
-}
-
 .imb-progress-tag {
   font-size: var(--imb-text-xs);
   flex: none;

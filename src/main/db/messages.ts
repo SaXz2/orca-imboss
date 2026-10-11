@@ -483,31 +483,6 @@ export function updateMessageSteps(
   return getMessageById(messageId);
 }
 
-/** Rewrite a specific step in a progress message, optionally resetting its status. */
-export function rewriteProgressStep(
-  messageId: number,
-  stepIndex: number,
-  patch: {
-    name?: string;
-    role?: string;
-    employeeId?: number;
-    status?: StepStatus;
-  },
-): { message: Message; updatedStep: MessageStep } | null {
-  const current = getMessageById(messageId);
-  if (!current || current.kind !== "progress") return null;
-  const steps = current.steps ? [...current.steps.map((s) => ({ ...s }))] : null;
-  if (!steps || stepIndex < 0 || stepIndex >= steps.length) return null;
-  const step = steps[stepIndex];
-  if (patch.name !== undefined) step.name = patch.name;
-  if (patch.role !== undefined) step.role = patch.role;
-  if (patch.employeeId !== undefined) step.employeeId = patch.employeeId;
-  if (patch.status !== undefined) step.status = patch.status;
-  const updatedMessage = updateMessageSteps(messageId, steps);
-  if (!updatedMessage) return null;
-  return { message: updatedMessage, updatedStep: step };
-}
-
 /** Mark busy steps in the chat's latest progress card as interrupted. */
 export function interruptProgressSteps(chatId: number): Message | null {
   const row = getDB()

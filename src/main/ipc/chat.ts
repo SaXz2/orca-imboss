@@ -129,58 +129,6 @@ export function registerChatHandlers(): void {
   });
 
   ipcMain.handle(
-    "chat:rewriteStep",
-    async (
-      _event,
-      chatId: unknown,
-      messageId: unknown,
-      stepIndex: unknown,
-      patch: unknown,
-      redispatch: unknown,
-    ) => {
-      const safeChatId = assertInteger(chatId, "chat id");
-      const safeMessageId = assertInteger(messageId, "message id");
-      const safeStepIndex = assertInteger(stepIndex, "step index");
-      const safePatch = patch as {
-        name?: string;
-        role?: string;
-        employeeId?: number;
-      };
-
-      const result = dbMessages.rewriteProgressStep(
-        safeMessageId,
-        safeStepIndex,
-        {
-          ...(safePatch.name ? { name: safePatch.name.trim() } : {}),
-          ...(safePatch.role !== undefined
-            ? { role: safePatch.role.trim() }
-            : {}),
-          ...(typeof safePatch.employeeId === "number"
-            ? { employeeId: safePatch.employeeId }
-            : {}),
-          ...(redispatch ? { status: "busy" } : {}),
-        },
-      );
-
-      if (!result) throw new Error("Failed to rewrite step.");
-
-      // If requested to re-dispatch, notify the assigned employee or assistant
-      if (redispatch) {
-        const targetEmployeeId = result.updatedStep.employeeId ?? ASSISTANT_ID;
-        const prompt = `[Task update] The boss has rewritten this task step to "${result.updatedStep.name}" (${result.updatedStep.role || "standard"}). Please carry out the updated task immediately and report progress.`;
-        void deliver(targetEmployeeId, safeChatId, prompt);
-      }
-
-      sendToRenderer("messages:changed", { chatId: safeChatId });
-      return result.message;
-    },
-  );
-
-  /**
-   * Chat pipeline: append the user message → run the assistant's agent turn
-   * (serialized per session queue).
-   */
-  ipcMain.handle(
     "chat:send",
     async (_event, chatId: unknown, content: unknown, attachments: unknown) => {
       const safeChatId = assertInteger(chatId, "chat id");

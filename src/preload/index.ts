@@ -281,21 +281,6 @@ const api = {
       ) as Promise<Message>,
     interrupt: (chatId: number) =>
       ipcRenderer.invoke("chat:interrupt", chatId) as Promise<boolean>,
-    rewriteStep: (
-      chatId: number,
-      messageId: number,
-      stepIndex: number,
-      patch: { name?: string; role?: string; employeeId?: number },
-      redispatch?: boolean,
-    ) =>
-      ipcRenderer.invoke(
-        "chat:rewriteStep",
-        chatId,
-        messageId,
-        stepIndex,
-        patch,
-        redispatch,
-      ) as Promise<Message>,
   },
 
   agentSession: {

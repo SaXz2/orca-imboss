@@ -5,8 +5,6 @@ import { cls } from "reactutils";
 import { useApp } from "../../../../app-store";
 import { resolveEmployeeLabel } from "../../../../employee-label";
 import { EmployeeAvatar } from "../../../employee-avatar";
-import { IconPencil } from "../../../icons";
-import { StepEditModal } from "./step-edit-modal";
 import "./index.css";
 
 /** Translation key per step status; rendered through `t()` for locale switches. */
@@ -21,7 +19,6 @@ export interface ProgressCardProps {
   title: string;
   steps: MessageStep[];
   chatId?: number;
-  messageId?: number;
   isLatest?: boolean;
   onOpenSession?: (employeeId: number) => void;
 }
@@ -30,14 +27,11 @@ export function ProgressCard({
   title,
   steps,
   chatId,
-  messageId,
   isLatest = true,
   onOpenSession,
 }: ProgressCardProps): React.JSX.Element {
   const { data } = useApp();
   const [interrupting, setInterrupting] = useState(false);
-  const [editIndex, setEditIndex] = useState<number | null>(null);
-  const [editStep, setEditStep] = useState<MessageStep | null>(null);
   const employees = data.employees.items;
   const hasBusyStep = isLatest && steps.some((s) => s.status === "busy");
 
@@ -49,21 +43,6 @@ export function ProgressCard({
     } finally {
       setInterrupting(false);
     }
-  };
-
-  const handleSaveStep = async (
-    targetIndex: number,
-    patch: { name: string; role: string; employeeId?: number },
-    redispatch: boolean,
-  ): Promise<void> => {
-    if (chatId === undefined || messageId === undefined) return;
-    await imb.chat.rewriteStep(
-      chatId,
-      messageId,
-      targetIndex,
-      patch,
-      redispatch,
-    );
   };
 
   return (
@@ -139,35 +118,10 @@ export function ProgressCard({
                 <span className="imb-status-dot" aria-hidden="true" />
                 {t(STEP_LABEL_KEYS[step.status] ?? step.status)}
               </span>
-              {isLatest && chatId !== undefined && messageId !== undefined && (
-                <button
-                  type="button"
-                  className="imb-progress-edit-btn"
-                  title={t("Rewrite step")}
-                  aria-label={t("Rewrite step")}
-                  onClick={() => {
-                    setEditIndex(index);
-                    setEditStep(step);
-                  }}
-                >
-                  <IconPencil />
-                </button>
-              )}
             </div>
           </div>
         );
       })}
-
-      <StepEditModal
-        open={editIndex !== null && editStep !== null}
-        step={editStep}
-        stepIndex={editIndex}
-        onClose={() => {
-          setEditIndex(null);
-          setEditStep(null);
-        }}
-        onSave={handleSaveStep}
-      />
     </div>
   );
 }

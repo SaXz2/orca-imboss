@@ -75,13 +75,11 @@ export function MessageItem({
           <EmployeeAvatar
             employeeId={message.senderEmployeeId ?? 0}
             size={34}
-            onClick={openSession}
           />
           <ProgressCard
             title={message.content}
             steps={message.steps ?? []}
             chatId={message.chatId}
-            messageId={message.id}
             isLatest={isLatestProgress}
             onOpenSession={(employeeId) =>
               void appStore.openAgentSession(employeeId, message.chatId)
