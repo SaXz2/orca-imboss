@@ -71,7 +71,12 @@ function emitMessageAppended(message: Message): void {
   }
 }
 
-const STEP_STATUSES: StepStatus[] = ["done", "busy", "pending"];
+const STEP_STATUSES: StepStatus[] = [
+  "done",
+  "busy",
+  "pending",
+  "interrupted",
+];
 
 const MAX_SEARCH_QUERY_LENGTH = 200;
 const MAX_SEARCH_RESULTS = 50;
@@ -320,6 +325,9 @@ function parseSteps(raw: string | null): MessageStep[] | null {
       continue;
     }
     result.push({
+      ...(typeof record["employeeId"] === "number"
+        ? { employeeId: record["employeeId"] }
+        : {}),
       name: record["name"],
       role: record["role"],
       status: record["status"] as StepStatus,
@@ -413,9 +421,54 @@ function validateSteps(
     if (!STEP_STATUSES.includes(step.status)) {
       throw new Error("Progress step status must be done, busy, or pending.");
     }
-    result.push({ name, role, status: step.status });
+    result.push({
+      ...(typeof step.employeeId === "number"
+        ? { employeeId: step.employeeId }
+        : {}),
+      name,
+      role,
+      status: step.status,
+    });
   }
   return result;
+}
+
+/** Update steps on an existing progress message and return the updated message. */
+export function updateMessageSteps(
+  messageId: number,
+  steps: MessageStep[],
+): Message | null {
+  const current = getMessageById(messageId);
+  if (!current || current.kind !== "progress") return null;
+  const validated = validateSteps(steps);
+  getDB()
+    .prepare("UPDATE messages SET steps = ? WHERE id = ?")
+    .run(
+      validated !== undefined ? JSON.stringify({ steps: validated }) : null,
+      messageId,
+    );
+  return getMessageById(messageId);
+}
+
+/** Mark busy steps in the chat's latest progress card as interrupted. */
+export function interruptProgressSteps(chatId: number): Message | null {
+  const row = getDB()
+    .prepare(
+      "SELECT id, steps FROM messages WHERE chat_id = ? AND kind = 'progress' ORDER BY id DESC LIMIT 1",
+    )
+    .get(chatId) as { id: number; steps: string | null } | undefined;
+  if (!row) return null;
+  const steps = parseSteps(row.steps);
+  if (!steps) return null;
+  let changed = false;
+  for (const step of steps) {
+    if (step.status === "busy") {
+      step.status = "interrupted";
+      changed = true;
+    }
+  }
+  if (!changed) return getMessageById(row.id);
+  return updateMessageSteps(row.id, steps);
 }
 
 function validateAttachments(

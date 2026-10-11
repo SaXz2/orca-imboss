@@ -255,6 +255,8 @@ const api = {
         content,
         attachments,
       ) as Promise<Message>,
+    interrupt: (chatId: number) =>
+      ipcRenderer.invoke("chat:interrupt", chatId) as Promise<boolean>,
   },
 
   agentSession: {

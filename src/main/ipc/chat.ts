@@ -1,7 +1,7 @@
 import { ASSISTANT_ID } from "@shared/constants/employees";
 import type { ChatParticipantUpdate, MessageAttachment } from "@shared/types";
 import { ipcMain } from "electron";
-import { deliver, disposeForChat } from "../agent/session-queue";
+import { abortChat, deliver, disposeForChat } from "../agent/session-queue";
 import { integrationManager } from "../integrations";
 import { maybeGenerateChatTitle } from "../agent/title-gen";
 import * as cron from "../cron";
@@ -110,6 +110,16 @@ export function registerChatHandlers(): void {
       sendToRenderer("chats:deleted", { chatIds });
     }
     return removed;
+  });
+
+  ipcMain.handle("chat:interrupt", async (_event, chatId: unknown) => {
+    const safeChatId = assertInteger(chatId, "chat id");
+    await abortChat(safeChatId);
+    const updated = dbMessages.interruptProgressSteps(safeChatId);
+    if (updated) {
+      sendToRenderer("messages:changed", { chatId: safeChatId });
+    }
+    return true;
   });
 
   /**

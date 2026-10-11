@@ -146,6 +146,33 @@ export async function disposeForChat(chatId: number): Promise<void> {
   await disposeMatching((state) => state.chatId === chatId);
 }
 
+/** Abort active and queued runs for a specific session. */
+export async function abortRun(
+  employeeId: number,
+  chatId: number,
+): Promise<void> {
+  const key = keyFor(employeeId, chatId);
+  const state = states.get(key);
+  if (!state) return;
+  state.queue = [];
+  state.activeBlocks = [];
+  if (state.session) {
+    await state.session.abort();
+  }
+}
+
+/** Abort all active and queued agent runs belonging to a chat. */
+export async function abortChat(chatId: number): Promise<void> {
+  const matching = [...states.values()].filter((s) => s.chatId === chatId);
+  for (const state of matching) {
+    state.queue = [];
+    state.activeBlocks = [];
+    if (state.session) {
+      await state.session.abort();
+    }
+  }
+}
+
 /** Dispose every session for one employee (employee deleted). */
 export async function disposeForEmployee(employeeId: number): Promise<void> {
   await disposeMatching((state) => state.employeeId === employeeId);

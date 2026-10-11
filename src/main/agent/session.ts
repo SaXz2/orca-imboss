@@ -184,6 +184,20 @@ export class AgentSession {
     await this._piSession.prompt(message);
   }
 
+  /** Abort the in-flight operation on the underlying Pi session, if any. */
+  async abort(): Promise<void> {
+    if (this._piSession) {
+      try {
+        await this._piSession.abort();
+      } catch (err) {
+        console.error(
+          "[agent-session] abort failed:",
+          err instanceof Error ? err.message : err,
+        );
+      }
+    }
+  }
+
   /** Dispose the Pi session and close MCP connections. Idempotent. */
   async dispose(): Promise<void> {
     this._disposed = true;

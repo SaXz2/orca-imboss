@@ -1,5 +1,6 @@
 import { t } from "@shared/l10n";
 import type { MessageStep, StepStatus } from "@shared/types";
+import { useState } from "react";
 import { cls } from "reactutils";
 import { useApp } from "../../../../app-store";
 import { EmployeeAvatar } from "../../../employee-avatar";
@@ -10,6 +11,7 @@ const STEP_LABEL_KEYS: Record<StepStatus, string> = {
   pending: "Pending",
   busy: "In progress",
   done: "Done",
+  interrupted: "Interrupted",
 };
 
 export interface ProgressCardProps {
@@ -22,14 +24,41 @@ export interface ProgressCardProps {
 export function ProgressCard({
   title,
   steps,
+  chatId,
   onOpenSession,
 }: ProgressCardProps): React.JSX.Element {
   const { data } = useApp();
+  const [interrupting, setInterrupting] = useState(false);
   const employees = data.employees.items;
+  const hasBusyStep = steps.some((s) => s.status === "busy");
+
+  const handleInterrupt = async (): Promise<void> => {
+    if (!chatId || interrupting) return;
+    setInterrupting(true);
+    try {
+      await imb.chat.interrupt(chatId);
+    } finally {
+      setInterrupting(false);
+    }
+  };
 
   return (
     <div className="imb-progress-card">
-      <div className="imb-progress-card-title">{title}</div>
+      <div className="imb-progress-header">
+        <div className="imb-progress-card-title">{title}</div>
+        {hasBusyStep && chatId !== undefined && (
+          <button
+            type="button"
+            className="imb-progress-interrupt-btn"
+            disabled={interrupting}
+            onClick={() => void handleInterrupt()}
+            title={t("Interrupt active task")}
+            aria-label={t("Interrupt active task")}
+          >
+            {interrupting ? t("Stopping…") : t("Interrupt")}
+          </button>
+        )}
+      </div>
       {steps.map((step, index) => {
         const resolvedEmployee = employees.find(
           (e) =>

@@ -8,9 +8,38 @@
   flex: 1;
 }
 
+.imb-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .imb-progress-card-title {
   font-size: var(--imb-text-sm);
   color: var(--imb-muted);
+}
+
+.imb-progress-interrupt-btn {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-danger);
+  background: transparent;
+  border: 1px solid var(--imb-danger);
+  border-radius: var(--imb-radius-sm);
+  padding: 1px 8px;
+  cursor: pointer;
+  transition: all var(--imb-motion-fast) var(--imb-ease-standard);
+  line-height: 1.5;
+}
+
+.imb-progress-interrupt-btn:hover:not(:disabled) {
+  background: var(--imb-danger);
+  color: #ffffff;
+}
+
+.imb-progress-interrupt-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .imb-progress-row {
@@ -90,6 +119,10 @@
 
 .imb-progress-tag.imb-pending {
   color: var(--imb-muted);
+}
+
+.imb-progress-tag.imb-interrupted {
+  color: var(--imb-danger);
 }
 
 .imb-status-dot {
