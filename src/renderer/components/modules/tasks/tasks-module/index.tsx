@@ -9,7 +9,7 @@ import { IconPlus } from "../../../icons";
 import { TaskCard } from "./task-card";
 import { TaskDetail } from "./task-detail";
 import { type EditableTask, TaskEditor } from "./task-editor";
-import { COLUMNS } from "./task-meta";
+import { COLUMNS, labelColor } from "./task-meta";
 import "./index.css";
 
 /**
@@ -31,6 +31,7 @@ export function TasksModule(): React.JSX.Element {
   const [editing, setEditing] = useState<EditableTask | null>(null);
   const [createStatus, setCreateStatus] = useState<TaskStatus>("pending");
   const [detailId, setDetailId] = useState<number | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
   const reload = useCallback(async (): Promise<void> => {
     try {
@@ -48,6 +49,37 @@ export function TasksModule(): React.JSX.Element {
     void reload();
   }, [reload]);
 
+  // Distinct categories across manual tasks (most used first) — the board's
+  // "small classification", used as a filter strip.
+  const categories = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const card of cards) {
+      if (card.source !== "task" || card.category === "") continue;
+      counts.set(card.category, (counts.get(card.category) ?? 0) + 1);
+    }
+    return [...counts.entries()].sort(
+      (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+    );
+  }, [cards]);
+
+  // A filter whose category disappeared (its last task deleted) is dropped.
+  useEffect(() => {
+    if (
+      categoryFilter !== null &&
+      !categories.some(([name]) => name === categoryFilter)
+    ) {
+      setCategoryFilter(null);
+    }
+  }, [categories, categoryFilter]);
+
+  const visible = useMemo(
+    () =>
+      categoryFilter === null
+        ? cards
+        : cards.filter((card) => card.category === categoryFilter),
+    [cards, categoryFilter],
+  );
+
   const byStatus = useMemo(() => {
     const map: Record<TaskStatus, BoardCard[]> = {
       pending: [],
@@ -55,9 +87,9 @@ export function TasksModule(): React.JSX.Element {
       done: [],
       closed: [],
     };
-    for (const card of cards) map[card.status].push(card);
+    for (const card of visible) map[card.status].push(card);
     return map;
-  }, [cards]);
+  }, [visible]);
 
   const openCreate = (status: TaskStatus): void => {
     setEditing(null);
@@ -132,7 +164,7 @@ export function TasksModule(): React.JSX.Element {
           <div className="imb-task-head-text">
             <div className="imb-chat-title">{t("Tasks")}</div>
             <div className="imb-task-sub">
-              {t("${count} tasks", { count: String(cards.length) })}
+              {t("${count} tasks", { count: String(visible.length) })}
             </div>
           </div>
           <Button onClick={() => openCreate("pending")}>
@@ -140,6 +172,43 @@ export function TasksModule(): React.JSX.Element {
             {t("New task")}
           </Button>
         </div>
+
+        {categories.length > 0 && (
+          <div className="imb-board-filters">
+            <button
+              type="button"
+              className={cls(
+                "imb-filter-chip",
+                categoryFilter === null && "imb-is-on",
+              )}
+              onClick={() => setCategoryFilter(null)}
+            >
+              {t("All")}
+            </button>
+            {categories.map(([name, count]) => (
+              <button
+                key={name}
+                type="button"
+                className={cls(
+                  "imb-filter-chip",
+                  categoryFilter === name && "imb-is-on",
+                )}
+                onClick={() =>
+                  setCategoryFilter((current) =>
+                    current === name ? null : name,
+                  )
+                }
+              >
+                <span
+                  className="imb-filter-dot"
+                  style={{ background: labelColor(name) }}
+                />
+                {name}
+                <span className="imb-filter-n">{count}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="imb-board">
           {COLUMNS.map((column) => (

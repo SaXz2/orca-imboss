@@ -18,6 +18,53 @@
   color: var(--imb-muted);
 }
 
+/* Category ("project") filter strip above the board. */
+.imb-board-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: var(--imb-space-2) var(--imb-space-4) 0;
+}
+
+.imb-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  font-size: var(--imb-text-xs);
+  color: var(--imb-text-2);
+  background: transparent;
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-pill);
+  cursor: pointer;
+  transition: all var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-filter-chip:hover {
+  border-color: var(--imb-accent);
+  color: var(--imb-accent);
+}
+
+.imb-filter-chip.imb-is-on {
+  color: var(--imb-fg);
+  border-color: color-mix(in oklch, var(--imb-fg) 35%, transparent);
+  background: var(--imb-fg-soft);
+  font-weight: 600;
+}
+
+.imb-filter-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.imb-filter-n {
+  color: var(--imb-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 .imb-board {
   flex: 1;
   min-height: 0;

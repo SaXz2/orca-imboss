@@ -210,6 +210,13 @@
   "No tasks": "暂无任务",
   "No skills installed": "暂无已安装的技能",
   "None": "未设置",
+  "Empty": "空",
+  "Memory": "记忆",
+  "What ${name} remembers across sessions.": "${name} 跨会话记住的东西。",
+  "Written in Markdown and injected into this employee's session prompt. Clear the field to forget everything.": "用 Markdown 书写，会注入到该员工的会话系统提示词。清空内容即遗忘。",
+  "e.g. The boss prefers concise Chinese reports. The weather task runs every morning.": "例如：老板偏好简短的中文汇报。天气任务每天早上执行。",
+  "${count} characters": "${count} 字",
+  "${count} scheduled": "${count} 个定时",
   "Not scheduled": "未安排",
   "Notifying": "发出提醒",
   "Ocean": "海洋蓝",
@@ -389,6 +396,7 @@
   "Won't fix": "不予处理",
   "Write a comment…": "写下评论…",
   "You": "你",
+  "All": "全部",
   "Details": "详情",
   "Open session": "打开会话"
 }
