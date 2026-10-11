@@ -548,6 +548,7 @@ function progressTool(env: AgentEnvironment): AnyPiTool {
       content: Type.String({ minLength: 1, maxLength: 100000 }),
       steps: Type.Array(
         Type.Object({
+          employeeId: Type.Optional(Type.Integer({ minimum: 0 })),
           name: Type.String({ minLength: 1, maxLength: 256 }),
           role: Type.String({ maxLength: 256 }),
           status: Type.Union([

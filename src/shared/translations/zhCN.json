@@ -176,6 +176,7 @@
   "Off": "关闭",
   "One KEY=value per line": "每行一个 KEY=value",
   "Open chat": "打开会话",
+  "Open session for ${name}": "查看 ${name} 的会话",
   "Open Telegram and start a chat with @BotFather.": "打开 Telegram，与 @BotFather 开始对话。",
   "Other (type a free-form answer)": "其他（自由填写）",
   "Owner accounts": "负责人账号",

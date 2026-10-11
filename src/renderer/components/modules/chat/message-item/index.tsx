@@ -57,7 +57,14 @@ export function MessageItem({
             size={34}
             onClick={openSession}
           />
-          <ProgressCard title={message.content} steps={message.steps ?? []} />
+          <ProgressCard
+            title={message.content}
+            steps={message.steps ?? []}
+            chatId={message.chatId}
+            onOpenSession={(employeeId) =>
+              void appStore.openAgentSession(employeeId, message.chatId)
+            }
+          />
         </div>
       );
     case "chat":

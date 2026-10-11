@@ -12,6 +12,7 @@ export type StepStatus = "done" | "busy" | "pending";
 
 /** One row of a progress card payload (kind = `progress`). */
 export interface MessageStep {
+  employeeId?: number;
   name: string;
   role: string;
   status: StepStatus;
