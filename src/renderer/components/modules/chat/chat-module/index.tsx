@@ -47,8 +47,52 @@ function displayTitle(title: string): string {
 interface ChatRunStatus {
   /** A run is in progress (keeps the reserved status slot in the layout). */
   running: boolean;
-  /** Context compaction is in progress (the only status text shown). */
+  /** Context compaction is in progress. */
   compacting: boolean;
+  /** Current micro-phase of the run. */
+  phase?: "thinking" | "tool" | "responding" | "working";
+  /** Tool name when executing a tool. */
+  toolName?: string;
+}
+
+function formatRunStatusText(status: ChatRunStatus): string {
+  if (status.compacting) return t("Compacting…");
+  switch (status.phase) {
+    case "thinking":
+      return t("Thinking…");
+    case "tool": {
+      const friendly = status.toolName ? friendlyToolName(status.toolName) : "";
+      return friendly
+        ? t("Using tool: ${name}", { name: friendly })
+        : t("Working…");
+    }
+    case "responding":
+      return t("Responding…");
+    case "working":
+    default:
+      return t("Working…");
+  }
+}
+
+function friendlyToolName(name: string): string {
+  switch (name) {
+    case "imb_list_employees":
+      return t("Reviewing team");
+    case "imb_set_employees":
+      return t("Recruiting employee");
+    case "imb_create_chat":
+      return t("Setting up task chat");
+    case "imb_send_message":
+      return t("Sending message");
+    case "imb_read_chat":
+      return t("Reading chat");
+    case "imb_progress":
+      return t("Updating progress");
+    case "imb_ask":
+      return t("Asking question");
+    default:
+      return name;
+  }
 }
 
 /** Distance from the bottom (px) still considered "pinned" for auto-scroll. */
@@ -166,22 +210,53 @@ export function ChatModule(): React.JSX.Element {
         switch (event.type) {
           case "agent_start":
             next.running = true;
+            next.phase = "working";
             break;
           case "agent_end":
             // A retry keeps the run (and the reserved slot) alive.
             if (event.willRetry) return prev;
             next.running = false;
             next.compacting = false;
+            next.phase = undefined;
+            next.toolName = undefined;
             break;
           case "error":
             next.running = false;
             next.compacting = false;
+            next.phase = undefined;
+            next.toolName = undefined;
             break;
           case "compaction_start":
             next.compacting = true;
             break;
           case "compaction_end":
             next.compacting = false;
+            break;
+          case "message_update": {
+            next.running = true;
+            if (
+              event.subType === "thinking_start" ||
+              event.subType === "thinking_delta"
+            ) {
+              next.phase = "thinking";
+            } else if (
+              event.subType === "text_start" ||
+              event.subType === "text_delta"
+            ) {
+              next.phase = "responding";
+            } else if (
+              event.subType === "toolcall_start" ||
+              event.subType === "toolcall_end"
+            ) {
+              next.phase = "tool";
+              if (event.toolName) next.toolName = event.toolName;
+            }
+            break;
+          }
+          case "tool_execution_start":
+            next.running = true;
+            next.phase = "tool";
+            if (event.toolName) next.toolName = event.toolName;
             break;
           default:
             return prev;
@@ -247,14 +322,40 @@ export function ChatModule(): React.JSX.Element {
     setTitleOverride(null);
   }, [selectedId]);
 
-  // Subscribe this window to the selected chat's agent events. The session
-  // itself is created lazily main-side on the first `chat:send` (via the
-  // session queue), so merely selecting a chat does not build a Pi session.
+  // Subscribe this window to the selected chat's agent events and restore any
+  // in-flight run status on initial selection.
   useEffect(() => {
     if (selectedId === null) return;
     const chatId = selectedId;
-    void imb.agentSession.bind(ASSISTANT_ID, chatId);
+    let cancelled = false;
+    void imb.agentSession.bind(ASSISTANT_ID, chatId).then((activeBlocks) => {
+      if (cancelled) return;
+      if (activeBlocks && activeBlocks.length > 0) {
+        const lastBlock = activeBlocks[activeBlocks.length - 1];
+        let phase: ChatRunStatus["phase"] = "working";
+        let toolName: string | undefined;
+        if (lastBlock.kind === "thinking") {
+          phase = "thinking";
+        } else if (lastBlock.kind === "tool") {
+          phase = "tool";
+          toolName = lastBlock.name;
+        } else if (lastBlock.kind === "text") {
+          phase = "responding";
+        }
+        setRunStatus((prev) => {
+          const map = new Map(prev);
+          map.set(chatId, {
+            running: true,
+            compacting: false,
+            phase,
+            toolName,
+          });
+          return map;
+        });
+      }
+    });
     return () => {
+      cancelled = true;
       void imb.agentSession.unbind(ASSISTANT_ID, chatId);
       // Drop any stale run indicator for the chat we are leaving (its events
       // stop arriving once unbound).
@@ -361,6 +462,15 @@ export function ChatModule(): React.JSX.Element {
       // Sending always jumps to the bottom, even if the user had scrolled up.
       pinnedRef.current = true;
       restoreScrollRef.current = null;
+      setRunStatus((prev) => {
+        const map = new Map(prev);
+        map.set(chatId, {
+          running: true,
+          compacting: false,
+          phase: "working",
+        });
+        return map;
+      });
       try {
         await imb.chat.send(chatId, text, attachments);
         void loadMessages(chatId);
@@ -615,13 +725,13 @@ export function ChatModule(): React.JSX.Element {
             askAnswer={pairing.answerByAskId.get(message.id)}
           />
         ))}
-        {selectedRunStatus !== undefined && (
-          // Reserved, fixed-height slot: it is present for the whole run, so
-          // toggling the compaction text never shifts the messages above it.
-          <div className="imb-run-status" role="status">
-            {selectedRunStatus.compacting ? t("Compacting…") : ""}
-          </div>
-        )}
+        {selectedRunStatus !== undefined &&
+          (selectedRunStatus.running || selectedRunStatus.compacting) && (
+            <div className="imb-run-status" role="status">
+              <span className="imb-run-dot" aria-hidden="true" />
+              <span>{formatRunStatusText(selectedRunStatus)}</span>
+            </div>
+          )}
       </div>
       <ChatInputBar
         chatId={selected.id}

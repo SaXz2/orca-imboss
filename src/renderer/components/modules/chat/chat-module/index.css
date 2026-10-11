@@ -4,23 +4,48 @@
   margin: var(--imb-space-2) 0;
 }
 
-/* Reserved run-status slot appended below the thread while a run is active.
-   Never persisted, and never an acknowledgement — it only reports compaction.
-   The fixed height keeps the layout stable whether or not text is shown, so
-   tool calls can no longer make the thread jitter. */
+/* Live run-status indicator appended below the thread while a run is active.
+   The fixed height keeps the layout stable while showing real-time activity. */
 .imb-run-status {
   align-self: center;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 22px;
+  gap: 6px;
+  height: 24px;
   max-width: 78%;
-  padding: 0 10px;
+  padding: 0 12px;
   font-size: var(--imb-text-xs);
   color: var(--imb-muted);
+  background: var(--imb-surface);
+  border: 1px solid var(--imb-border-soft);
+  border-radius: var(--imb-radius-full);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  user-select: none;
+  animation: imb-fade-in var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-run-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--imb-accent);
+  flex-shrink: 0;
+  animation: imb-run-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes imb-run-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
 }
 
 /* Platform label for a conversation bridged to an IM integration. */
