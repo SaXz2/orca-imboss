@@ -1,5 +1,5 @@
 import { t } from "@shared/l10n";
-import type { Task, TaskInput, TaskStatus } from "@shared/types";
+import type { BoardCard, TaskInput, TaskStatus } from "@shared/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { cls } from "reactutils";
 import { appStore, useApp } from "../../../../app-store";
@@ -14,7 +14,7 @@ import { Select } from "../../../select";
 import { Textarea } from "../../../textarea";
 import "./index.css";
 
-/** Kanban columns, in display order. */
+/** Kanban columns, in display order (GitHub-Project style, left → right). */
 const COLUMNS: Array<{ status: TaskStatus; labelKey: string }> = [
   { status: "pending", labelKey: "Pending" },
   { status: "running", labelKey: "In progress" },
@@ -26,27 +26,45 @@ const STATUS_OPTIONS = COLUMNS.map((c) => ({
   label: t(c.labelKey),
 }));
 
+/** GitHub-like label palette (chip tint derived from the label text). */
+const LABEL_COLORS = [
+  "#2f6fed",
+  "#e8740c",
+  "#12a150",
+  "#c026d3",
+  "#0891b2",
+  "#d9236b",
+  "#7c5cff",
+  "#a16207",
+];
+
+function labelColor(text: string): string {
+  let hash = 0;
+  for (const ch of text) hash = (hash * 31 + (ch.codePointAt(0) ?? 0)) >>> 0;
+  return LABEL_COLORS[hash % LABEL_COLORS.length];
+}
+
 /**
- * Task Center — a kanban board (待执行 / 正在执行 / 已完成) giving a macro view of
- * the company's tasks. Cards can be dragged between columns, assigned to several
- * employees, grouped by a small category and annotated with a flow.
+ * Task Center — a GitHub-Projects-style board merging the company's manual
+ * tasks and its real task conversations (assistant group chats and bridged
+ * platform chats), so the board is a live view of what is being worked on.
  */
 export function TasksModule(): React.JSX.Element {
   const { data } = useApp();
   const employees = data.employees.items;
 
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [cards, setCards] = useState<BoardCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dragId, setDragId] = useState<number | null>(null);
+  const [dragKey, setDragKey] = useState<string | null>(null);
   const [overStatus, setOverStatus] = useState<TaskStatus | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
-  const [editing, setEditing] = useState<Task | null>(null);
+  const [editing, setEditing] = useState<BoardCard | null>(null);
+  const [createStatus, setCreateStatus] = useState<TaskStatus>("pending");
 
   const reload = useCallback(async (): Promise<void> => {
     try {
-      const list = await imb.tasks.list();
-      setTasks(list);
+      setCards(await imb.tasks.board());
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -61,34 +79,45 @@ export function TasksModule(): React.JSX.Element {
   }, [reload]);
 
   const byStatus = useMemo(() => {
-    const map: Record<TaskStatus, Task[]> = {
+    const map: Record<TaskStatus, BoardCard[]> = {
       pending: [],
       running: [],
       done: [],
     };
-    for (const task of tasks) map[task.status].push(task);
+    for (const card of cards) map[card.status].push(card);
     return map;
-  }, [tasks]);
+  }, [cards]);
 
-  const openCreate = (): void => {
+  const openCreate = (status: TaskStatus): void => {
     setEditing(null);
+    setCreateStatus(status);
     setEditorOpen(true);
   };
 
-  const openEdit = (task: Task): void => {
-    setEditing(task);
+  const openEdit = (card: BoardCard): void => {
+    if (card.source === "chat") return;
+    setEditing(card);
     setEditorOpen(true);
+  };
+
+  const openChat = async (chatId: number): Promise<void> => {
+    try {
+      const summary = await imb.chats.summary(chatId);
+      if (summary) appStore.openChat(summary);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
   };
 
   const handleDrop = async (status: TaskStatus): Promise<void> => {
-    const id = dragId;
-    setDragId(null);
+    const key = dragKey;
+    setDragKey(null);
     setOverStatus(null);
-    if (id === null) return;
-    const task = tasks.find((item) => item.id === id);
-    if (!task || task.status === status) return;
+    if (key === null) return;
+    const card = cards.find((c) => c.key === key);
+    if (!card || card.source !== "task" || card.status === status) return;
     try {
-      await imb.tasks.move(id, status);
+      await imb.tasks.move(card.refId, status);
       await reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -97,7 +126,7 @@ export function TasksModule(): React.JSX.Element {
 
   const saveTask = async (input: TaskInput): Promise<void> => {
     if (editing) {
-      await imb.tasks.update(editing.id, input);
+      await imb.tasks.update(editing.refId, input);
     } else {
       await imb.tasks.create(input);
     }
@@ -119,10 +148,10 @@ export function TasksModule(): React.JSX.Element {
         <div className="imb-task-head-text">
           <div className="imb-chat-title">{t("Task Center")}</div>
           <div className="imb-task-sub">
-            {t("${count} tasks", { count: String(tasks.length) })}
+            {t("${count} tasks", { count: String(cards.length) })}
           </div>
         </div>
-        <Button onClick={openCreate}>
+        <Button onClick={() => openCreate("pending")}>
           <IconPlus className="imb-icon imb-sm" />
           {t("New task")}
         </Button>
@@ -149,23 +178,41 @@ export function TasksModule(): React.JSX.Element {
             onDrop={() => void handleDrop(column.status)}
           >
             <div className="imb-board-col-head">
-              <span className={`imb-col-dot imb-${column.status}`} aria-hidden="true" />
+              <span
+                className={`imb-col-dot imb-${column.status}`}
+                aria-hidden="true"
+              />
               <span className="imb-col-name">{t(column.labelKey)}</span>
-              <span className="imb-col-count">{byStatus[column.status].length}</span>
+              <span className="imb-col-count">
+                {byStatus[column.status].length}
+              </span>
+              <button
+                type="button"
+                className="imb-col-add"
+                title={t("New task")}
+                aria-label={t("New task")}
+                onClick={() => openCreate(column.status)}
+              >
+                <IconPlus className="imb-icon imb-xs" />
+              </button>
             </div>
             <div className="imb-board-col-body">
-              {byStatus[column.status].map((task) => (
+              {byStatus[column.status].map((card) => (
                 <TaskCard
-                  key={task.id}
-                  task={task}
+                  key={card.key}
+                  card={card}
                   employees={employees}
-                  dragging={dragId === task.id}
-                  onDragStart={() => setDragId(task.id)}
+                  dragging={dragKey === card.key}
+                  onDragStart={() => setDragKey(card.key)}
                   onDragEnd={() => {
-                    setDragId(null);
+                    setDragKey(null);
                     setOverStatus(null);
                   }}
-                  onClick={() => openEdit(task)}
+                  onOpen={() =>
+                    card.source === "chat" && card.chatId !== null
+                      ? void openChat(card.chatId)
+                      : openEdit(card)
+                  }
                 />
               ))}
               {!loading && byStatus[column.status].length === 0 && (
@@ -176,11 +223,14 @@ export function TasksModule(): React.JSX.Element {
         ))}
       </div>
 
-      {error !== null && <p className="imb-error-text imb-chat-error">{error}</p>}
+      {error !== null && (
+        <p className="imb-error-text imb-chat-error">{error}</p>
+      )}
 
       <TaskEditor
         open={editorOpen}
-        task={editing}
+        card={editing}
+        initialStatus={createStatus}
         onClose={() => {
           setEditorOpen(false);
           setEditing(null);
@@ -201,74 +251,106 @@ type EmployeeList = readonly {
 }[];
 
 function TaskCard({
-  task,
+  card,
   employees,
   dragging,
   onDragStart,
   onDragEnd,
-  onClick,
+  onOpen,
 }: {
-  task: Task;
+  card: BoardCard;
   employees: EmployeeList;
   dragging: boolean;
   onDragStart: () => void;
   onDragEnd: () => void;
-  onClick: () => void;
+  onOpen: () => void;
 }): React.JSX.Element {
+  const isChat = card.source === "chat";
+  const doneSteps = card.steps.filter((s) => s.status === "done").length;
+  const totalSteps = card.steps.length;
+  const shown = card.assignees.slice(0, 4);
+  const extra = card.assignees.length - shown.length;
+
   return (
     <div
-      className={cls("imb-task-card", dragging && "imb-is-dragging")}
-      draggable
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      onClick={onClick}
+      className={cls(
+        "imb-gh-card",
+        isChat && "imb-is-chat",
+        dragging && "imb-is-dragging",
+      )}
+      draggable={!isChat}
+      onDragStart={isChat ? undefined : onDragStart}
+      onDragEnd={isChat ? undefined : onDragEnd}
+      onClick={onOpen}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          onClick();
+          onOpen();
         }
       }}
     >
-      <div className="imb-task-card-top">
-        <span className="imb-task-title">{task.title}</span>
-        <span className="imb-task-edit">
-          <IconPencil />
-        </span>
-      </div>
-      {task.category && (
-        <span className="imb-task-category">{task.category}</span>
-      )}
-      {task.flow && <div className="imb-task-flow">{task.flow}</div>}
-      {task.assignees.length > 0 && (
-        <div className="imb-task-card-people">
-          {task.assignees.map((id) => {
-            const employee = employees.find((e) => e.id === id);
-            return (
-              <span key={id} className="imb-task-person" title={employee?.name ?? `#${id}`}>
-                <EmployeeAvatar employeeId={id} size={20} />
-                <span className="imb-task-person-name">
-                  {employee?.name || employee?.role || `#${id}`}
-                </span>
-              </span>
-            );
-          })}
+      <div className="imb-gh-card-title">{card.title}</div>
+
+      {(card.category || totalSteps > 0) && (
+        <div className="imb-gh-card-labels">
+          {card.category && (
+            <span
+              className="imb-gh-label"
+              style={{
+                color: labelColor(card.category),
+                borderColor: labelColor(card.category),
+                background: `color-mix(in srgb, ${labelColor(card.category)} 12%, transparent)`,
+              }}
+            >
+              {card.category}
+            </span>
+          )}
+          {totalSteps > 0 && (
+            <span className="imb-gh-steps">
+              {t("${done} of ${total} steps", {
+                done: String(doneSteps),
+                total: String(totalSteps),
+              })}
+            </span>
+          )}
         </div>
       )}
+
+      <div className="imb-gh-card-foot">
+        <span className="imb-gh-ref">
+          {isChat ? t("Conversation") : `#${card.refId}`}
+        </span>
+        <span className="imb-gh-assignees">
+          {shown.map((id) => (
+            <span key={id} className="imb-gh-assignee">
+              <EmployeeAvatar employeeId={id} size={20} />
+            </span>
+          ))}
+          {extra > 0 && <span className="imb-gh-more">{`+${extra}`}</span>}
+        </span>
+        {!isChat && (
+          <span className="imb-gh-edit" aria-hidden="true">
+            <IconPencil />
+          </span>
+        )}
+      </div>
     </div>
   );
 }
 
 function TaskEditor({
   open,
-  task,
+  card,
+  initialStatus,
   onClose,
   onSave,
   onDelete,
 }: {
   open: boolean;
-  task: Task | null;
+  card: BoardCard | null;
+  initialStatus: TaskStatus;
   onClose: () => void;
   onSave: (input: TaskInput) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
@@ -287,14 +369,14 @@ function TaskEditor({
 
   useEffect(() => {
     if (!open) return;
-    setTitle(task?.title ?? "");
-    setDetail(task?.detail ?? "");
-    setCategory(task?.category ?? "");
-    setFlow(task?.flow ?? "");
-    setStatus(task?.status ?? "pending");
-    setAssignees(task ? [...task.assignees] : []);
+    setTitle(card?.title ?? "");
+    setDetail(card?.detail ?? "");
+    setCategory(card?.category ?? "");
+    setFlow(card?.flow ?? "");
+    setStatus(card?.status ?? initialStatus);
+    setAssignees(card ? [...card.assignees] : []);
     setError(null);
-  }, [open, task]);
+  }, [open, card, initialStatus]);
 
   if (!open) return null;
 
@@ -332,15 +414,15 @@ function TaskEditor({
       open={open}
       onClose={onClose}
       size="lg"
-      title={task ? t("Edit task") : t("New task")}
+      title={card ? t("Edit task") : t("New task")}
       sub={t("Group, assign and set the flow of a task.")}
       error={error}
       actions={
         <>
-          {task && (
+          {card && (
             <Button
               variant="danger"
-              onClick={() => void onDelete(task.id)}
+              onClick={() => void onDelete(card.refId)}
               disabled={saving}
             >
               {t("Delete")}
@@ -349,7 +431,11 @@ function TaskEditor({
           <Button variant="secondary" onClick={onClose} disabled={saving}>
             {t("Cancel")}
           </Button>
-          <Button variant="primary" onClick={() => void submit()} disabled={saving}>
+          <Button
+            variant="primary"
+            onClick={() => void submit()}
+            disabled={saving}
+          >
             {saving ? t("Saving…") : t("Confirm")}
           </Button>
         </>

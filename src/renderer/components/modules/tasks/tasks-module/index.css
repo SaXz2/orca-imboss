@@ -1,4 +1,4 @@
-/* Task Center — kanban board. */
+/* Task Center — GitHub-Projects-flavoured board. */
 
 .imb-task-head {
   display: flex;
@@ -32,7 +32,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: var(--imb-surface);
+  background: color-mix(in oklch, var(--imb-fg) 3%, var(--imb-bg));
   border: 1px solid var(--imb-border-soft);
   border-radius: var(--imb-radius-lg);
   overflow: hidden;
@@ -42,17 +42,16 @@
 
 .imb-board-col.imb-is-drop {
   border-color: var(--imb-accent);
-  background: color-mix(in oklch, var(--imb-accent) 6%, var(--imb-surface));
+  background: color-mix(in oklch, var(--imb-accent) 7%, var(--imb-bg));
 }
 
 .imb-board-col-head {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 10px 12px;
+  padding: 9px 10px 9px 12px;
   font-size: var(--imb-text-sm);
   font-weight: 600;
-  border-bottom: 1px solid var(--imb-border-soft);
 }
 
 .imb-col-dot {
@@ -86,14 +85,39 @@
   padding: 1px 8px;
 }
 
+.imb-col-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: var(--imb-radius-sm);
+  background: transparent;
+  color: var(--imb-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--imb-motion-fast) var(--imb-ease-standard),
+    background var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-board-col:hover .imb-col-add {
+  opacity: 1;
+}
+
+.imb-col-add:hover {
+  background: var(--imb-fg-soft);
+  color: var(--imb-fg);
+}
+
 .imb-board-col-body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--imb-space-2);
+  padding: 0 8px 8px;
   display: flex;
   flex-direction: column;
-  gap: var(--imb-space-2);
+  gap: 6px;
 }
 
 .imb-board-empty {
@@ -103,96 +127,134 @@
   padding: var(--imb-space-4) 0;
 }
 
-/* --- Card --- */
-.imb-task-card {
+/* --- Card (GitHub issue/project card) --- */
+.imb-gh-card {
+  position: relative;
   background: var(--imb-surface);
   border: 1px solid var(--imb-border);
   border-radius: var(--imb-radius-md);
-  padding: 10px 12px;
+  padding: 9px 10px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  box-shadow: var(--imb-elev-flat, 0 1px 2px rgba(0, 0, 0, 0.04));
+  gap: 7px;
   transition: border-color var(--imb-motion-fast) var(--imb-ease-standard),
-    transform var(--imb-motion-fast) var(--imb-ease-standard);
+    box-shadow var(--imb-motion-fast) var(--imb-ease-standard);
 }
 
-.imb-task-card:hover {
-  border-color: var(--imb-accent);
+.imb-gh-card:hover {
+  border-color: color-mix(in oklch, var(--imb-accent) 55%, var(--imb-border));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-.imb-task-card.imb-is-dragging {
-  opacity: 0.5;
+.imb-gh-card:focus-visible {
+  outline: none;
+  box-shadow: var(--imb-focus-ring);
 }
 
-.imb-task-card-top {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
+.imb-gh-card.imb-is-dragging {
+  opacity: 0.45;
 }
 
-.imb-task-title {
-  flex: 1;
-  min-width: 0;
+/* Conversation-derived card: read-only, marked by a left accent rail. */
+.imb-gh-card.imb-is-chat {
+  border-left: 3px solid var(--imb-accent);
+}
+
+.imb-gh-card-title {
   font-size: var(--imb-text-sm);
   font-weight: 600;
   color: var(--imb-fg);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
   overflow-wrap: anywhere;
 }
 
-.imb-task-edit {
-  flex: none;
+.imb-gh-card-labels {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.imb-gh-label {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  padding: 0 7px;
+  border: 1px solid transparent;
+  border-radius: var(--imb-radius-pill);
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.imb-gh-steps {
+  font-size: 11px;
+  color: var(--imb-muted);
+}
+
+.imb-gh-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 20px;
+}
+
+.imb-gh-ref {
+  font-family: var(--imb-font-mono);
+  font-size: 11px;
+  color: var(--imb-muted);
+  white-space: nowrap;
+}
+
+.imb-gh-assignees {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+}
+
+.imb-gh-assignee {
+  display: inline-flex;
+  margin-left: -6px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--imb-surface);
+}
+
+.imb-gh-assignee:first-child {
+  margin-left: 0;
+}
+
+.imb-gh-assignee .imb-avatar {
+  width: 20px;
+  height: 20px;
+  font-size: 10px;
+}
+
+.imb-gh-more {
+  margin-left: 4px;
+  font-size: 11px;
+  color: var(--imb-muted);
+}
+
+.imb-gh-edit {
+  display: inline-flex;
   color: var(--imb-muted);
   opacity: 0;
-  display: inline-flex;
   transition: opacity var(--imb-motion-fast) var(--imb-ease-standard);
 }
 
-.imb-task-edit svg {
+.imb-gh-edit svg {
   width: 13px;
   height: 13px;
 }
 
-.imb-task-card:hover .imb-task-edit {
+.imb-gh-card:hover .imb-gh-edit {
   opacity: 1;
-}
-
-.imb-task-category {
-  align-self: flex-start;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 1px 8px;
-  border-radius: var(--imb-radius-pill);
-  background: color-mix(in oklch, var(--imb-accent) 14%, var(--imb-surface));
-  color: var(--imb-accent);
-}
-
-.imb-task-flow {
-  font-size: var(--imb-text-xs);
-  color: var(--imb-muted);
-  overflow-wrap: anywhere;
-}
-
-.imb-task-card-people {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.imb-task-person {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: var(--imb-text-xs);
-  color: var(--imb-text-2);
-  background: var(--imb-bg);
-  border-radius: var(--imb-radius-pill);
-  padding: 1px 8px 1px 2px;
-}
-
-.imb-task-person-name {
-  white-space: nowrap;
 }
 
 /* --- Editor --- */

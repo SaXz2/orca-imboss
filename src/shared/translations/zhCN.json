@@ -4,6 +4,7 @@
   "${count} done": "完成 ${count}",
   "${count} tasks": "共 ${count} 个任务",
   "${count} members": "${count} 位成员",
+  "${done} of ${total} steps": "${done} / ${total} 步",
   "A new version of imboss is available": "imboss 有新版本可用",
   "A new version v${version} is available.": "新版本 v${version} 已发布。",
   "About": "关于",

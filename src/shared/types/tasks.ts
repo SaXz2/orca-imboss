@@ -49,3 +49,30 @@ export interface TaskInput {
   assignees?: number[];
   sortOrder?: number;
 }
+
+/** Where a board card comes from. */
+export type BoardSource = "task" | "chat";
+
+/**
+ * One Task Center board card. `task` cards are the persistent, editable cards;
+ * `chat` cards are derived from real task conversations (group chats / bridged
+ * chats), so the board reflects the company's actual work — read-only, and
+ * clicking one opens that conversation.
+ */
+export interface BoardCard {
+  /** Stable key: `task:<id>` or `chat:<id>`. */
+  key: string;
+  source: BoardSource;
+  refId: number;
+  title: string;
+  detail: string;
+  category: string;
+  flow: string;
+  status: TaskStatus;
+  assignees: number[];
+  updatedAt: number;
+  /** Latest progress steps (chat cards only; for a compact stepper). */
+  steps: import("./messages").MessageStep[];
+  /** Chat id to open (chat cards only). */
+  chatId: number | null;
+}

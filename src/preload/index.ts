@@ -29,6 +29,7 @@ import type {
   ProviderInfo,
   ProviderModelsQuery,
   ProviderUpsert,
+  BoardCard,
   Task,
   TaskInput,
   TaskStatus,
@@ -334,6 +335,7 @@ const api = {
 
   tasks: {
     list: () => ipcRenderer.invoke("tasks:list") as Promise<Task[]>,
+    board: () => ipcRenderer.invoke("tasks:board") as Promise<BoardCard[]>,
     create: (input: TaskInput) =>
       ipcRenderer.invoke("tasks:create", input) as Promise<Task>,
     update: (id: number, input: TaskInput) =>
