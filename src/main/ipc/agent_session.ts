@@ -14,8 +14,8 @@ import { assertInteger } from "./helpers";
 export function registerAgentSessionHandlers(): void {
   ipcMain.handle(
     "agentSession:bind",
-    (event, employeeId: unknown, chatId: unknown): void => {
-      bind(
+    (event, employeeId: unknown, chatId: unknown) => {
+      return bind(
         assertInteger(employeeId, "employee id"),
         assertInteger(chatId, "chat id"),
         event.sender,

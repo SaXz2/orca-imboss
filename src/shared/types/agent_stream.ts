@@ -47,6 +47,19 @@ export type AgentStreamEvent =
     }
   | { type: "error"; message: string };
 
+/** A live block of the currently streaming assistant message in an active turn. */
+export interface ActiveLiveBlock {
+  key: string;
+  kind: "text" | "thinking" | "tool";
+  text: string;
+  toolCallId?: string;
+  name?: string;
+  argsSummary?: string;
+  argsDetail?: string;
+  status?: "running" | "ok" | "error";
+  done?: boolean;
+}
+
 /** Envelope pushed to a bound renderer over `agentSession:event`. */
 export interface AgentStreamPayload {
   employeeId: number;
