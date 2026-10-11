@@ -20,6 +20,7 @@ import { MultiSelect, type MultiSelectOption } from "../../../multi-select";
 import { Select, type SelectOption } from "../../../select";
 import { Textarea } from "../../../textarea";
 import { EmployeeCronJobs } from "../employee-cron-jobs";
+import { EmployeeEntryRows } from "./entry-rows";
 import "./index.css";
 
 export interface EmployeeDetailProps {
@@ -196,6 +197,11 @@ export function EmployeeDetail({
           </p>
         )}
 
+        <EmployeeEntryRows
+          employeeId={employee.id}
+          employeeName={displayName}
+        />
+
         <div
           className={cls(
             "imb-field-row",
@@ -307,7 +313,9 @@ export function EmployeeDetail({
           />
         </Field>
 
-        <EmployeeCronJobs employeeId={employee.id} />
+        <div id={`emp-cron-${employee.id}`}>
+          <EmployeeCronJobs employeeId={employee.id} />
+        </div>
       </DetailBody>
 
       {!isAssistant && (

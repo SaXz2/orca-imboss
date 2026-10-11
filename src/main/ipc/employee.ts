@@ -9,6 +9,7 @@ import { deleteAvatarFiles, saveAvatar } from "../avatars";
 import * as cron from "../cron";
 import * as dbEmployees from "../db/employees";
 import { listEmployeeMessageMetrics } from "../db/metrics";
+import { getEmployeeMemory, setEmployeeMemory } from "../employee-memory";
 import { employeeTaskCounts } from "../task-board";
 import { listByEmployee, unlinkSessionFile } from "../db/sessions";
 import { sendToRenderer } from "../notifications";
@@ -21,6 +22,14 @@ function notifyEmployeesChanged(ids: number[]): void {
 
 export function registerEmployeeHandlers(): void {
   ipcMain.handle("employees:list", () => dbEmployees.listEmployees());
+
+  // Long-term memory: a per-employee note injected into the session prompt.
+  ipcMain.handle("employees:getMemory", (_e, id: number) =>
+    getEmployeeMemory(assertInteger(id, "id")),
+  );
+  ipcMain.handle("employees:setMemory", (_e, id: number, text: string) =>
+    setEmployeeMemory(assertInteger(id, "id"), assertString(text, "text")),
+  );
 
   // Live dashboard metrics for the employees list (working status, run time,
   // recent activity, completed deliverables).

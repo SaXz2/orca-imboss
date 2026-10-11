@@ -263,6 +263,26 @@ export function IconPencil(props: IconProps): React.JSX.Element {
 }
 
 /** Kanban board / task center icon. */
+export function IconMemory(props: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(props)}>
+      <path d="M6 3.5h10.5A1.5 1.5 0 0 1 18 5v14a1.5 1.5 0 0 1-1.5 1.5H6" />
+      <path d="M6 3.5A2.5 2.5 0 0 0 3.5 6v12A2.5 2.5 0 0 0 6 20.5" />
+      <path d="M9 9h5.5" />
+      <path d="M9 13h5.5" />
+    </svg>
+  );
+}
+
+export function IconClock(props: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(props)}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 1.8" />
+    </svg>
+  );
+}
+
 export function IconUsage(props: IconProps): React.JSX.Element {
   return (
     <svg {...base(props)}>
