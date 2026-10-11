@@ -98,6 +98,7 @@ export function ChatInputBar({
     setNotice(null);
     setPopupOpen(false);
     setDropActive(false);
+    if (textareaRef.current) textareaRef.current.value = "";
     textareaRef.current?.focus();
   }, [focusToken, chatId]);
 
@@ -107,6 +108,11 @@ export function ChatInputBar({
     setNotice(null);
     setPopupOpen(false);
     setDropActive(false);
+    // Uncontrolled textarea: manually sync the DOM value to this chat's draft
+    // (React never rewrites it, so IME composition is never interrupted).
+    if (textareaRef.current) {
+      textareaRef.current.value = appStore.chatDrafts[chatId]?.text ?? "";
+    }
   }, [chatId]);
 
   // A file dropped anywhere outside the input bar would otherwise make Chromium
@@ -154,6 +160,8 @@ export function ChatInputBar({
     );
     // Clear the per-chat draft; the store revokes its preview URLs.
     appStore.clearChatDraft(chatId);
+    // Uncontrolled textarea: clear the DOM value directly.
+    if (textareaRef.current) textareaRef.current.value = "";
     setNotice(null);
   };
 
@@ -337,6 +345,7 @@ export function ChatInputBar({
     setTimeout(() => {
       const textarea = textareaRef.current;
       if (textarea) {
+        textarea.value = nextText;
         textarea.focus();
         const newCursor = mentionCaret.start + mentionTag.length;
         textarea.setSelectionRange(newCursor, newCursor);
@@ -393,7 +402,9 @@ export function ChatInputBar({
           ref={textareaRef}
           className="imb-chat-input-textarea"
           rows={1}
-          value={text}
+          // Uncontrolled: React never rewrites the DOM value, so IME
+          // composition and first keystrokes are never interrupted.
+          defaultValue={text}
           placeholder={t("What are your instructions?")}
           disabled={disabled}
           minHeight={0}
