@@ -1,5 +1,6 @@
+import type { CronJob } from "@shared/types";
 import { ipcMain } from "electron";
-import { removeJob } from "../cron";
+import { removeJob, runJobNow, setJobEnabled } from "../cron";
 import * as dbCron from "../db/cron";
 import { assertInteger, assertString } from "./helpers";
 
@@ -14,6 +15,18 @@ export function registerCronHandlers(): void {
 
   // Every job across all employees: the dock's scheduled-tasks view.
   ipcMain.handle("cron:listAll", () => dbCron.listAll());
+
+  // Enable / disable a job (stops or (re)starts its live scheduler handle).
+  ipcMain.handle(
+    "cron:setEnabled",
+    (_event, id: unknown, enabled: unknown): CronJob | null =>
+      setJobEnabled(assertString(id, "cron job id"), enabled === true),
+  );
+
+  // Fire a job immediately, as its schedule would have.
+  ipcMain.handle("cron:runNow", (_event, id: unknown): CronJob | null =>
+    runJobNow(assertString(id, "cron job id")),
+  );
 
   // Remove a job: stops the live Cron handle and deletes the DB row. Returns
   // false when the job does not exist (idempotent from the renderer's view).

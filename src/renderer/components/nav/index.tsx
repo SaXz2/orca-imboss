@@ -1,6 +1,5 @@
 import { SettingKeys } from "@shared/constants/settings";
 import { t } from "@shared/l10n";
-import type { CronJobInfo } from "@shared/types";
 import { useEffect, useRef, useState } from "react";
 import { cls } from "reactutils";
 import { appStore, sessionKey, useApp, type AppModule } from "../../app-store";
@@ -33,7 +32,7 @@ interface NavItem {
   icon: (props: { className?: string }) => React.JSX.Element;
   section?: "main" | "miniapp" | "bottom";
   /** Renders an expandable browse list under the entry (what is inside). */
-  browse?: "chats" | "employees" | "cron";
+  browse?: "chats" | "employees";
 }
 
 /** Stable key for a nav entry (browse-only entries have no module). */
@@ -70,9 +69,9 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     labelKey: "Scheduled tasks",
+    module: "scheduled",
     icon: IconClock,
     section: "main",
-    browse: "cron",
   },
   { module: "mcp", labelKey: "MCP", icon: IconMcp, section: "main" },
   {
@@ -118,27 +117,6 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
   const [chatDragId, setChatDragId] = useState<number | null>(null);
   const [sessionDragKey, setSessionDragKey] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [cronJobs, setCronJobs] = useState<CronJobInfo[]>([]);
-
-  // Scheduled tasks live in the rail so automation is visible from anywhere.
-  // Refreshed on a slow timer: one indexed query, and jobs change rarely.
-  useEffect(() => {
-    let alive = true;
-    const load = async (): Promise<void> => {
-      try {
-        const jobs = await imb.cron.listAll();
-        if (alive) setCronJobs(jobs);
-      } catch {
-        // Best-effort: keep the last snapshot.
-      }
-    };
-    void load();
-    const timer = window.setInterval(() => void load(), 60_000);
-    return () => {
-      alive = false;
-      window.clearInterval(timer);
-    };
-  }, []);
   const [brandEditing, setBrandEditing] = useState(false);
   const [brandDraft, setBrandDraft] = useState("");
   const brandLogoInputRef = useRef<HTMLInputElement>(null);
@@ -252,7 +230,6 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
                 item={item}
                 collapsed={collapsed}
                 expanded={expanded === navItemKey(item)}
-                cronJobs={cronJobs}
                 onToggle={() =>
                   setExpanded((current) =>
                     current === navItemKey(item) ? null : navItemKey(item),
@@ -414,7 +391,6 @@ type NavBrowseGroupProps = {
   item: NavItem;
   collapsed: boolean;
   expanded: boolean;
-  cronJobs: readonly CronJobInfo[];
   onToggle: () => void;
 };
 
@@ -430,7 +406,6 @@ function NavBrowseGroup({
   item,
   collapsed,
   expanded,
-  cronJobs,
   onToggle,
 }: NavBrowseGroupProps): React.JSX.Element {
   const { module, locale, data } = useApp();
@@ -452,45 +427,6 @@ function NavBrowseGroup({
   const chats = data.chats.items.slice(0, BROWSE_LIMIT);
   const employees = data.employees.items.slice(0, BROWSE_LIMIT);
   const open = expanded && !collapsed;
-
-  /** One row of the scheduled-tasks list. */
-  const renderCronRows = (): React.JSX.Element | React.JSX.Element[] => {
-    if (cronJobs.length === 0) {
-      return (
-        <div className="imb-nav-browse-empty">
-          {t("No scheduled tasks yet")}
-        </div>
-      );
-    }
-    return cronJobs.map((job) => {
-      const employee = data.employees.items.find(
-        (person) => person.id === job.employeeId,
-      );
-      const preview = job.content.replace(/\s+/g, " ").trim();
-      return (
-        <button
-          key={job.id}
-          type="button"
-          className="imb-nav-browse-item"
-          title={preview}
-          onClick={() =>
-            void appStore.openAgentSession(job.employeeId, job.chatId)
-          }
-        >
-          <EmployeeAvatar employeeId={job.employeeId} size={18} />
-          <span className="imb-nav-browse-text">
-            <span className="imb-nav-label">
-              {employee ? employeeLabel(employee) : `#${job.employeeId}`}
-            </span>
-            <span className="imb-nav-sub">
-              {job.schedule}
-              {preview.length > 0 ? ` · ${preview}` : ""}
-            </span>
-          </span>
-        </button>
-      );
-    });
-  };
 
   return (
     <div className={cls("imb-nav-browse", open && "imb-is-open")}>
@@ -531,9 +467,7 @@ function NavBrowseGroup({
 
       {open && (
         <div className="imb-nav-browse-list">
-          {item.browse === "cron"
-            ? renderCronRows()
-            : item.browse === "chats"
+          {item.browse === "chats"
             ? chats.map((chat) => (
                 <button
                   key={`chat:${chat.id}`}

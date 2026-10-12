@@ -130,6 +130,14 @@ export function deleteJob(id: string): boolean {
   );
 }
 
+/** Turn a job on or off; returns the updated job (null when it is gone). */
+export function setEnabled(id: string, enabled: boolean): CronJob | null {
+  const changes = getDB()
+    .prepare("UPDATE cron_jobs SET enabled = ? WHERE id = ?")
+    .run(enabled ? 1 : 0, id).changes;
+  return changes > 0 ? getJob(id) : null;
+}
+
 /** Record a run and recompute the next run time from the stored schedule. */
 export function markRun(id: string, at: number): void {
   const row = getDB()

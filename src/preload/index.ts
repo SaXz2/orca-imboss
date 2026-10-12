@@ -7,6 +7,7 @@ import type {
   Chat,
   ChatParticipantUpdate,
   ChatSummary,
+  CronJob,
   CronJobInfo,
   Employee,
   EmployeeDeleteResult,
@@ -178,9 +179,17 @@ const api = {
     /** Remove a job (stops the live scheduler handle + deletes the row). */
     remove: (id: string) =>
       ipcRenderer.invoke("cron:remove", id) as Promise<boolean>,
-    /** Every job across all employees (the dock's scheduled-tasks view). */
+    /** Every job across all employees (the scheduled-tasks page). */
     listAll: () =>
       ipcRenderer.invoke("cron:listAll") as Promise<CronJobInfo[]>,
+    /** Turn a job on or off. */
+    setEnabled: (id: string, enabled: boolean) =>
+      ipcRenderer.invoke("cron:setEnabled", id, enabled) as Promise<
+        CronJob | null
+      >,
+    /** Fire a job immediately. */
+    runNow: (id: string) =>
+      ipcRenderer.invoke("cron:runNow", id) as Promise<CronJob | null>,
   },
 
   chats: {
