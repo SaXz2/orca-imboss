@@ -30,7 +30,7 @@ interface NavItem {
   module?: AppModule;
   labelKey: string;
   icon: (props: { className?: string }) => React.JSX.Element;
-  section?: "main" | "miniapp" | "bottom";
+  section?: "main" | "tools" | "miniapp" | "bottom";
   /** Renders an expandable browse list under the entry (what is inside). */
   browse?: "chats" | "employees";
 }
@@ -65,20 +65,20 @@ const NAV_ITEMS: NavItem[] = [
     module: "usage",
     labelKey: "Usage",
     icon: IconUsage,
-    section: "main",
+    section: "tools",
   },
   {
     labelKey: "Scheduled tasks",
     module: "scheduled",
     icon: IconClock,
-    section: "main",
+    section: "tools",
   },
-  { module: "mcp", labelKey: "MCP", icon: IconMcp, section: "main" },
+  { module: "mcp", labelKey: "MCP", icon: IconMcp, section: "tools" },
   {
     module: "skills",
     labelKey: "Skills",
     icon: IconSkills,
-    section: "main",
+    section: "tools",
   },
   {
     module: "settings",
@@ -143,6 +143,7 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
   }
 
   const main = NAV_ITEMS.filter((i) => i.section === "main");
+  const tools = NAV_ITEMS.filter((i) => i.section === "tools");
   const bottom = NAV_ITEMS.filter((i) => i.section === "bottom");
   const miniApps = data.miniapps.items;
 
@@ -247,6 +248,20 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
         </div>
         <div className="imb-nav-divider" />
         <div className="imb-scroll">
+          {tools.length > 0 && (
+            <div className="imb-nav-group">
+              <div className="imb-nav-section">{t("Tools")}</div>
+              <div className="imb-nav-items">
+                {tools.map((item) => (
+                  <NavButton
+                    key={navItemKey(item)}
+                    item={item}
+                    collapsed={collapsed}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
           {miniApps.length > 0 && (
             <div className="imb-nav-group">
               <div className="imb-nav-section">{t("Apps")}</div>

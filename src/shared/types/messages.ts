@@ -41,6 +41,12 @@ export interface Message {
   senderEmployeeId: number | null;
   kind: MessageKind;
   content: string;
+  /**
+   * Selected text quoted into this message from the composer ("quote to
+   * chat"). Shown above the body and folded into the model prompt; `null`
+   * when the message carries no quote.
+   */
+  quotedText: string | null;
   /** Present when `kind` is `progress`. */
   steps: MessageStep[] | null;
   /** Present when the message carries attachments. */
@@ -69,6 +75,8 @@ export interface MessageSearchResult {
 /** Optional payload for `appendMessage` (all fields validated by the service). */
 export interface AppendMessageOptions {
   kind?: MessageKind;
+  /** Selected text quoted into this message (shown above the body, fed to the model). */
+  quotedText?: string;
   steps?: MessageStep[];
   attachments?: MessageAttachment[];
   /**
@@ -90,4 +98,6 @@ export interface SendChatPayload {
   chatId: number;
   content: string;
   attachments?: MessageAttachment[];
+  /** Selected text quoted into this message. */
+  quotedText?: string;
 }
