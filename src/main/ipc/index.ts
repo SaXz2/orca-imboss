@@ -15,6 +15,7 @@ import { registerTaskHandlers } from "./tasks";
 import { registerThemeHandlers } from "./theme";
 import { registerUpdaterHandlers } from "./updater";
 import { registerWindowHandlers } from "./window";
+import { registerWorkbenchHandlers } from "./workbench";
 import { registerWorkdirHandlers } from "./workdir";
 
 /** Register all renderer ↔ main IPC channels. */
@@ -37,4 +38,5 @@ export function registerIpcHandlers(): void {
   registerEmployeeHandlers();
   registerSessionHandlers();
   registerIntegrationHandlers();
+  registerWorkbenchHandlers();
 }

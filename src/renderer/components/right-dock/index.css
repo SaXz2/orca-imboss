@@ -1,0 +1,250 @@
+/* The right dock — a workbench panel beside the content. */
+
+/* Edge handle: opens the dock when it is closed. */
+.imb-dock-handle {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  z-index: 25;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 48px;
+  padding: 0;
+  border: 1px solid var(--imb-border);
+  border-right: none;
+  border-radius: var(--imb-radius-md) 0 0 var(--imb-radius-md);
+  background: var(--imb-surface);
+  color: var(--imb-muted);
+  cursor: pointer;
+  transition:
+    color var(--imb-motion-fast) var(--imb-ease-standard),
+    width var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-dock-handle:hover {
+  color: var(--imb-accent);
+  width: 30px;
+}
+
+.imb-dock-handle svg {
+  width: 15px;
+  height: 15px;
+}
+
+.imb-dock {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 360px;
+  max-width: 60vw;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--imb-surface);
+  border-left: 1px solid var(--imb-border);
+  box-shadow: -8px 0 28px rgba(0, 0, 0, 0.08);
+}
+
+.imb-dock-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 10px 8px 14px;
+  border-bottom: 1px solid var(--imb-border-soft);
+}
+
+.imb-dock-title {
+  font-size: var(--imb-text-sm);
+  font-weight: 600;
+}
+
+.imb-dock-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.imb-dock-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--imb-muted);
+  border-radius: var(--imb-radius-sm);
+  cursor: pointer;
+  transition:
+    background var(--imb-motion-fast) var(--imb-ease-standard),
+    color var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-dock-icon-btn:hover {
+  background: var(--imb-fg-soft);
+  color: var(--imb-fg);
+}
+
+.imb-dock-icon-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.imb-dock-path {
+  flex: none;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--imb-border-soft);
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  overflow: hidden;
+}
+
+.imb-dock-path-text {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  direction: rtl;
+  text-align: left;
+}
+
+.imb-dock-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  padding: 2px 6px;
+  border: none;
+  background: transparent;
+  color: var(--imb-fg);
+  font-size: var(--imb-text-xs);
+  font-weight: 600;
+  border-radius: var(--imb-radius-sm);
+  cursor: pointer;
+}
+
+.imb-dock-back:hover {
+  background: var(--imb-fg-soft);
+}
+
+.imb-dock-back svg {
+  width: 12px;
+  height: 12px;
+  flex: none;
+}
+
+.imb-dock-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.imb-dock-list {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 6px 12px;
+}
+
+.imb-dock-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  border-radius: var(--imb-radius-sm);
+  color: var(--imb-text-2);
+  font-size: var(--imb-text-sm);
+  cursor: pointer;
+  text-align: left;
+}
+
+.imb-dock-row:hover {
+  background: var(--imb-fg-soft);
+  color: var(--imb-fg);
+}
+
+.imb-dock-row-icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--imb-muted);
+}
+
+.imb-dock-row-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.imb-dock-row.imb-is-dir .imb-dock-row-icon {
+  color: var(--imb-accent);
+}
+
+.imb-dock-row.imb-is-dir .imb-dock-row-name {
+  font-weight: 550;
+}
+
+.imb-dock-row-name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.imb-dock-row-size {
+  flex: none;
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.imb-dock-up svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.imb-dock-preview {
+  padding: 10px 12px 20px;
+}
+
+.imb-dock-preview-image {
+  display: flex;
+  justify-content: center;
+  background: var(--imb-bg);
+  min-height: 100%;
+}
+
+.imb-dock-preview-image img {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  border-radius: var(--imb-radius-md);
+}
+
+.imb-dock-preview-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding-top: 40px;
+}
+
+.imb-dock-text {
+  margin: 0;
+  font-family: var(--imb-font-mono);
+  font-size: var(--imb-text-xs);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--imb-text-2);
+}
