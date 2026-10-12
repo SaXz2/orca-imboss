@@ -17,22 +17,29 @@
 .imb-titlebar-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 18px;
+  padding-right: 16px;
   -webkit-app-region: no-drag;
   app-region: no-drag;
 }
 
-/* Workbench toggle: same row and weight as the window controls. */
+/* Panel toggles: standalone icons with room around them. */
+.imb-titlebar-toggles {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .imb-titlebar-toggle {
-  width: 28px;
-  height: 20px;
+  width: 30px;
+  height: 30px;
   display: grid;
   place-items: center;
   background: transparent;
   border: 0;
   padding: 0;
   color: var(--imb-text-2);
-  border-radius: var(--imb-radius-sm);
+  border-radius: var(--imb-radius-md);
   cursor: pointer;
   transition:
     background var(--imb-motion-fast) var(--imb-ease-standard),
@@ -40,8 +47,8 @@
 }
 
 .imb-titlebar-toggle svg {
-  width: 15px;
-  height: 15px;
+  width: 17px;
+  height: 17px;
 }
 
 .imb-titlebar-toggle:hover {
@@ -54,9 +61,16 @@
   background: var(--imb-accent-soft);
 }
 
+/* Window controls ride in their own raised pill, like a floating control. */
 .imb-winbtns {
   display: flex;
   align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--imb-surface-raised);
+  border: 1px solid var(--imb-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   -webkit-app-region: no-drag;
   app-region: no-drag;
 }
@@ -64,20 +78,24 @@
 .imb-winbtn {
   -webkit-app-region: no-drag;
   app-region: no-drag;
-  width: 28px;
-  height: 20px;
+  width: 30px;
+  height: 24px;
   display: grid;
   place-items: center;
   background: transparent;
   border: 0;
   padding: 0;
   color: var(--imb-text-2);
+  border-radius: 7px;
   cursor: default;
+  transition:
+    background var(--imb-motion-fast) var(--imb-ease-standard),
+    color var(--imb-motion-fast) var(--imb-ease-standard);
 }
 
 .imb-winbtn .imb-icon {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
 }
 
 .imb-winbtn:hover {

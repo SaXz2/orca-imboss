@@ -96,7 +96,7 @@
   --imb-font-serif: "Songti SC", "Noto Serif SC", Georgia, serif;
 
   /* ── 布局尺寸 ── */
-  --imb-titlebar-h: 20px;
+  --imb-titlebar-h: 40px;
   --imb-container-max: 1200px;
   --imb-container: 1120px;
   --imb-gutter: 24px;

@@ -35,16 +35,18 @@ export function TitleBar(): React.JSX.Element {
   return (
     <header className="imb-titlebar">
       <div className="imb-titlebar-actions">
-        <button
-          type="button"
-          className="imb-titlebar-toggle"
-          aria-label={t("Workbench")}
-          aria-pressed={dockOpen}
-          title={t("Workbench")}
-          onClick={() => appStore.toggleDock()}
-        >
-          <IconFile />
-        </button>
+        <div className="imb-titlebar-toggles">
+          <button
+            type="button"
+            className="imb-titlebar-toggle"
+            aria-label={t("Workbench")}
+            aria-pressed={dockOpen}
+            title={t("Workbench")}
+            onClick={() => appStore.toggleDock()}
+          >
+            <IconFile />
+          </button>
+        </div>
         {!IS_MAC && (
         <div className="imb-winbtns">
           <WindowButton

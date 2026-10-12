@@ -2,18 +2,17 @@
 
 .imb-dock {
   position: fixed;
-  top: var(--imb-titlebar-h, 32px);
+  top: var(--imb-titlebar-h, 40px);
   right: 0;
   bottom: 0;
-  width: 360px;
-  max-width: 60vw;
+  width: 380px;
+  max-width: 62vw;
   z-index: 30;
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: var(--imb-surface);
+  background: var(--imb-bg);
   border-left: 1px solid var(--imb-border);
-  box-shadow: -8px 0 28px rgba(0, 0, 0, 0.08);
 }
 
 .imb-dock-head {
@@ -22,13 +21,16 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 10px 10px 8px 14px;
+  padding: 14px 12px 12px 18px;
+  background: var(--imb-surface);
   border-bottom: 1px solid var(--imb-border-soft);
 }
 
 .imb-dock-title {
-  font-size: var(--imb-text-sm);
-  font-weight: 600;
+  font-size: var(--imb-text-base);
+  font-weight: 650;
+  color: var(--imb-fg);
+  letter-spacing: -0.01em;
 }
 
 .imb-dock-head-actions {
@@ -41,12 +43,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   border: none;
   background: transparent;
-  color: var(--imb-muted);
-  border-radius: var(--imb-radius-sm);
+  color: var(--imb-text-2);
+  border-radius: var(--imb-radius-md);
   cursor: pointer;
   transition:
     background var(--imb-motion-fast) var(--imb-ease-standard),
@@ -59,17 +61,18 @@
 }
 
 .imb-dock-icon-btn svg {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
 }
 
 .imb-dock-path {
   flex: none;
-  padding: 6px 12px;
+  padding: 9px 18px;
   border-bottom: 1px solid var(--imb-border-soft);
-  font-size: var(--imb-text-xs);
-  color: var(--imb-muted);
+  font-size: var(--imb-text-sm);
+  color: var(--imb-text-2);
   overflow: hidden;
+  background: var(--imb-surface);
 }
 
 .imb-dock-path-text {
@@ -84,13 +87,13 @@
 .imb-dock-back {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   max-width: 100%;
-  padding: 2px 6px;
+  padding: 3px 8px;
   border: none;
   background: transparent;
   color: var(--imb-fg);
-  font-size: var(--imb-text-xs);
+  font-size: var(--imb-text-sm);
   font-weight: 600;
   border-radius: var(--imb-radius-sm);
   cursor: pointer;
@@ -101,8 +104,8 @@
 }
 
 .imb-dock-back svg {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   flex: none;
 }
 
@@ -115,39 +118,39 @@
 .imb-dock-list {
   display: flex;
   flex-direction: column;
-  padding: 4px 6px 12px;
+  padding: 8px 10px 16px;
+  gap: 1px;
 }
 
 .imb-dock-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
   min-width: 0;
-  padding: 6px 8px;
+  padding: 9px 12px;
   border: none;
   background: transparent;
-  border-radius: var(--imb-radius-sm);
-  color: var(--imb-text-2);
-  font-size: var(--imb-text-sm);
+  border-radius: var(--imb-radius-md);
+  color: var(--imb-fg);
+  font-size: var(--imb-text-base);
   cursor: pointer;
   text-align: left;
 }
 
 .imb-dock-row:hover {
   background: var(--imb-fg-soft);
-  color: var(--imb-fg);
 }
 
 .imb-dock-row-icon {
   display: inline-flex;
   flex: none;
-  color: var(--imb-muted);
+  color: var(--imb-text-2);
 }
 
 .imb-dock-row-icon svg {
-  width: 15px;
-  height: 15px;
+  width: 17px;
+  height: 17px;
 }
 
 .imb-dock-row.imb-is-dir .imb-dock-row-icon {
@@ -168,19 +171,19 @@
 
 .imb-dock-row-size {
   flex: none;
-  font-size: var(--imb-text-xs);
-  color: var(--imb-muted);
+  font-size: var(--imb-text-sm);
+  color: var(--imb-text-2);
   font-variant-numeric: tabular-nums;
 }
 
 .imb-dock-up svg {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   flex: none;
 }
 
 .imb-dock-preview {
-  padding: 10px 12px 20px;
+  padding: 14px 18px 24px;
 }
 
 .imb-dock-preview-image {
@@ -208,9 +211,9 @@
 .imb-dock-text {
   margin: 0;
   font-family: var(--imb-font-mono);
-  font-size: var(--imb-text-xs);
-  line-height: 1.6;
+  font-size: var(--imb-text-sm);
+  line-height: 1.7;
   white-space: pre-wrap;
   word-break: break-word;
-  color: var(--imb-text-2);
+  color: var(--imb-fg);
 }
