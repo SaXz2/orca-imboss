@@ -1,6 +1,6 @@
 import { SettingKeys } from "@shared/constants/settings";
 import { t } from "@shared/l10n";
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cls } from "reactutils";
 import { appStore, sessionKey, useApp, type AppModule } from "../../app-store";
 import { employeeLabel } from "../../employee-label";
@@ -104,6 +104,30 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
   const [chatDragId, setChatDragId] = useState<number | null>(null);
   const [sessionDragKey, setSessionDragKey] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<AppModule | null>(null);
+  const [brandEditing, setBrandEditing] = useState(false);
+  const [brandDraft, setBrandDraft] = useState("");
+  const brandLogoInputRef = useRef<HTMLInputElement>(null);
+
+  function beginBrandEdit(): void {
+    setBrandDraft(brandName);
+    setBrandEditing(true);
+  }
+
+  async function commitBrandEdit(): Promise<void> {
+    setBrandEditing(false);
+    const next = brandDraft.trim();
+    if (next !== brandName) await appStore.setBrand(next, brandLogo);
+  }
+
+  function onBrandLogoPicked(file: File | undefined): void {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const url = typeof reader.result === "string" ? reader.result : null;
+      void appStore.setBrand(brandName, url);
+    };
+    reader.readAsDataURL(file);
+  }
 
   const main = NAV_ITEMS.filter((i) => i.section === "main");
   const bottom = NAV_ITEMS.filter((i) => i.section === "bottom");
@@ -127,17 +151,63 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
         aria-label="Modules"
       >
         <div className="imb-nav-brand">
-          {brandLogo ? (
-            <img
-              className="imb-nav-brandlogo"
-              src={brandLogo}
-              alt=""
-              draggable={false}
+          <button
+            type="button"
+            className="imb-nav-brandavatar"
+            title={t("Change avatar")}
+            aria-label={t("Change avatar")}
+            onClick={() => brandLogoInputRef.current?.click()}
+          >
+            {brandLogo ? (
+              <img
+                className="imb-nav-brandlogo"
+                src={brandLogo}
+                alt=""
+                draggable={false}
+              />
+            ) : (
+              <BrandLogo style={{ maxWidth: "41px" }} />
+            )}
+          </button>
+          {brandEditing ? (
+            <input
+              className="imb-nav-brandinput"
+              value={brandDraft}
+              maxLength={40}
+              autoFocus
+              aria-label={t("App name")}
+              onChange={(event) => setBrandDraft(event.target.value)}
+              onBlur={() => void commitBrandEdit()}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  void commitBrandEdit();
+                } else if (event.key === "Escape") {
+                  event.preventDefault();
+                  setBrandEditing(false);
+                }
+              }}
             />
           ) : (
-            <BrandLogo style={{ maxWidth: "41px" }} />
+            <button
+              type="button"
+              className="imb-nav-brandname"
+              title={t("Click to rename")}
+              onClick={beginBrandEdit}
+            >
+              {brandName || "imboss"}
+            </button>
           )}
-          <span className="imb-nav-brandname">{brandName || "imboss"}</span>
+          <input
+            ref={brandLogoInputRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(event) => {
+              onBrandLogoPicked(event.target.files?.[0]);
+              event.target.value = "";
+            }}
+          />
         </div>
         <div className="imb-nav-items">
           {main.map((item) =>

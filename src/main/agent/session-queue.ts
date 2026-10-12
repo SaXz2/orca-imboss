@@ -4,6 +4,7 @@ import { readChatPrompt } from "@shared/constants/prompts";
 import type { ActiveLiveBlock, AgentStreamEvent } from "@shared/types";
 import type { WebContents } from "electron";
 import * as dbChats from "../db/chats";
+import { addEmployeeRuntime } from "../employee-runtime";
 import { sendToRenderer } from "../notifications";
 import { errorEvent, sendEventTo, toStreamEvent } from "./agent-events";
 import { getAgentEnvironment } from "./environment";
@@ -51,8 +52,6 @@ const states = new Map<string, QueueState>();
 
 /** Run-tracking for the employees dashboard: key → run start timestamp. */
 const activeSince = new Map<string, number>();
-/** Accumulated run time per employee (ms) since this app launch. */
-const runtimeTotals = new Map<number, number>();
 
 /** Employee ids currently running an agent turn. */
 export function getActiveEmployeeIds(): number[] {
@@ -65,11 +64,6 @@ export function getActiveSince(employeeId: number): number | null {
     if (Number(key.split("/")[0]) === employeeId) return at;
   }
   return null;
-}
-
-/** Accumulated run time (ms) per employee since launch. */
-export function getRuntimeTotals(): ReadonlyMap<number, number> {
-  return runtimeTotals;
 }
 
 /** Notify renderers that agent activity (busy/idle) changed. */
@@ -243,14 +237,11 @@ async function drain(state: QueueState): Promise<void> {
       void drain(state);
     } else {
       scheduleIdleDispose(state);
-      // The busy episode ended: accumulate its run time for the dashboard.
+      // The busy episode ended: record its run time for the dashboard (工時).
       const key = keyFor(state.employeeId, state.chatId);
       const started = activeSince.get(key);
       if (started !== undefined) {
-        runtimeTotals.set(
-          state.employeeId,
-          (runtimeTotals.get(state.employeeId) ?? 0) + (Date.now() - started),
-        );
+        addEmployeeRuntime(state.employeeId, Date.now() - started);
         activeSince.delete(key);
         notifyActivity();
       }

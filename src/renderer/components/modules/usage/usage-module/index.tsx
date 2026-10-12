@@ -168,18 +168,25 @@ function UsageRowView({
     <div className="imb-usage-row">
       <span className="imb-usage-rank">{rank}</span>
 
-      <EmployeeAvatar employeeId={row.id} size={28} />
+      <button
+        type="button"
+        className="imb-usage-person"
+        title={t("See ${name}'s tasks", { name: row.label })}
+        onClick={() => void appStore.focusEmployee(row.id)}
+      >
+        <EmployeeAvatar employeeId={row.id} size={28} />
 
-      <div className="imb-usage-id">
-        <span className="imb-usage-name" style={{ color: row.color }}>
-          {row.label}
+        <span className="imb-usage-id">
+          <span className="imb-usage-name" style={{ color: row.color }}>
+            {row.label}
+          </span>
+          <span className="imb-usage-meta">
+            {t("${count} messages", { count: String(row.messages) })}
+            {" · "}
+            {t("${count} deliverables", { count: String(row.reports) })}
+          </span>
         </span>
-        <span className="imb-usage-meta">
-          {t("${count} messages", { count: String(row.messages) })}
-          {" · "}
-          {t("${count} deliverables", { count: String(row.reports) })}
-        </span>
-      </div>
+      </button>
 
       <span className="imb-usage-states">
         <span className="imb-emp-state imb-state-done" title={t("Done")}>

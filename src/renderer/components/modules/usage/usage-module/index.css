@@ -61,11 +61,33 @@
 
 .imb-usage-row {
   display: grid;
-  grid-template-columns: 22px 28px minmax(120px, 1.6fr) auto 96px 56px;
+  grid-template-columns: 22px minmax(120px, 1.6fr) auto 96px 56px;
   align-items: center;
   gap: 12px;
   padding: 10px 6px;
   border-bottom: 1px solid var(--imb-border-soft);
+}
+
+/* The person cell is the door into what this employee actually worked on. */
+.imb-usage-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 4px 8px 4px 4px;
+  border: none;
+  background: transparent;
+  border-radius: var(--imb-radius-md);
+  cursor: pointer;
+  text-align: left;
+}
+
+.imb-usage-person:hover {
+  background: var(--imb-fg-soft);
+}
+
+.imb-usage-person:hover .imb-usage-name {
+  text-decoration: underline;
 }
 
 .imb-usage-row:last-child {
@@ -84,6 +106,7 @@
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  flex: 1;
 }
 
 .imb-usage-name {
@@ -146,7 +169,7 @@
   }
 
   .imb-usage-row {
-    grid-template-columns: 22px 28px minmax(0, 1fr) 56px;
+    grid-template-columns: 22px minmax(0, 1fr) 56px;
   }
 
   .imb-usage-states,

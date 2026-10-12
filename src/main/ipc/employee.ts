@@ -3,13 +3,13 @@ import { ipcMain } from "electron";
 import {
   disposeForEmployee,
   getActiveSince,
-  getRuntimeTotals,
 } from "../agent/session-queue";
 import { deleteAvatarFiles, saveAvatar } from "../avatars";
 import * as cron from "../cron";
 import * as dbEmployees from "../db/employees";
 import { listEmployeeMessageMetrics } from "../db/metrics";
 import { getEmployeeMemory, setEmployeeMemory } from "../employee-memory";
+import { getEmployeeRuntime } from "../employee-runtime";
 import { employeeTaskCounts } from "../task-board";
 import { listByEmployee, unlinkSessionFile } from "../db/sessions";
 import { sendToRenderer } from "../notifications";
@@ -37,7 +37,6 @@ export function registerEmployeeHandlers(): void {
     const byId = new Map(
       listEmployeeMessageMetrics().map((m) => [m.employeeId, m]),
     );
-    const totals = getRuntimeTotals();
     const taskCounts = employeeTaskCounts();
     const now = Date.now();
     return dbEmployees.listEmployees().map((employee) => {
@@ -47,7 +46,7 @@ export function registerEmployeeHandlers(): void {
         employeeId: employee.id,
         working: since !== null,
         currentRunMs: since !== null ? now - since : 0,
-        totalRunMs: totals.get(employee.id) ?? 0,
+        totalRunMs: getEmployeeRuntime(employee.id),
         messages: m?.messages ?? 0,
         reports: m?.reports ?? 0,
         lastText: m?.lastText ?? null,

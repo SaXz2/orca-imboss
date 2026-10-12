@@ -33,6 +33,50 @@
   object-fit: contain;
 }
 
+/* The brand mark and name are editable in place: click the logo to replace the
+   image, click the name to rename it. */
+.imb-nav-brandavatar {
+  display: inline-flex;
+  flex: none;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--imb-radius-md);
+}
+
+.imb-nav-brandavatar:hover {
+  opacity: 0.82;
+}
+
+button.imb-nav-brandname {
+  padding: 2px 6px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  border-radius: var(--imb-radius-sm);
+  cursor: text;
+  text-align: left;
+}
+
+button.imb-nav-brandname:hover {
+  background: var(--imb-fg-soft);
+}
+
+.imb-nav-brandinput {
+  min-width: 0;
+  width: 100%;
+  max-width: 180px;
+  padding: 2px 6px;
+  border: 1px solid var(--imb-accent);
+  border-radius: var(--imb-radius-sm);
+  background: var(--imb-surface);
+  color: var(--imb-fg);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
 .imb-scroll {
   overflow-y: scroll;
   scrollbar-width: none;
