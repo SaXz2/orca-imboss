@@ -44,6 +44,24 @@ export function removeJob(id: string): boolean {
   return dbCron.deleteJob(id);
 }
 
+/** Enable or disable a job: persist the flag, then (de)register its handle. */
+export function setJobEnabled(id: string, enabled: boolean): CronJob | null {
+  const job = dbCron.setEnabled(id, enabled);
+  if (!job) return null;
+  if (enabled) registerJob(job);
+  else stopJob(id);
+  return job;
+}
+
+/** Wake the job's employee right now, exactly as its schedule would have. */
+export function runJobNow(id: string): CronJob | null {
+  const job = dbCron.getJob(id);
+  if (!job) return null;
+  dbCron.markRun(id, Math.floor(Date.now() / 1000));
+  void wakeAgent(job.employeeId, job.chatId, job.content);
+  return dbCron.getJob(id);
+}
+
 /**
  * Stop every live Cron handle whose job belongs to one of the given chats.
  *

@@ -1,0 +1,141 @@
+/* Scheduled tasks — every timer the company runs, in one table. */
+
+.imb-scheduled-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--imb-space-3);
+}
+
+.imb-scheduled-head-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.imb-scheduled-sub {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+}
+
+.imb-scheduled-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--imb-space-3) var(--imb-space-4) var(--imb-space-4);
+}
+
+.imb-scheduled-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.imb-scheduled-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--imb-surface-raised);
+  border: 1px solid var(--imb-border-soft);
+  border-radius: var(--imb-radius-lg);
+  transition: border-color var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-scheduled-row:hover {
+  border-color: var(--imb-border);
+}
+
+.imb-scheduled-row.imb-is-paused {
+  opacity: 0.62;
+}
+
+.imb-scheduled-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.imb-scheduled-top {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.imb-scheduled-name {
+  font-size: var(--imb-text-base);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.imb-scheduled-schedule {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  font-family: var(--imb-font-mono);
+  font-size: var(--imb-text-xs);
+  color: var(--imb-text-2);
+  white-space: nowrap;
+}
+
+.imb-scheduled-schedule svg {
+  width: 12px;
+  height: 12px;
+}
+
+.imb-scheduled-state {
+  flex: none;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: var(--imb-radius-pill);
+  border: 1px solid var(--imb-border);
+  color: var(--imb-muted);
+}
+
+.imb-scheduled-state.imb-is-on {
+  color: var(--imb-accent);
+  border-color: color-mix(in oklch, var(--imb-accent) 40%, transparent);
+  background: color-mix(in oklch, var(--imb-accent) 10%, transparent);
+}
+
+.imb-scheduled-content {
+  font-size: var(--imb-text-sm);
+  line-height: 1.55;
+  color: var(--imb-fg);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.imb-scheduled-meta {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.imb-scheduled-row .imb-detail-actions {
+  flex: none;
+  opacity: 0;
+  transition: opacity var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-scheduled-row:hover .imb-detail-actions,
+.imb-scheduled-row:focus-within .imb-detail-actions {
+  opacity: 1;
+}
+
+.imb-detail-action.imb-is-danger:hover:not(:disabled) {
+  border-color: var(--imb-danger);
+  color: var(--imb-danger);
+}

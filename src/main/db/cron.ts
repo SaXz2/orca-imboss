@@ -36,6 +36,19 @@ export function listByEmployee(employeeId: number): CronJobInfo[] {
   return rows.map((row) => ({ ...toCronJob(row), chatTitle: row.chat_title }));
 }
 
+/** Every job across all employees, chat titles resolved (scheduled-tasks page). */
+export function listAll(): CronJobInfo[] {
+  const rows = getDB()
+    .prepare(
+      `SELECT cj.*, c.title AS chat_title
+         FROM cron_jobs cj
+         JOIN chats c ON c.id = cj.chat_id
+        ORDER BY cj.next_run_at IS NULL, cj.next_run_at ASC, cj.id ASC`,
+    )
+    .all() as Array<CronJobRow & { chat_title: string }>;
+  return rows.map((row) => ({ ...toCronJob(row), chatTitle: row.chat_title }));
+}
+
 export function getJob(id: string): CronJob | null {
   const row = getDB()
     .prepare(`SELECT * FROM cron_jobs WHERE id = ?`)
@@ -114,6 +127,14 @@ export function deleteJob(id: string): boolean {
   return (
     getDB().prepare("DELETE FROM cron_jobs WHERE id = ?").run(id).changes > 0
   );
+}
+
+/** Turn a job on or off; returns the updated job (null when it is gone). */
+export function setEnabled(id: string, enabled: boolean): CronJob | null {
+  const changes = getDB()
+    .prepare("UPDATE cron_jobs SET enabled = ? WHERE id = ?")
+    .run(enabled ? 1 : 0, id).changes;
+  return changes > 0 ? getJob(id) : null;
 }
 
 /** Record a run and recompute the next run time from the stored schedule. */

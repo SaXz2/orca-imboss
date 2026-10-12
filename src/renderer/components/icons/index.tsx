@@ -270,3 +270,24 @@ export function IconHelp(props: IconProps): React.JSX.Element {
     </svg>
   );
 }
+
+/** Clock — scheduled tasks. */
+export function IconClock(props: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(props)}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 1.8" />
+    </svg>
+  );
+}
+
+/** Refresh — reload data. */
+export function IconRefresh(props: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(props)}>
+      <path d="M20 12a8 8 0 1 1-2.34-5.66" />
+      <path d="M20 4.5V9h-4.5" />
+    </svg>
+  );
+}
+
