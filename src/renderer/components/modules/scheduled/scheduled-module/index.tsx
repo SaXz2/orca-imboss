@@ -7,8 +7,9 @@ import { appStore, useApp } from "../../../../app-store";
 import { employeeLabel } from "../../../../employee-label";
 import { ModuleView } from "../../../app-shell";
 import { EmployeeAvatar } from "../../../employee-avatar";
-import { IconCheck, IconClock, IconRefresh, IconTrash } from "../../../icons";
+import { IconCheck, IconClock, IconPencil, IconRefresh, IconTrash } from "../../../icons";
 import { formatMessageTime } from "../../chat/relative-time";
+import { JobEditor } from "./job-editor";
 import "./index.css";
 
 /**
@@ -23,6 +24,7 @@ export function ScheduledModule(): React.JSX.Element {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<CronJobInfo | null>(null);
 
   const load = useCallback(async (): Promise<void> => {
     try {
@@ -152,6 +154,15 @@ export function ScheduledModule(): React.JSX.Element {
                       type="button"
                       className="imb-detail-action"
                       disabled={busyId !== null}
+                      onClick={() => setEditing(job)}
+                    >
+                      <IconPencil />
+                      {t("Edit")}
+                    </button>
+                    <button
+                      type="button"
+                      className="imb-detail-action"
+                      disabled={busyId !== null}
                       title={t("Open the session that runs this")}
                       onClick={() =>
                         void appStore.openAgentSession(
@@ -211,5 +222,15 @@ export function ScheduledModule(): React.JSX.Element {
     </>
   );
 
-  return <ModuleView content={content} />;
+  return (
+    <>
+      <ModuleView content={content} />
+      <JobEditor
+        open={editing !== null}
+        job={editing}
+        onClose={() => setEditing(null)}
+        onSaved={() => void load()}
+      />
+    </>
+  );
 }
