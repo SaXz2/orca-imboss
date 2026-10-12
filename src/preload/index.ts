@@ -187,6 +187,9 @@ const api = {
       ipcRenderer.invoke("cron:setEnabled", id, enabled) as Promise<
         CronJob | null
       >,
+    /** Edit a job's schedule and/or content. */
+    update: (id: string, patch: { schedule?: string; content?: string }) =>
+      ipcRenderer.invoke("cron:update", id, patch) as Promise<CronJob | null>,
     /** Fire a job immediately. */
     runNow: (id: string) =>
       ipcRenderer.invoke("cron:runNow", id) as Promise<CronJob | null>,
