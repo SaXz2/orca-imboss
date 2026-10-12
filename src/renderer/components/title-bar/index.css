@@ -112,3 +112,97 @@
   background: var(--imb-danger);
   color: #fff;
 }
+
+/* Theme quick switch popover anchored under its title-bar button. */
+.imb-theme-quick {
+  position: relative;
+  display: flex;
+}
+
+.imb-theme-quick-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  min-width: 208px;
+  background: var(--imb-surface-raised, var(--imb-surface));
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-lg);
+  box-shadow: var(--imb-elev-3);
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  transform-origin: top right;
+  animation: imb-popout var(--imb-duration-fast) var(--imb-ease-out);
+}
+
+.imb-theme-quick-modes {
+  display: flex;
+  gap: 4px;
+  padding: 2px;
+  border-radius: var(--imb-radius-md);
+  background: var(--imb-bg);
+}
+
+.imb-theme-quick-mode {
+  flex: 1;
+  padding: 5px 0;
+  border: none;
+  border-radius: var(--imb-radius-sm);
+  background: transparent;
+  color: var(--imb-muted);
+  font-size: var(--imb-text-sm);
+  cursor: pointer;
+  transition:
+    background var(--imb-duration-fast) var(--imb-ease-standard),
+    color var(--imb-duration-fast) var(--imb-ease-standard);
+}
+
+.imb-theme-quick-mode:hover {
+  color: var(--imb-fg);
+}
+
+.imb-theme-quick-mode.imb-is-active {
+  background: var(--imb-accent);
+  color: var(--imb-accent-on);
+}
+
+.imb-theme-quick-palettes {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.imb-theme-quick-swatch {
+  position: relative;
+  height: 26px;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: var(--imb-radius-sm);
+  cursor: pointer;
+  transition:
+    transform var(--imb-duration-fast) var(--imb-ease-standard),
+    box-shadow var(--imb-duration-fast) var(--imb-ease-standard);
+}
+
+.imb-theme-quick-swatch:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--imb-elev-1);
+}
+
+.imb-theme-quick-swatch.imb-is-active {
+  box-shadow: 0 0 0 2px var(--imb-accent);
+}
+
+.imb-theme-quick-swatch-dot {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}

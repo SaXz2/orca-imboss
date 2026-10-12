@@ -1,7 +1,11 @@
 import { t } from "@shared/l10n";
-import { useEffect, useState } from "react";
+import type { ThemeMode } from "@shared/types";
+import { useEffect, useRef, useState } from "react";
 import { cls } from "reactutils";
 import { appStore, IS_MAC, useApp } from "../../app-store";
+import { useClickOutside } from "../../hooks/use-click-outside";
+import { useEscapeKey } from "../../hooks/use-escape-key";
+import { setTheme, THEME_PALETTES } from "../../theme";
 import { IconBack, IconForward } from "../icons";
 import "./index.css";
 
@@ -59,6 +63,7 @@ export function TitleBar(): React.JSX.Element {
           >
             <IconForward />
           </button>
+          <ThemeQuickSwitch />
         </div>
         {!IS_MAC && (
         <div className="imb-winbtns">
@@ -148,5 +153,87 @@ function WindowButton({
     >
       {children}
     </button>
+  );
+}
+
+const THEME_MODES: Array<{ value: ThemeMode; label: string }> = [
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+  { value: "system", label: "System" },
+];
+
+/** Title-bar theme shortcut: palette swatches plus a light/dark/system switch. */
+function ThemeQuickSwitch(): React.JSX.Element {
+  const { theme } = useApp();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useClickOutside([ref], () => setOpen(false), open);
+  useEscapeKey(() => setOpen(false), open);
+
+  return (
+    <div className="imb-theme-quick" ref={ref}>
+      <button
+        type="button"
+        className="imb-titlebar-toggle"
+        aria-label={t("Theme")}
+        title={t("Theme")}
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <svg className="imb-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="8.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          />
+          <path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" />
+        </svg>
+      </button>
+      {open && (
+        <div className="imb-theme-quick-panel" role="menu">
+          <div className="imb-theme-quick-modes">
+            {THEME_MODES.map((mode) => (
+              <button
+                key={mode.value}
+                type="button"
+                className={cls(
+                  "imb-theme-quick-mode",
+                  theme.mode === mode.value && "imb-is-active",
+                )}
+                onClick={() => void setTheme({ mode: mode.value })}
+              >
+                {t(mode.label)}
+              </button>
+            ))}
+          </div>
+          <div className="imb-theme-quick-palettes">
+            {THEME_PALETTES.map((palette) => (
+              <button
+                key={palette.id}
+                type="button"
+                className={cls(
+                  "imb-theme-quick-swatch",
+                  theme.theme === palette.id && "imb-is-active",
+                )}
+                title={t(`theme.${palette.id}`)}
+                aria-label={t(`theme.${palette.id}`)}
+                style={{ background: palette.swatch[0] }}
+                onClick={() =>
+                  void setTheme({ theme: palette.id, color: palette.accent })
+                }
+              >
+                <span
+                  className="imb-theme-quick-swatch-dot"
+                  style={{ background: palette.accent }}
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
