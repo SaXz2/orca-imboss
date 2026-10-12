@@ -1,4 +1,5 @@
 import { employeeColor } from "@shared/constants/employee-colors";
+import { describeSchedule } from "@shared/cron-describe";
 import { getLocale, t } from "@shared/l10n";
 import type { CronJobInfo } from "@shared/types";
 import { useCallback, useEffect, useState } from "react";
@@ -115,9 +116,12 @@ export function ScheduledModule(): React.JSX.Element {
                       >
                         {label}
                       </span>
-                      <span className="imb-scheduled-schedule">
+                      <span
+                        className="imb-scheduled-schedule"
+                        title={job.schedule}
+                      >
                         <IconClock />
-                        {job.schedule}
+                        {describeSchedule(job.schedule)}
                       </span>
                       <span
                         className={cls(
