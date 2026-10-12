@@ -242,6 +242,17 @@ export function ChatInputBar({
     setPopupOpen(false);
   };
 
+  // Pasting files (e.g. a screenshot) attaches them; plain text paste falls
+  // through to the browser default.
+  const onPasteAttachments = (
+    event: React.ClipboardEvent<HTMLDivElement>,
+  ): void => {
+    const files = Array.from(event.clipboardData?.files ?? []);
+    if (files.length === 0) return;
+    event.preventDefault();
+    addFiles(files);
+  };
+
   // Folders cannot be attached, and a `File` alone cannot be told apart from an
   // empty file; Chromium's entry API distinguishes them synchronously (no IPC).
   const addDropped = (dataTransfer: DataTransfer): void => {
@@ -394,6 +405,20 @@ export function ChatInputBar({
     }, 0);
   };
 
+  // Toolbar shortcut: drop an "@" at the caret and open the mention popup.
+  const triggerMention = (): void => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const pos = textarea.selectionStart ?? textarea.value.length;
+    const next =
+      textarea.value.slice(0, pos) + "@" + textarea.value.slice(pos);
+    const caret = pos + 1;
+    textarea.value = next;
+    textarea.focus();
+    textarea.setSelectionRange(caret, caret);
+    syncDraftText(next, caret);
+  };
+
   return (
     <div
       className={cls("imb-chat-input-wrap", dropActive && "imb-drop-active")}
@@ -405,7 +430,7 @@ export function ChatInputBar({
       {dropActive && (
         <div className="imb-drop-hint">{t("Drop files to attach")}</div>
       )}
-      <div className="imb-chat-input-card">
+      <div className="imb-chat-input-card" onPaste={onPasteAttachments}>
         {quotes.length > 0 && (
           <div className="imb-quote-chips">
             {quotes.map((quote, index) => (
@@ -479,7 +504,8 @@ export function ChatInputBar({
           onKeyDown={onKeyDown}
         />
         <div className="imb-chat-input-actions">
-          <div className="imb-attach-anchor" ref={popupRef}>
+          <div className="imb-input-tools">
+            <div className="imb-attach-anchor" ref={popupRef}>
             <button
               type="button"
               className="imb-attach-btn"
@@ -541,6 +567,16 @@ export function ChatInputBar({
                 </div>,
                 document.body,
               )}
+            </div>
+            <button
+              type="button"
+              className="imb-attach-btn"
+              aria-label={t("Mention")}
+              title={t("Mention")}
+              onClick={triggerMention}
+            >
+              <span className="imb-mention-glyph">@</span>
+            </button>
           </div>
           <button
             type="button"

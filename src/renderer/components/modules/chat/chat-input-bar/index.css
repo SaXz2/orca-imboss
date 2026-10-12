@@ -186,6 +186,19 @@
   padding: 6px 10px 8px;
 }
 
+/* Left tool group (attach + mention) sits together; send stays far right. */
+.imb-input-tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.imb-mention-glyph {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1;
+}
+
 .imb-attach-btn {
   width: 32px;
   height: 32px;
