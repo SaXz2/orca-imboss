@@ -10,7 +10,7 @@ import type {
   PageResult,
 } from "@shared/types";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { appStore, useApp } from "../../../../app-store";
+import { appStore, IS_MAC, useApp } from "../../../../app-store";
 import { useInfiniteList } from "../../../../hooks/use-infinite-list";
 import { useMultiSelect } from "../../../../hooks/use-multi-select";
 import { ModuleView } from "../../../app-shell";
@@ -620,6 +620,24 @@ export function ChatModule(): React.JSX.Element {
     setThreadMatchIndex(0);
   }, []);
 
+  // Cmd/Ctrl+K focuses the chat search (the same muscle memory as most apps).
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "k") {
+        return;
+      }
+      const input = document.querySelector<HTMLInputElement>(
+        ".imb-searchbox input",
+      );
+      if (!input) return;
+      event.preventDefault();
+      input.focus();
+      input.select();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   // Auto-scroll to the newest message, but only while the user is pinned to
   // the bottom. Runs before paint (useLayoutEffect) so a chat switch never
   // shows a frame parked at the previous chat's scroll offset before snapping
@@ -865,6 +883,7 @@ export function ChatModule(): React.JSX.Element {
           value={query}
           onValueChange={setQuery}
           placeholder={t("Search chats")}
+          hint={IS_MAC ? "⌘K" : "Ctrl+K"}
         />
       }
       footer={
