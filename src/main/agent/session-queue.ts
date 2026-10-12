@@ -66,6 +66,22 @@ export function getActiveSince(employeeId: number): number | null {
   return null;
 }
 
+/**
+ * Chats in which this employee currently has a run in flight.
+ *
+ * `activeSince` is keyed per `(employee, chat)`, so "is this employee busy?" is
+ * a different question from "is this employee busy *on this task*?" — an
+ * employee working in another chat must not make this task look active.
+ */
+export function getActiveChatIds(employeeId: number): Set<number> {
+  const chats = new Set<number>();
+  for (const key of activeSince.keys()) {
+    const [employee, chat] = key.split("/");
+    if (Number(employee) === employeeId) chats.add(Number(chat));
+  }
+  return chats;
+}
+
 /** Notify renderers that agent activity (busy/idle) changed. */
 function notifyActivity(): void {
   try {

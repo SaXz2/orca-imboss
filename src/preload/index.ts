@@ -43,6 +43,8 @@ import type {
   TaskThread,
   ThemeState,
   UpdaterState,
+  WorkbenchFile,
+  WorkbenchListing,
   WorkDirState,
 } from "@shared/types";
 import { contextBridge, ipcRenderer, webUtils } from "electron";
@@ -364,18 +366,13 @@ const api = {
       ipcRenderer.invoke("tasks:close", id, reason) as Promise<Task | null>,
     reopen: (id: number) =>
       ipcRenderer.invoke("tasks:reopen", id) as Promise<Task | null>,
-    reopenProgress: (chatId: number, title: string) =>
-      ipcRenderer.invoke("tasks:reopenProgress", chatId, title) as Promise<
+    reopenProgress: (progressKey: string) =>
+      ipcRenderer.invoke("tasks:reopenProgress", progressKey) as Promise<
         Task | null
       >,
     archives: () =>
       ipcRenderer.invoke("tasks:archives") as Promise<ArchivedTask[]>,
-    archive: (entry: {
-      key: string;
-      title: string;
-      chatId: number | null;
-      workChatId: number | null;
-    }) =>
+    archive: (entry: Omit<ArchivedTask, "archivedAt">) =>
       ipcRenderer.invoke("tasks:archive", entry) as Promise<ArchivedTask[]>,
     unarchive: (key: string) =>
       ipcRenderer.invoke("tasks:unarchive", key) as Promise<ArchivedTask[]>,
@@ -471,6 +468,14 @@ const api = {
     /** Ensure the app's server is running and reachable, then return it. */
     open: (id: string) =>
       ipcRenderer.invoke("miniapps:open", id) as Promise<MiniApp>,
+  },
+
+  workbench: {
+    root: () => ipcRenderer.invoke("workbench:root") as Promise<string>,
+    list: (path: string) =>
+      ipcRenderer.invoke("workbench:list", path) as Promise<WorkbenchListing>,
+    read: (path: string) =>
+      ipcRenderer.invoke("workbench:read", path) as Promise<WorkbenchFile>,
   },
 };
 

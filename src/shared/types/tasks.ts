@@ -114,6 +114,11 @@ export interface ArchivedTask {
   chatId: number | null;
   /** The task's working group chat. */
   workChatId: number | null;
+  /**
+   * Stable task identity the card was promoted under, so restoring can reopen
+   * the same task (`group:<chatId>` or `<chatId>:<title>`).
+   */
+  progressKey: string | null;
   /** Epoch milliseconds the task was archived. */
   archivedAt: number;
 }

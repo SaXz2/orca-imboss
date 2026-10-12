@@ -146,6 +146,7 @@ export function TasksModule(): React.JSX.Element {
         title: card.title,
         chatId: card.chatId,
         workChatId: card.workChatId,
+        progressKey: card.progressKey,
       });
       setArchived(list);
       setProgressCard(null);
@@ -159,8 +160,8 @@ export function TasksModule(): React.JSX.Element {
     try {
       setArchived(await imb.tasks.unarchive(entry.key));
       // A card that was closed to dismiss it comes back to the board too.
-      if (entry.chatId !== null) {
-        await imb.tasks.reopenProgress(entry.chatId, entry.title);
+      if (entry.progressKey !== null) {
+        await imb.tasks.reopenProgress(entry.progressKey);
       }
       await reload();
     } catch (err) {

@@ -5,7 +5,7 @@ import {
   type MessageStep,
   type TaskStatus,
 } from "@shared/types";
-import { getActiveSince } from "./agent/session-queue";
+import { getActiveChatIds } from "./agent/session-queue";
 import { getDB } from "./db";
 import * as dbEmployees from "./db/employees";
 import { parseJsonObject } from "./db/json";
@@ -114,15 +114,35 @@ export function listBoardCards(): BoardCard[] {
   const archived = new Set(listArchivedTasks().map((entry) => entry.key));
   const seen = new Set<string>();
 
+  // Employee id → the chats they are running in right now (built lazily; a
+  // board listing touches only the assignees that actually appear).
+  const activeChats = new Map<number, Set<number>>();
+  const chatsOf = (employeeId: number): Set<number> => {
+    let chats = activeChats.get(employeeId);
+    if (!chats) {
+      chats = getActiveChatIds(employeeId);
+      activeChats.set(employeeId, chats);
+    }
+    return chats;
+  };
+
   for (const row of rows) {
     const steps = parseSteps(row.steps);
     const title = (row.content ?? "").trim();
     if (title.length === 0 && steps.length === 0) continue;
 
+    // The chat the task's people actually work in — created once per task, so
+    // it is a stable identity even though the assistant re-posts the card with
+    // a slightly different title ("… · 进度" → "… · 已完成").
+    const workChatId = taskGroupChatId(row.chat_id, row.id) ?? row.chat_id;
+    const progressKey =
+      workChatId !== row.chat_id
+        ? `group:${workChatId}`
+        : `${row.chat_id}:${title}`;
+
     // Newest card wins for a given task in a given conversation.
-    const groupKey = `${row.chat_id}\u0000${title}`;
-    if (seen.has(groupKey)) continue;
-    seen.add(groupKey);
+    if (seen.has(progressKey)) continue;
+    seen.add(progressKey);
 
     // Archived tasks are hidden from the board (they live in the archive view).
     if (archived.has(`progress:${row.id}`)) continue;
@@ -146,24 +166,27 @@ export function listBoardCards(): BoardCard[] {
           .filter((id): id is number => typeof id === "number"),
       ),
     ];
-    const live = owned.some(
-      (step) =>
-        step.employeeId !== undefined &&
-        getActiveSince(step.employeeId) !== null,
-    );
 
     // Every card owns a real task, materialised here, so it can carry a thread
     // (discussion, feedback, references, close) without the view having to
-    // create one first. The key is stable across the assistant's re-posts.
-    const progressKey = `${row.chat_id}:${title}`;
+    // create one first.
     const flow = owned.map((step) => step.name).join(" → ");
-    const derived = live ? "running" : statusFromSteps(owned);
-    const workChatId = taskGroupChatId(row.chat_id, row.id) ?? row.chat_id;
+    const derived = statusFromSteps(owned);
+    // Live only upgrades work that is not already finished, and only when the
+    // activity is in *this* task's chats — someone busy elsewhere must not drag
+    // a finished card back to "in progress".
+    const activeHere =
+      derived !== "done" &&
+      owned.some((step) => {
+        if (step.employeeId === undefined) return false;
+        const chats = chatsOf(step.employeeId);
+        return chats.has(workChatId) || chats.has(row.chat_id);
+      });
     const task = ensureProgressTask({
       progressKey,
       title: title || t("Untitled"),
       flow,
-      status: derived,
+      status: activeHere ? "running" : derived,
       assignees,
       workChatId,
     });
@@ -177,7 +200,7 @@ export function listBoardCards(): BoardCard[] {
       detail: task.detail,
       category: task.category,
       flow: task.flow || flow,
-      status: closed ? "closed" : derived,
+      status: closed ? "closed" : activeHere ? "running" : derived,
       closeReason: closed ? task.closeReason : null,
       assignees,
       updatedAt: row.created_at,

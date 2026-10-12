@@ -104,13 +104,8 @@ export function registerTaskHandlers(): void {
   );
 
   // Restoring a closed card: reopen the promoted task it belonged to.
-  ipcMain.handle(
-    "tasks:reopenProgress",
-    (_event, chatId: unknown, title: unknown) =>
-      dbTasks.reopenProgressTask(
-        assertInteger(chatId, "chat id"),
-        assertString(title, "title"),
-      ),
+  ipcMain.handle("tasks:reopenProgress", (_event, progressKey: unknown) =>
+    dbTasks.reopenProgressTask(assertString(progressKey, "progress key")),
   );
 
   ipcMain.handle(
@@ -147,6 +142,8 @@ export function registerTaskHandlers(): void {
       chatId: typeof record.chatId === "number" ? record.chatId : null,
       workChatId:
         typeof record.workChatId === "number" ? record.workChatId : null,
+      progressKey:
+        typeof record.progressKey === "string" ? record.progressKey : null,
       archivedAt: Date.now(),
     });
   });
