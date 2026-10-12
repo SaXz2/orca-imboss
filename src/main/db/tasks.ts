@@ -77,14 +77,6 @@ export function listManualTasks(): Task[] {
   ).map(toTask);
 }
 
-/** Promoted-task id per `progress_key`, for wiring board cards to their thread. */
-export function progressTaskIds(): Map<string, number> {
-  const rows = getDB()
-    .prepare("SELECT id, progress_key FROM tasks WHERE progress_key IS NOT NULL")
-    .all() as Array<{ id: number; progress_key: string }>;
-  return new Map(rows.map((row) => [row.progress_key, row.id]));
-}
-
 /**
  * Promote a progress-derived board card into a real task, so it can carry a
  * thread. Idempotent on `progressKey`; the task's fields track the latest card
@@ -101,17 +93,20 @@ export function ensureProgressTask(input: {
   if (key.length === 0) throw new Error("A progress key is required.");
   const db = getDB();
   const existing = db
-    .prepare("SELECT id FROM tasks WHERE progress_key = ?")
-    .get(key) as { id: number } | undefined;
+    .prepare("SELECT id, status FROM tasks WHERE progress_key = ?")
+    .get(key) as { id: number; status: string } | undefined;
   const status = isStatus(input.status) ? input.status : "done";
   if (existing) {
+    // A closed card stays closed: its board column is the user's decision, not
+    // something the next progress re-post should undo.
+    const nextStatus = existing.status === "closed" ? "closed" : status;
     db.prepare(
       "UPDATE tasks SET title = ?, flow = ?, status = ?, assignees = ?, " +
         "updated_at = CAST(strftime('%s', 'now') AS INTEGER) WHERE id = ?",
     ).run(
       cleanText(input.title, MAX_TITLE) || "—",
       cleanText(input.flow, MAX_FLOW),
-      status,
+      nextStatus,
       stringifyArray(cleanAssignees(input.assignees)),
       existing.id,
     );

@@ -4,8 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { cls } from "reactutils";
 import { appStore, useApp } from "../../../../app-store";
 import { ModuleView } from "../../../app-shell";
-import { Button } from "../../../button";
-import { IconArchive, IconPlus } from "../../../icons";
+import { IconArchive } from "../../../icons";
 import { TaskArchiveList } from "./archive-list";
 import { TaskCard } from "./task-card";
 import { TaskDetail } from "./task-detail";
@@ -30,7 +29,6 @@ export function TasksModule(): React.JSX.Element {
   const [overStatus, setOverStatus] = useState<TaskStatus | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<EditableTask | null>(null);
-  const [createStatus, setCreateStatus] = useState<TaskStatus>("pending");
   const [detailId, setDetailId] = useState<number | null>(null);
   const [progressCard, setProgressCard] = useState<BoardCard | null>(null);
   const [archived, setArchived] = useState<ArchivedTask[]>([]);
@@ -100,14 +98,7 @@ export function TasksModule(): React.JSX.Element {
     return map;
   }, [visible]);
 
-  const openCreate = (status: TaskStatus): void => {
-    setEditing(null);
-    setCreateStatus(status);
-    setEditorOpen(true);
-  };
-
   const openEdit = (card: BoardCard): void => {
-    if (card.source !== "task") return;
     setEditing(editableFromCard(card));
     setEditorOpen(true);
   };
@@ -227,10 +218,6 @@ export function TasksModule(): React.JSX.Element {
                 <span className="imb-task-archive-n">{archived.length}</span>
               )}
             </button>
-            <Button onClick={() => openCreate("pending")}>
-              <IconPlus className="imb-icon imb-sm" />
-              {t("New task")}
-            </Button>
           </div>
         </div>
 
@@ -300,15 +287,6 @@ export function TasksModule(): React.JSX.Element {
                 <span className="imb-col-count">
                   {byStatus[column.status].length}
                 </span>
-                <button
-                  type="button"
-                  className="imb-col-add"
-                  title={t("New task")}
-                  aria-label={t("New task")}
-                  onClick={() => openCreate(column.status)}
-                >
-                  <IconPlus className="imb-icon imb-xs" />
-                </button>
               </div>
               <div className="imb-board-col-body">
                 {byStatus[column.status].map((card) => (
@@ -351,7 +329,6 @@ export function TasksModule(): React.JSX.Element {
       <TaskEditor
         open={editorOpen}
         task={editing}
-        initialStatus={createStatus}
         onClose={() => {
           setEditorOpen(false);
           setEditing(null);
@@ -366,7 +343,7 @@ export function TasksModule(): React.JSX.Element {
 /** The editable subset the editor works on, taken from a board card. */
 function editableFromCard(card: BoardCard): EditableTask {
   return {
-    id: card.refId,
+    id: card.threadId ?? card.refId,
     title: card.title,
     detail: card.detail,
     category: card.category,

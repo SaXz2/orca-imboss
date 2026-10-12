@@ -30,18 +30,16 @@ const EDITOR_STATUSES: Array<{ status: TaskStatus; labelKey: string }> = [
   { status: "done", labelKey: "Done" },
 ];
 
-/** Create / edit a task's own fields (the timeline lives in the detail view). */
+/** Edit a task's own fields (the thread lives in the detail / steps view). */
 export function TaskEditor({
   open,
   task,
-  initialStatus,
   onClose,
   onSave,
   onDelete,
 }: {
   open: boolean;
   task: EditableTask | null;
-  initialStatus: TaskStatus;
   onClose: () => void;
   onSave: (input: TaskInput) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
@@ -59,18 +57,17 @@ export function TaskEditor({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!open) return;
-    setTitle(task?.title ?? "");
-    setDetail(task?.detail ?? "");
-    setCategory(task?.category ?? "");
-    setFlow(task?.flow ?? "");
-    const initial = task?.status ?? initialStatus;
-    setStatus(initial === "closed" ? "pending" : initial);
-    setAssignees(task ? [...task.assignees] : []);
+    if (!open || task === null) return;
+    setTitle(task.title);
+    setDetail(task.detail);
+    setCategory(task.category);
+    setFlow(task.flow);
+    setStatus(task.status === "closed" ? "pending" : task.status);
+    setAssignees([...task.assignees]);
     setError(null);
-  }, [open, task, initialStatus]);
+  }, [open, task]);
 
-  if (!open) return null;
+  if (!open || task === null) return null;
 
   const toggleAssignee = (id: number): void => {
     setAssignees((prev) =>
@@ -106,20 +103,18 @@ export function TaskEditor({
       open={open}
       onClose={onClose}
       size="lg"
-      title={task ? t("Edit task") : t("New task")}
+      title={t("Edit task")}
       sub={t("Group, assign and set the flow of a task.")}
       error={error}
       actions={
         <>
-          {task && (
-            <Button
-              variant="danger"
-              onClick={() => void onDelete(task.id)}
-              disabled={saving}
-            >
-              {t("Delete")}
-            </Button>
-          )}
+          <Button
+            variant="danger"
+            onClick={() => void onDelete(task.id)}
+            disabled={saving}
+          >
+            {t("Delete")}
+          </Button>
           <Button variant="secondary" onClick={onClose} disabled={saving}>
             {t("Cancel")}
           </Button>

@@ -10,7 +10,7 @@ import { getDB } from "./db";
 import * as dbEmployees from "./db/employees";
 import { parseJsonObject } from "./db/json";
 import { authoredCounts, reactionsFor } from "./db/task-thread";
-import { listManualTasks, progressTaskIds } from "./db/tasks";
+import { ensureProgressTask, listManualTasks } from "./db/tasks";
 import { listArchivedTasks } from "./task-archive";
 
 /**
@@ -71,7 +71,6 @@ export function listBoardCards(): BoardCard[] {
   const cards: BoardCard[] = [];
 
   const tasks = listManualTasks();
-  const promoted = progressTaskIds();
 
   for (const task of tasks) {
     cards.push({
@@ -153,16 +152,31 @@ export function listBoardCards(): BoardCard[] {
         getActiveSince(step.employeeId) !== null,
     );
 
+    // Every card owns a real task, materialised here, so it can carry a thread
+    // (discussion, feedback, references, close) without the view having to
+    // create one first. The key is stable across the assistant's re-posts.
+    const progressKey = `${row.chat_id}:${title}`;
+    const flow = owned.map((step) => step.name).join(" → ");
+    const derived = live ? "running" : statusFromSteps(owned);
+    const task = ensureProgressTask({
+      progressKey,
+      title: title || t("Untitled"),
+      flow,
+      status: derived,
+      assignees,
+    });
+    const closed = task.status === "closed";
+
     cards.push({
       key: `progress:${row.id}`,
       source: "progress",
       refId: row.id,
       title: title || t("Untitled"),
-      detail: "",
-      category: "",
-      flow: owned.map((step) => step.name).join(" → "),
-      status: live ? "running" : statusFromSteps(owned),
-      closeReason: null,
+      detail: task.detail,
+      category: task.category,
+      flow: task.flow || flow,
+      status: closed ? "closed" : derived,
+      closeReason: closed ? task.closeReason : null,
       assignees,
       updatedAt: row.created_at,
       steps: owned,
@@ -170,9 +184,8 @@ export function listBoardCards(): BoardCard[] {
       workChatId: taskGroupChatId(row.chat_id, row.id) ?? row.chat_id,
       commentCount: 0,
       reactions: { ...EMPTY_REACTIONS },
-      // Stable across re-posts: the board already groups by (chat, title).
-      progressKey: `${row.chat_id}:${title}`,
-      threadId: promoted.get(`${row.chat_id}:${title}`) ?? null,
+      progressKey,
+      threadId: task.id,
     });
   }
 

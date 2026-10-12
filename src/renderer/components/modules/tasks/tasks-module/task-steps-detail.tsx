@@ -1,13 +1,28 @@
 import { employeeColor } from "@shared/constants/employee-colors";
 import { t } from "@shared/l10n";
-import type { BoardCard, MessageStep, StepStatus } from "@shared/types";
-import { useEffect, useState } from "react";
+import {
+  TASK_CLOSE_REASONS,
+  type BoardCard,
+  type MessageStep,
+  type StepStatus,
+  type TaskCloseReason,
+} from "@shared/types";
+import { useState } from "react";
 import { cls } from "reactutils";
 import { appStore } from "../../../../app-store";
 import { employeeLabel } from "../../../../employee-label";
+import { Button } from "../../../button";
 import { EmployeeAvatar } from "../../../employee-avatar";
-import { IconArchive, IconBack, IconChat, IconEmployees } from "../../../icons";
-import { COLUMNS } from "./task-meta";
+import {
+  IconArchive,
+  IconBack,
+  IconChat,
+  IconClosed,
+  IconEmployees,
+  IconReopen,
+} from "../../../icons";
+import { Modal } from "../../../modal";
+import { CLOSE_REASON_KEYS, COLUMNS } from "./task-meta";
 import { TaskThreadPanel } from "./task-thread-panel";
 
 /** Translation key per step status; rendered through `t()` for locale switches. */
@@ -45,7 +60,11 @@ export function TaskStepsDetail({
   onOpenTask: (id: number) => void;
 }): React.JSX.Element {
   const [busy, setBusy] = useState(false);
-  const [threadId, setThreadId] = useState<number | null>(card.threadId);
+  const [closeOpen, setCloseOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  // Every board card owns a task (materialised when the board is listed).
+  const threadId = card.threadId;
+  const closed = card.status === "closed";
   const statusLabel =
     COLUMNS.find((column) => column.status === card.status)?.labelKey ??
     "Pending";
@@ -59,35 +78,6 @@ export function TaskStepsDetail({
     if (chatId === null) return;
     void appStore.openAgentSession(employeeId, chatId);
   };
-
-  // A progress card carries no task of its own; promote it once so the thread
-  // (discussion, feedback, references) has something to attach to.
-  useEffect(() => {
-    if (card.threadId !== null) {
-      setThreadId(card.threadId);
-      return;
-    }
-    const progressKey = card.progressKey;
-    if (progressKey === null) return;
-    let cancelled = false;
-    void (async () => {
-      try {
-        const task = await imb.tasks.promote({
-          progressKey,
-          title: card.title,
-          flow: card.flow,
-          status: card.status,
-          assignees: card.assignees,
-        });
-        if (!cancelled) setThreadId(task.id);
-      } catch {
-        // Leave the thread unavailable; the steps still render.
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [card.threadId, card.progressKey, card.title, card.flow, card.status, card.assignees]);
 
   /**
    * Open the task's conversation the way the chat list does: select it in the
@@ -108,6 +98,27 @@ export function TaskStepsDetail({
       if (summary) appStore.openChat(summary);
     } finally {
       setBusy(false);
+    }
+  };
+
+  const closeTask = async (reason: TaskCloseReason): Promise<void> => {
+    if (threadId === null) return;
+    try {
+      setCloseOpen(false);
+      await imb.tasks.close(threadId, reason);
+      await onChanged();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const reopen = async (): Promise<void> => {
+    if (threadId === null) return;
+    try {
+      await imb.tasks.reopen(threadId);
+      await onChanged();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     }
   };
 
@@ -141,6 +152,26 @@ export function TaskStepsDetail({
               {t("Open task group")}
             </button>
           )}
+          {threadId !== null &&
+            (closed ? (
+              <button
+                type="button"
+                className="imb-detail-action"
+                onClick={() => void reopen()}
+              >
+                <IconReopen />
+                {t("Reopen")}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="imb-detail-action"
+                onClick={() => setCloseOpen(true)}
+              >
+                <IconClosed />
+                {t("Close task")}
+              </button>
+            ))}
           <button
             type="button"
             className="imb-detail-action"
@@ -194,8 +225,34 @@ export function TaskStepsDetail({
               onOpenTask={onOpenTask}
             />
           )}
+
+          {error !== null && <p className="imb-error-text">{error}</p>}
         </div>
       </div>
+
+      <Modal
+        open={closeOpen}
+        onClose={() => setCloseOpen(false)}
+        title={t("Close task")}
+        actions={
+          <Button variant="secondary" onClick={() => setCloseOpen(false)}>
+            {t("Cancel")}
+          </Button>
+        }
+      >
+        <div className="imb-task-close-reasons">
+          {TASK_CLOSE_REASONS.map((reason) => (
+            <button
+              key={reason}
+              type="button"
+              className="imb-task-close-reason"
+              onClick={() => void closeTask(reason)}
+            >
+              {t(CLOSE_REASON_KEYS[reason])}
+            </button>
+          ))}
+        </div>
+      </Modal>
     </div>
   );
 }
