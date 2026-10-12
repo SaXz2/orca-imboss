@@ -18,15 +18,18 @@ body {
   background: var(--imb-bg);
   color: var(--imb-fg);
   font-family: var(--imb-font-body);
-  font-size: var(--imb-fs-body);
+  font-size: var(--imb-text-base);
   line-height: var(--imb-leading-body);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
   overflow: hidden;
 }
 
 #root {
   height: 100vh;
+  height: 100dvh;
 }
 
 img,
@@ -58,6 +61,37 @@ h4 {
   margin: 0;
 }
 
+::selection {
+  background: var(--imb-selection);
+}
+
+/* 细滚动条：桌面端统一质感，`.imb-scroll` 另行隐藏 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--imb-fg) 22%, transparent) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--imb-fg) 20%, transparent);
+  border: 3px solid transparent;
+  border-radius: var(--imb-radius-pill);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--imb-fg) 34%, transparent);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 .imb-num {
   font-family: var(--imb-font-mono);
   font-variant-numeric: tabular-nums;
@@ -77,4 +111,17 @@ h4 {
 .imb-icon.imb-xs {
   width: 14px;
   height: 14px;
+}
+
+/* 尊重系统「减弱动态效果」：停掉全方位 animation/transition，
+   只保留瞬时状态切换，避免前庭不适。 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

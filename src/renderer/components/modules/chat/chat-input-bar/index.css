@@ -219,12 +219,14 @@
 .imb-attach-popup {
   display: flex;
   flex-direction: column;
-  background: var(--imb-surface);
+  background: var(--imb-surface-raised, var(--imb-surface));
   border: 1px solid var(--imb-border);
   border-radius: var(--imb-radius-md);
-  box-shadow: var(--imb-elev-raised);
+  box-shadow: var(--imb-elev-2);
   min-width: 120px;
   padding: 4px 0;
+  transform-origin: bottom left;
+  animation: imb-popout var(--imb-duration-fast) var(--imb-ease-out);
 }
 
 .imb-attach-anchor {

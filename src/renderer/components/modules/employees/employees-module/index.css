@@ -24,19 +24,10 @@
   border-radius: 50%;
   background: currentColor;
   flex: none;
-  animation: imb-live-pulse 1.4s ease-in-out infinite;
-}
-
-@keyframes imb-live-pulse {
-  0%,
-  100% {
-    opacity: 0.35;
-    transform: scale(0.8);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.15);
-  }
+  --pulse-lo: 0.35;
+  --pulse-scale-lo: 0.8;
+  --pulse-scale-hi: 1.15;
+  animation: imb-pulse 1.4s ease-in-out infinite;
 }
 
 /* Compact live stats line under the role. */

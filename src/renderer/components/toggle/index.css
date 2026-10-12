@@ -6,11 +6,11 @@
   padding: 0;
   border: 1px solid var(--imb-border);
   border-radius: var(--imb-radius-pill, 999px);
-  background: var(--imb-surface);
+  background: var(--imb-surface-sunken, var(--imb-surface));
   cursor: pointer;
   transition:
-    background 0.15s ease,
-    border-color 0.15s ease;
+    background var(--imb-duration-fast) var(--imb-ease-standard),
+    border-color var(--imb-duration-fast) var(--imb-ease-standard);
 }
 
 .imb-toggle:disabled {
@@ -32,7 +32,7 @@
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-  transition: transform 0.15s ease;
+  transition: transform var(--imb-duration-fast) var(--imb-ease-spring);
 }
 
 .imb-toggle.imb-is-on .imb-toggle-knob {

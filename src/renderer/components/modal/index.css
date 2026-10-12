@@ -2,10 +2,12 @@
   position: fixed;
   inset: 0;
   z-index: 40;
-  background: rgba(0, 0, 0, 0.32);
+  background: var(--imb-scrim);
+  backdrop-filter: blur(2px);
   display: grid;
   place-items: center;
   padding: 20px;
+  animation: imb-fade-in var(--imb-duration-fast) var(--imb-ease-standard);
 }
 
 .imb-modal {
@@ -13,11 +15,12 @@
   max-width: 580px;
   background: var(--imb-surface);
   border-radius: var(--imb-radius-lg);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--imb-elev-3);
   overflow: hidden;
   max-height: calc(100vh - 40px);
   display: flex;
   flex-direction: column;
+  animation: imb-scale-in var(--imb-duration-slow) var(--imb-ease-out);
 }
 
 .imb-modal-lg {

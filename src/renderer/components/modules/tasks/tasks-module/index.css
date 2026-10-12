@@ -115,7 +115,10 @@
 }
 .imb-col-dot.imb-running {
   background: var(--imb-warn);
-  animation: imb-live-pulse 1.4s ease-in-out infinite;
+  --pulse-lo: 0.4;
+  --pulse-scale-lo: 0.85;
+  --pulse-scale-hi: 1.15;
+  animation: imb-pulse 1.4s ease-in-out infinite;
 }
 .imb-col-dot.imb-done {
   background: var(--imb-accent);
@@ -826,18 +829,6 @@
   background: color-mix(in oklch, var(--imb-accent) 14%, var(--imb-surface));
   color: var(--imb-accent);
   font-weight: 600;
-}
-
-@keyframes imb-live-pulse {
-  0%,
-  100% {
-    opacity: 0.4;
-    transform: scale(0.85);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.15);
-  }
 }
 
 /* --- A task's per-person sub-tasks --- */

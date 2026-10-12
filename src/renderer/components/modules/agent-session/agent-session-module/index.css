@@ -182,7 +182,8 @@ button.imb-session-tool-head:hover {
 }
 
 .imb-session-tool.imb-is-running .imb-session-tool-dot {
-  animation: imb-session-pulse 1s ease-in-out infinite;
+  --pulse-lo: 0.3;
+  animation: imb-pulse 1s ease-in-out infinite;
 }
 
 .imb-session-tool-name {
@@ -248,13 +249,4 @@ button.imb-session-tool-head:hover {
   font-size: var(--imb-text-sm);
 }
 
-@keyframes imb-session-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
 
-  50% {
-    opacity: 0.3;
-  }
-}

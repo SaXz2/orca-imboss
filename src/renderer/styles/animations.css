@@ -1,0 +1,283 @@
+/* ============================================================
+   动效系统 · Motion
+   ------------------------------------------------------------
+   所有 @keyframes 的唯一真相来源。组件只引用这里的名称，
+   不再各自定义局部 keyframes。
+
+   约定：
+   - 位移量用变量控制：--slide-y（默认 4px）
+   - 呼吸/脉冲亮暗用：--pulse-lo / --pulse-hi；需要缩放时
+     另给 --pulse-scale-lo / --pulse-scale-hi（默认 1 = 纯透明度）
+   - 时长短动画统一取间 token：--imb-duration-fast / -slow
+   ============================================================ */
+
+/* ── 旋转 ── 加载指示器 / 刷新 */
+@keyframes imb-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── 淡入 / 淡出 ── */
+@keyframes imb-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes imb-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* ── 淡入 + 纵向位移 ── 下拉、菜单、行内出现 */
+@keyframes imb-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(var(--slide-y, 4px));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes imb-fade-down {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(var(--slide-y, 4px));
+  }
+}
+
+/* ── 消息流：短促轻柔，仅透明度/微位移 ── */
+@keyframes imb-stream-tail-in {
+  from {
+    opacity: 0.18;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes imb-soft-up-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes imb-soft-down-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── 缩放 + 淡入 ── 图层出现 */
+@keyframes imb-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ── 弹出 ── 配合 transform-origin，让菜单"从按钮长出" */
+@keyframes imb-popout {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ── 横向滑入 / 滑出（浮窗） ── */
+@keyframes imb-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-20px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes imb-slide-out-left {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-12px) scale(0.97);
+  }
+}
+
+/* ── 纵向滑入 / 滑出（面板从上方） ── */
+@keyframes imb-slide-in-top {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes imb-slide-out-top {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/* ── 卡片从顶部滑入（大幅度） ── */
+@keyframes imb-card-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-110%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── 脉冲 / 呼吸灯 ──
+   纯透明度：不设 --pulse-scale-* （默认 1）
+   呼吸缩放：另设 --pulse-scale-lo / -hi */
+@keyframes imb-pulse {
+  0%,
+  100% {
+    opacity: var(--pulse-lo, 0.35);
+    transform: scale(var(--pulse-scale-lo, 1));
+  }
+  50% {
+    opacity: var(--pulse-hi, 1);
+    transform: scale(var(--pulse-scale-hi, 1));
+  }
+}
+
+/* ── 手风琴展开 ── */
+@keyframes imb-expand {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 800px;
+  }
+}
+
+/* ── 提示淡出：显示片刻后自动隐去 ── */
+@keyframes imb-hint-fade {
+  0%,
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ── 上升 / 收起（确认栏） ── */
+@keyframes imb-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+    clip-path: inset(100% 0 0 0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes imb-retract {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+    clip-path: inset(0 0 0 0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(24px);
+    clip-path: inset(100% 0 0 0);
+  }
+}
+
+/* ── 打点打字机（省略号循环） ── */
+@keyframes imb-typewriter-dots {
+  0%,
+  100% {
+    content: "\00a0";
+  }
+  25% {
+    content: ".";
+  }
+  50% {
+    content: "..";
+  }
+  75% {
+    content: "...";
+  }
+}
+
+@keyframes imb-cycling-dots {
+  0%,
+  100% {
+    content: ".";
+  }
+  33% {
+    content: "..";
+  }
+  66% {
+    content: "...";
+  }
+}
+
+/* ── 加载微光（骨架屏 / 忙碌条） ── */
+@keyframes imb-shimmer {
+  from {
+    background-position: -150% 0;
+  }
+  to {
+    background-position: 250% 0;
+  }
+}

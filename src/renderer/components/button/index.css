@@ -87,12 +87,6 @@
   border: 2px solid currentColor;
   border-top-color: transparent;
   border-radius: 50%;
-  animation: btn-spin 0.8s linear infinite;
+  animation: imb-spin 0.8s linear infinite;
   flex: none;
-}
-
-@keyframes btn-spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
