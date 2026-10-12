@@ -212,8 +212,12 @@ export interface BoardCard {
   updatedAt: number;
   /** Latest progress steps (progress cards only; for a compact stepper). */
   steps: import("./messages").MessageStep[];
-  /** Chat the task lives in (progress cards only; to open the conversation). */
+  /** Conversation to open for this card: a root chat, so it is reachable from
+   *  the chat list (progress and task cards alike). */
   chatId: number | null;
+  /** The task's working group chat, where the assignees actually worked. Used
+   *  to open an assignee's session; falls back to `chatId`. */
+  workChatId: number | null;
   /** Authored timeline entries (task cards only). */
   commentCount: number;
   /** Feedback rollup (task cards only; chat cards report zeros). */

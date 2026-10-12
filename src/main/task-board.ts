@@ -89,6 +89,7 @@ export function listBoardCards(): BoardCard[] {
       updatedAt: task.updatedAt,
       steps: [],
       chatId: null,
+      workChatId: null,
       commentCount: counts.get(task.id) ?? 0,
       reactions: reactions.get(task.id) ?? { ...EMPTY_REACTIONS },
     });
@@ -161,12 +162,35 @@ export function listBoardCards(): BoardCard[] {
       updatedAt: row.created_at,
       steps: owned,
       chatId: row.chat_id,
+      workChatId: taskGroupChatId(row.chat_id, row.id) ?? row.chat_id,
       commentCount: 0,
       reactions: { ...EMPTY_REACTIONS },
     });
   }
 
   return cards.sort((a, b) => b.updatedAt - a.updatedAt);
+}
+
+/**
+ * The task group chat a progress card belongs to. The assistant posts a
+ * `chat`-kind card into the root chat right before it starts a task, whose
+ * content is the id of the group chat it just created; that group is where the
+ * assignees actually work, so it is the chat an assignee's session lives in.
+ */
+function taskGroupChatId(rootChatId: number, beforeMessageId: number): number | null {
+  const row = getDB()
+    .prepare(
+      `SELECT content FROM messages
+        WHERE chat_id = ? AND kind = 'chat' AND id < ?
+        ORDER BY id DESC LIMIT 1`,
+    )
+    .get(rootChatId, beforeMessageId) as { content: string } | undefined;
+  const id = Number.parseInt((row?.content ?? "").trim(), 10);
+  if (!Number.isSafeInteger(id)) return null;
+  const chat = getDB()
+    .prepare("SELECT from_chat_id FROM chats WHERE id = ?")
+    .get(id) as { from_chat_id: number | null } | undefined;
+  return chat && chat.from_chat_id === rootChatId ? id : null;
 }
 
 /** Per-employee task counts by board column (GitHub-style state summary). */

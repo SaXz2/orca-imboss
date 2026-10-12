@@ -43,14 +43,19 @@ export function TaskStepsDetail({
   const doneCount = card.steps.filter((step) => step.status === "done").length;
 
   const openSession = (employeeId: number): void => {
-    if (card.chatId === null) return;
-    void appStore.openAgentSession(employeeId, card.chatId);
+    const chatId = card.workChatId ?? card.chatId;
+    if (chatId === null) return;
+    void appStore.openAgentSession(employeeId, chatId);
   };
 
-  const openChat = async (): Promise<void> => {
+  /**
+   * Open the conversation the way the chat list does: select it in the chat
+   * module instead of pushing a new entry into the sidebar.
+   */
+  const openChat = (): void => {
     if (card.chatId === null) return;
-    const summary = await imb.chats.summary(card.chatId);
-    if (summary) appStore.openChat(summary);
+    appStore.focusChatId = card.chatId;
+    appStore.module = "chat";
   };
 
   return (
@@ -61,7 +66,7 @@ export function TaskStepsDetail({
           {t("Back to board")}
         </button>
         {card.chatId !== null && (
-          <Button variant="secondary" onClick={() => void openChat()}>
+          <Button variant="secondary" onClick={openChat}>
             <IconChat className="imb-icon imb-xs" />
             {t("Open chat")}
           </Button>
