@@ -32,31 +32,24 @@
   overflow-y: auto;
   padding: var(--imb-space-5) var(--imb-space-6) var(--imb-space-6);
   background: var(--imb-bg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--imb-space-4);
   min-height: 0;
   /* Reserve the gutter so the scrollbar appearing/disappearing never shifts or
      flashes the content. */
   scrollbar-gutter: stable;
 }
 
-/* Content layer: keeps the message column's flex/gap. Deliberately NO entrance
-   animation here — any fade of the message area on conversation switch reads as
-   a flicker, and the previous chat's messages would be caught mid-fade before
-   the new ones arrive. */
-.imb-thread-inner {
-  display: flex;
-  flex-direction: column;
-  gap: var(--imb-space-4);
-  min-height: 100%;
-}
-
-/* Per-message wrapper: always present, so toggling the entrance class never
-   remounts the message. Kept as a plain block; the bubble keeps its own
-   max-width + auto-margin alignment inside. */
+/* Per-message wrapper. `display: contents` makes it layout-invisible: the
+   message becomes a direct flex child of `.imb-thread` exactly as before, so
+   the shared thread's gap/alignment (chat, group chat, agent session) is
+   untouched. It exists only to hang the entrance animation off a stable node. */
 .imb-thread-item {
-  min-width: 0;
+  display: contents;
 }
 
-.imb-thread-item.imb-item-in {
+.imb-thread-item.imb-item-in > * {
   animation: imb-msg-in var(--imb-duration-slow) var(--imb-ease-out) both;
   animation-delay: var(--enter-delay, 0ms);
 }

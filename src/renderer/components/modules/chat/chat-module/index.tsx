@@ -798,42 +798,40 @@ export function ChatModule(): React.JSX.Element {
         )}
       </div>
       <div className="imb-thread" ref={threadRef} onScroll={handleThreadScroll}>
-        <div className="imb-thread-inner">
-          {visibleMessages.map((message, index) => {
-            const entering = enteringIds?.has(message.id) ?? false;
-            return (
-              <div
-                key={`${message.chatId}-${message.id}`}
-                className={
-                  entering ? "imb-thread-item imb-item-in" : "imb-thread-item"
-                }
-                style={
-                  entering
-                    ? ({
-                        "--enter-delay": cascade
-                          ? `${Math.min(index, 10) * 18}ms`
-                          : "0ms",
-                      } as React.CSSProperties)
-                    : undefined
-                }
-              >
-                <MessageItem
-                  message={message}
-                  isLatestProgress={message.id === latestProgressId}
-                  onAnswered={() => void loadMessages(message.chatId)}
-                  askAnswer={pairing.answerByAskId.get(message.id)}
-                />
-              </div>
-            );
-          })}
-          {selectedRunStatus !== undefined &&
-            (selectedRunStatus.running || selectedRunStatus.compacting) && (
-              <div className="imb-run-status" role="status">
-                <span className="imb-run-dot" aria-hidden="true" />
-                <span>{formatRunStatusText(selectedRunStatus)}</span>
-              </div>
-            )}
-        </div>
+        {visibleMessages.map((message, index) => {
+          const entering = enteringIds?.has(message.id) ?? false;
+          return (
+            <div
+              key={`${message.chatId}-${message.id}`}
+              className={
+                entering ? "imb-thread-item imb-item-in" : "imb-thread-item"
+              }
+              style={
+                entering
+                  ? ({
+                      "--enter-delay": cascade
+                        ? `${Math.min(index, 10) * 18}ms`
+                        : "0ms",
+                    } as React.CSSProperties)
+                  : undefined
+              }
+            >
+              <MessageItem
+                message={message}
+                isLatestProgress={message.id === latestProgressId}
+                onAnswered={() => void loadMessages(message.chatId)}
+                askAnswer={pairing.answerByAskId.get(message.id)}
+              />
+            </div>
+          );
+        })}
+        {selectedRunStatus !== undefined &&
+          (selectedRunStatus.running || selectedRunStatus.compacting) && (
+            <div className="imb-run-status" role="status">
+              <span className="imb-run-dot" aria-hidden="true" />
+              <span>{formatRunStatusText(selectedRunStatus)}</span>
+            </div>
+          )}
       </div>
       <ChatInputBar
         chatId={selected.id}

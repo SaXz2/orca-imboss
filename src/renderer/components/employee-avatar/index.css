@@ -8,15 +8,6 @@
   border-radius: 50%;
   line-height: 0;
   cursor: pointer;
-  transition: transform var(--imb-duration-fast) var(--imb-ease-spring);
-}
-
-.imb-avatar-button:hover {
-  transform: scale(1.08);
-}
-
-.imb-avatar-button:active {
-  transform: scale(0.95);
 }
 
 .imb-avatar-button:focus-visible {
