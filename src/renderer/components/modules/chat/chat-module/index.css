@@ -82,43 +82,59 @@
 }
 
 /* --- Archived conversations --- */
-.imb-chat-search-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .imb-chat-archive-btn {
+  position: relative;
   flex: none;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  width: 30px;
   height: 30px;
-  padding: 0 10px;
-  border: 1px solid var(--imb-border);
+  border: none;
   border-radius: var(--imb-radius-md);
   background: transparent;
-  color: var(--imb-text-2);
+  color: var(--imb-muted);
   cursor: pointer;
   transition:
-    border-color var(--imb-motion-fast) var(--imb-ease-standard),
-    color var(--imb-motion-fast) var(--imb-ease-standard);
+    background var(--imb-motion-fast) var(--imb-ease-standard),
+    color var(--imb-motion-fast) var(--imb-ease-standard),
+    transform var(--imb-duration-instant) var(--imb-ease-standard);
 }
 
 .imb-chat-archive-btn:hover {
-  border-color: var(--imb-accent);
-  color: var(--imb-accent);
+  background: var(--imb-fg-soft);
+  color: var(--imb-fg);
+}
+
+.imb-chat-archive-btn:active {
+  transform: scale(0.92);
+}
+
+.imb-chat-archive-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--imb-focus-ring);
 }
 
 .imb-chat-archive-btn svg {
-  width: 15px;
-  height: 15px;
+  width: 18px;
+  height: 18px;
 }
 
 .imb-chat-archive-count {
-  font-size: var(--imb-text-xs);
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: var(--imb-radius-pill);
+  background: var(--imb-accent);
+  color: var(--imb-accent-on);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 15px;
+  text-align: center;
   font-variant-numeric: tabular-nums;
-  color: var(--imb-muted);
 }
 
 .imb-chat-archive-back {

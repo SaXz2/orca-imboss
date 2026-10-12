@@ -241,6 +241,10 @@ export function ChatModule(): React.JSX.Element {
   const chats = isSearching
     ? search.items
     : (data.chats.items as ChatSummary[]);
+  const totalUnread = useMemo(
+    () => chats.reduce((sum, chat) => sum + (chat.unread ?? 0), 0),
+    [chats],
+  );
   const listLoading = isSearching ? search.loading : data.chats.loading;
   const listError = isSearching ? search.error : data.chats.error;
   const listHasMore = isSearching ? search.hasMore : false;
@@ -773,7 +777,7 @@ export function ChatModule(): React.JSX.Element {
   const listPane = showArchive ? (
     <ListPane
       title={t("Archived chats")}
-      search={
+      actions={
         <button
           type="button"
           className="imb-chat-archive-back"
@@ -817,29 +821,38 @@ export function ChatModule(): React.JSX.Element {
     </ListPane>
   ) : (
     <ListPane
-      title={t("Chats")}
+      title={
+        <>
+          {t("Chats")}
+          {totalUnread > 0 && (
+            <span className="imb-pane-title-badge">
+              {totalUnread > 99 ? "99+" : totalUnread}
+            </span>
+          )}
+        </>
+      }
+      actions={
+        <button
+          type="button"
+          className="imb-chat-archive-btn"
+          title={t("Archived chats")}
+          aria-label={t("Archived chats")}
+          onClick={() => setShowArchive(true)}
+        >
+          <IconArchive />
+          {archivedChats.length > 0 && (
+            <span className="imb-chat-archive-count">
+              {archivedChats.length}
+            </span>
+          )}
+        </button>
+      }
       search={
-        <div className="imb-chat-search-row">
-          <SearchInput
-            value={query}
-            onValueChange={setQuery}
-            placeholder={t("Search chats")}
-          />
-          <button
-            type="button"
-            className="imb-chat-archive-btn"
-            title={t("Archived chats")}
-            aria-label={t("Archived chats")}
-            onClick={() => setShowArchive(true)}
-          >
-            <IconArchive />
-            {archivedChats.length > 0 && (
-              <span className="imb-chat-archive-count">
-                {archivedChats.length}
-              </span>
-            )}
-          </button>
-        </div>
+        <SearchInput
+          value={query}
+          onValueChange={setQuery}
+          placeholder={t("Search chats")}
+        />
       }
       footer={
         <Button block onClick={() => void newChat()}>
