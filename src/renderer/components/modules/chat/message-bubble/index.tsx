@@ -37,6 +37,10 @@ export interface MessageBubbleProps {
    * kinds keep the literal rendering.
    */
   markdown?: boolean;
+  /** Resolve `@<id>` mentions to employee names (Markdown path only). */
+  resolveMention?: (id: number) => string | null;
+  /** When set, a resolved mention becomes a button that opens the agent session. */
+  onMentionClick?: (id: number) => void;
 }
 
 export function MessageBubble({
@@ -51,6 +55,8 @@ export function MessageBubble({
   senderColor,
   isAdmin = false,
   markdown = false,
+  resolveMention,
+  onMentionClick,
 }: MessageBubbleProps): React.JSX.Element {
   const { data } = useApp();
   const employees = data.employees.items;
@@ -146,11 +152,11 @@ export function MessageBubble({
           <Markdown
             content={formattedContent}
             inline={!markdown}
-            onMentionClick={handleMentionClick}
+            resolveMention={resolveMention}
+            onMentionClick={onMentionClick ?? handleMentionClick}
             mentionColor={employeeColor}
           />
         )}
-        </div>
       </div>
     </div>
   );

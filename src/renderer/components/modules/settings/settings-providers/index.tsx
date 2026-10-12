@@ -115,7 +115,6 @@ export function SettingsProviders(): React.JSX.Element {
 
   const selected =
     providers.find((provider) => provider.id === selectedId) ?? null;
-
   return (
     <div className="imb-settings-providers">
       <div className="imb-settings-providers-list">
@@ -188,10 +187,11 @@ export function SettingsProviders(): React.JSX.Element {
       <div className="imb-settings-providers-detail">
         {selected ? (
           <ProviderDetail
-            key={`${selected.kind}:${selected.id}`}
+            key={`${selected.kind}:${selected.id}:${selected.authType}`}
             provider={selected}
             onSave={save}
             onRemove={() => void remove(selected.id)}
+            onSignedIn={() => appStore.reloadProviders()}
           />
         ) : (
           <EmptyState>{t("Select a provider to configure it.")}</EmptyState>
@@ -222,6 +222,10 @@ export function SettingsProviders(): React.JSX.Element {
         open={addOpen}
         onClose={() => setAddOpen(false)}
         onSaved={handleSaved}
+        onSignedIn={async (id) => {
+          await appStore.reloadProviders();
+          setSelectedId(id);
+        }}
       />
       {error !== null && (
         <p className="imb-error-text imb-module-error">{error}</p>

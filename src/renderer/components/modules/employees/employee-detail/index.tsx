@@ -1,10 +1,6 @@
-import {
-  isThinkingLevel,
-  THINKING_LEVEL_LABEL_KEYS,
-  THINKING_LEVELS,
-} from "@shared/constants/thinking";
+import { isThinkingLevel } from "@shared/constants/thinking";
 import { t } from "@shared/l10n";
-import type { Employee, EmployeeInput } from "@shared/types";
+import type { Employee, EmployeeInput, ModelOption } from "@shared/types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cls } from "reactutils";
 import { Button } from "../../../button";
@@ -17,17 +13,24 @@ import { IconCamera } from "../../../icons";
 import { Input } from "../../../input";
 import { Modal } from "../../../modal";
 import { MultiSelect, type MultiSelectOption } from "../../../multi-select";
-import { Select, type SelectOption } from "../../../select";
+import { Select } from "../../../select";
 import { Textarea } from "../../../textarea";
 import { EmployeeCronJobs } from "../employee-cron-jobs";
 import { EmployeeEntryRows } from "./entry-rows";
+import {
+  modelRef,
+  thinkingLevelsFor,
+  thinkingSelectOptions,
+} from "../../../../thinking-options";
 import "./index.css";
 
 export interface EmployeeDetailProps {
   employee: Employee;
   mcpOptions: MultiSelectOption[];
   skillOptions: MultiSelectOption[];
-  modelOptions: SelectOption[];
+  models: ModelOption[];
+  /** App default model (`provider/id`), used when this employee follows it. */
+  defaultModel: string;
   onPatch: (input: EmployeeInput) => Promise<boolean>;
   onRemove: () => void;
   /** Called when the avatar file is replaced (keeps appStore in sync). */
@@ -40,7 +43,8 @@ export function EmployeeDetail({
   employee,
   mcpOptions,
   skillOptions,
-  modelOptions,
+  models,
+  defaultModel,
   onPatch,
   onRemove,
   onAvatarUpdated,
@@ -284,7 +288,13 @@ export function EmployeeDetail({
           <Select
             id={`emp-model-${employee.id}`}
             value={form.modelId ?? ""}
-            options={[{ value: "", label: t("Default") }, ...modelOptions]}
+            options={[
+              { value: "", label: t("Default") },
+              ...models.map((model) => ({
+                value: modelRef(model),
+                label: modelRef(model),
+              })),
+            ]}
             placeholder={t("Default")}
             onChange={(modelId) =>
               scheduleSave({ ...form, modelId: modelId || null })
@@ -295,17 +305,19 @@ export function EmployeeDetail({
         <Field
           label={t("Thinking level")}
           htmlFor={`emp-thinking-${employee.id}`}
-          hint={t("Unset follows the default thinking level.")}
+          hint={t(
+            "Unset follows the default thinking level. Only levels this model accepts are listed.",
+          )}
         >
           <Select
             id={`emp-thinking-${employee.id}`}
             value={form.thinkingLevel ?? ""}
             options={[
               { value: "", label: t("Default") },
-              ...THINKING_LEVELS.map((level) => ({
-                value: level,
-                label: t(THINKING_LEVEL_LABEL_KEYS[level]),
-              })),
+              ...thinkingSelectOptions(
+                thinkingLevelsFor(models, form.modelId ?? "", defaultModel),
+                form.thinkingLevel ?? "",
+              ),
             ]}
             onChange={(level) =>
               scheduleSave({

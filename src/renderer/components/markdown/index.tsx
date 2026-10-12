@@ -21,6 +21,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math-extended";
 import type { PluggableList } from "unified";
 import { IconCheck, IconCopy } from "../icons";
+import { MENTION_TAG, mentionPlugin } from "./mention";
 import "./index.css";
 
 /**
@@ -242,6 +243,32 @@ function createComponents(
       );
     },
   };
+
+  // Custom element emitted by the mention rehype plugin. The display name is
+  // already in `children`; `node` carries the employee id used as a click
+  // target. The tag is not a known intrinsic element, so it is added through a
+  // cast.
+  const Mention = (props: {
+    node?: { properties?: Record<string, unknown> };
+    children?: ReactNode;
+  }): React.JSX.Element => {
+    const raw = props.node?.properties?.employeeId;
+    const id = typeof raw === "number" ? raw : Number(raw);
+    if (onMentionClick !== undefined && Number.isSafeInteger(id)) {
+      return (
+        <button
+          type="button"
+          className="imb-mention"
+          onClick={() => onMentionClick(id)}
+        >
+          {props.children}
+        </button>
+      );
+    }
+    return <span className="imb-mention">{props.children}</span>;
+  };
+  (components as Record<string, unknown>)[MENTION_TAG] = Mention;
+
   if (inline) {
     components.p = ({ children }) => <>{children}</>;
   } else {
@@ -255,6 +282,8 @@ export interface MarkdownProps {
   /** Render as phrasing content (no block wrapper); for labels and table cells. */
   inline?: boolean;
   className?: string;
+  /** Resolve `@<id>` mentions to display names; omit to leave them as raw text. */
+  resolveMention?: (id: number) => string | null;
   onMentionClick?: (employeeId: number) => void;
   /** Accent colour for an employee's mention link. */
   mentionColor?: (employeeId: number) => string | undefined;
@@ -268,6 +297,7 @@ export const Markdown = memo(function Markdown({
   content,
   inline = false,
   className,
+  resolveMention,
   onMentionClick,
   mentionColor,
 }: MarkdownProps): React.JSX.Element {
@@ -275,6 +305,16 @@ export const Markdown = memo(function Markdown({
     () => createComponents(inline, onMentionClick, mentionColor),
     [inline, onMentionClick, mentionColor],
   );
+  // Run the mention plugin before `rehype-katex`: math is still a `code` /
+  // `math`-classed subtree the plugin skips, so a mention inside math is never
+  // rewritten either way.
+  const rehypePlugins = useMemo<PluggableList>(() => {
+    if (resolveMention === undefined) return REHYPE_PLUGINS;
+    return [
+      [mentionPlugin, { resolve: resolveMention }],
+      ...REHYPE_PLUGINS,
+    ] as PluggableList;
+  }, [resolveMention]);
   const Wrapper = inline ? "span" : "div";
   return (
     <Wrapper
@@ -286,7 +326,7 @@ export const Markdown = memo(function Markdown({
     >
       <ReactMarkdown
         remarkPlugins={REMARK_PLUGINS}
-        rehypePlugins={REHYPE_PLUGINS}
+        rehypePlugins={rehypePlugins}
         urlTransform={sanitizeUrl}
         components={components}
       >
