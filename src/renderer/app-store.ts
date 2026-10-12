@@ -136,6 +136,9 @@ export const appStore = proxy({
   // notification click). Cleared once consumed.
   focusChatId: null as number | null,
 
+  // Right workbench dock visibility. Session-only: a restart starts closed.
+  dockOpen: false,
+
   // Pending employee to select when the employees module is mounted (set when a
   // browse entry in the Nav opens an employee). Cleared once consumed.
   focusEmployeeId: null as number | null,
@@ -719,8 +722,7 @@ export const appStore = proxy({
     }
   },
 
-  async focusChat(chatId: number): Promise<void> {
-    appStore.focusChatId = chatId;
+  async focusChat(chatId: number): Promise<void> {    appStore.focusChatId = chatId;
     appStore.module = "chat";
     await imb.settings.set(SettingKeys.Module, "chat");
   },
@@ -730,6 +732,16 @@ export const appStore = proxy({
     appStore.focusEmployeeId = employeeId;
     appStore.module = "employees";
     await imb.settings.set(SettingKeys.Module, "employees");
+  },
+
+  /** Show or hide the right workbench dock. */
+  setDockOpen(open: boolean): void {
+    appStore.dockOpen = open;
+  },
+
+  /** Toggle the right workbench dock. */
+  toggleDock(): void {
+    appStore.dockOpen = !appStore.dockOpen;
   },
 
   /** Open the Settings module on a section (persists the active module). */

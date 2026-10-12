@@ -1,6 +1,8 @@
+import { t } from "@shared/l10n";
 import { useEffect, useState } from "react";
 import { cls } from "reactutils";
-import { IS_MAC } from "../../app-store";
+import { appStore, IS_MAC, useApp } from "../../app-store";
+import { IconFile } from "../icons";
 import "./index.css";
 
 const stroke = { stroke: "currentColor", strokeWidth: 1.4 } as const;
@@ -10,9 +12,11 @@ const stroke = { stroke: "currentColor", strokeWidth: 1.4 } as const;
  * macOS: empty draggable strip; the native traffic lights sit on its left.
  * Windows/Linux: custom small min/max/close buttons on the right (native
  * controls are hidden via the absence of `titleBarOverlay`).
+ * Both platforms get the workbench toggle just left of the window controls.
  */
 export function TitleBar(): React.JSX.Element {
   const [maximized, setMaximized] = useState(false);
+  const { dockOpen } = useApp();
 
   useEffect(() => {
     let alive = true;
@@ -30,7 +34,18 @@ export function TitleBar(): React.JSX.Element {
 
   return (
     <header className="imb-titlebar">
-      {!IS_MAC && (
+      <div className="imb-titlebar-actions">
+        <button
+          type="button"
+          className="imb-titlebar-toggle"
+          aria-label={t("Workbench")}
+          aria-pressed={dockOpen}
+          title={t("Workbench")}
+          onClick={() => appStore.toggleDock()}
+        >
+          <IconFile />
+        </button>
+        {!IS_MAC && (
         <div className="imb-winbtns">
           <WindowButton
             label="Minimize"
@@ -87,6 +102,7 @@ export function TitleBar(): React.JSX.Element {
           </WindowButton>
         </div>
       )}
+      </div>
     </header>
   );
 }

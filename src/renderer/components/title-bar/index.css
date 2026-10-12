@@ -14,6 +14,46 @@
   z-index: 10;
 }
 
+.imb-titlebar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+/* Workbench toggle: same row and weight as the window controls. */
+.imb-titlebar-toggle {
+  width: 28px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: var(--imb-text-2);
+  border-radius: var(--imb-radius-sm);
+  cursor: pointer;
+  transition:
+    background var(--imb-motion-fast) var(--imb-ease-standard),
+    color var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-titlebar-toggle svg {
+  width: 15px;
+  height: 15px;
+}
+
+.imb-titlebar-toggle:hover {
+  background: var(--imb-fg-soft);
+  color: var(--imb-fg);
+}
+
+.imb-titlebar-toggle[aria-pressed="true"] {
+  color: var(--imb-accent);
+  background: var(--imb-accent-soft);
+}
+
 .imb-winbtns {
   display: flex;
   align-items: center;

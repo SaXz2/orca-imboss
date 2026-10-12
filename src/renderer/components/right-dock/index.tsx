@@ -147,25 +147,6 @@ export function RightDock({
   );
 }
 
-/** The edge handle that opens the dock. */
-export function RightDockHandle({
-  onOpen,
-}: {
-  onOpen: () => void;
-}): React.JSX.Element {
-  return (
-    <button
-      type="button"
-      className="imb-dock-handle"
-      title={t("Workbench")}
-      aria-label={t("Workbench")}
-      onClick={onOpen}
-    >
-      <IconFile />
-    </button>
-  );
-}
-
 /** Preview of one file: inline text, an image, or a "cannot preview" note. */
 function FilePreview({ file }: { file: WorkbenchFile }): React.JSX.Element {
   if (file.kind === "image" && file.dataUrl) {

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { parseSessionKey, useApp, type AppModule } from "./app-store";
+import { useEffect } from "react";
+import { appStore, parseSessionKey, useApp, type AppModule } from "./app-store";
 import { AppShell } from "./components/app-shell";
 import { AgentSessionModule } from "./components/modules/agent-session/agent-session-module";
 import { ChatModule } from "./components/modules/chat/chat-module";
@@ -7,7 +7,7 @@ import { EmployeesModule } from "./components/modules/employees/employees-module
 import { GroupChatModule } from "./components/modules/group-chat/group-chat-module";
 import { McpModule } from "./components/modules/mcp/mcp-module";
 import { MiniAppModule } from "./components/modules/miniapp/miniapp-module";
-import { RightDock, RightDockHandle } from "./components/right-dock";
+import { RightDock } from "./components/right-dock";
 import { SettingsModule } from "./components/modules/settings/settings-module";
 import { SkillsModule } from "./components/modules/skills/skills-module";
 import { TasksModule } from "./components/modules/tasks/tasks-module";
@@ -28,8 +28,7 @@ export default function App(): React.JSX.Element {
   // and every `t()` call re-evaluates against the new locale. Without this,
   // only components that read `locale` directly (e.g. SettingsGeneral) refresh;
   // the rest of the UI (nav, headers, modules) would wait for a restart.
-  const { locale } = useApp();
-  const [dockOpen, setDockOpen] = useState(false);
+  const { locale, dockOpen } = useApp();
 
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -41,11 +40,9 @@ export default function App(): React.JSX.Element {
       <ActiveModule />
       {/* Always mounted so visited mini-app iframes survive module switches. */}
       <MiniAppModule />
-      {/* The workbench dock sits beside the content, opened from the edge handle. */}
-      {dockOpen ? (
-        <RightDock open onClose={() => setDockOpen(false)} />
-      ) : (
-        <RightDockHandle onOpen={() => setDockOpen(true)} />
+      {/* The workbench dock sits beside the content, toggled from the title bar. */}
+      {dockOpen && (
+        <RightDock open onClose={() => appStore.setDockOpen(false)} />
       )}
     </>
   );
