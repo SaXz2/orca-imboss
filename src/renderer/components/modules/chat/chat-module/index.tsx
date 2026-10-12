@@ -555,7 +555,20 @@ export function ChatModule(): React.JSX.Element {
       restoreScrollRef.current = null;
       return;
     }
-    if (pinnedRef.current) el.scrollTop = el.scrollHeight;
+    if (!pinnedRef.current) return;
+    const target = el.scrollHeight;
+    const distance = target - el.scrollTop - el.clientHeight;
+    // Glide only for a short, discrete jump (one new message) while idle;
+    // stream updates and long jumps snap so the view never lags behind.
+    const running = selectedRunStatus?.running === true;
+    const reduceMotion = window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    if (!running && !reduceMotion && distance > 4 && distance < 600) {
+      el.scrollTo({ top: target, behavior: "smooth" });
+    } else {
+      el.scrollTop = target;
+    }
   }, [messages, selectedRunStatus]);
 
   const handleThreadScroll = useCallback((): void => {
