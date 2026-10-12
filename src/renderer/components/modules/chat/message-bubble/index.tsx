@@ -157,6 +157,7 @@ export function MessageBubble({
             mentionColor={employeeColor}
           />
         )}
+        </div>
       </div>
     </div>
   );
