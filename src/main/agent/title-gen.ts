@@ -111,11 +111,13 @@ async function requestTitle(
           },
         ],
       },
-      { signal: controller.signal, maxTokens: 100 },
+      { signal: controller.signal, maxTokens: 512 },
     );
     if (response.stopReason === "error" || response.stopReason === "aborted") {
       console.warn(
         `[title-gen] model call ended with ${response.stopReason} for chat ${chatId}`,
+        `model=${model.provider}/${model.id}`,
+        JSON.stringify(response).slice(0, 600),
       );
       return null;
     }
