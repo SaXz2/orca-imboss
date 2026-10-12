@@ -18,7 +18,14 @@ import { Avatar } from "../../../avatar";
 import { Button } from "../../../button";
 import { ContextMenu, type ContextMenuState } from "../../../context-menu";
 import { EmployeeAvatar } from "../../../employee-avatar";
-import { IconArchive, IconBack } from "../../../icons";
+import { IconButton } from "../../../icon-button";
+import {
+  IconArchive,
+  IconBack,
+  IconChevronDown,
+  IconSearch,
+  IconX,
+} from "../../../icons";
 import { Input } from "../../../input";
 import { ItemList } from "../../../item-list";
 import { useMentionResolver } from "../../../markdown/use-mention";
@@ -143,6 +150,10 @@ export function ChatModule(): React.JSX.Element {
   // Bumped when a selection is quoted so the composer takes focus without
   // resetting the draft (a separate token from `focusToken`).
   const [quoteFocusToken, setQuoteFocusToken] = useState(0);
+  // In-conversation search (find-in-thread).
+  const [threadSearchOpen, setThreadSearchOpen] = useState(false);
+  const [threadQuery, setThreadQuery] = useState("");
+  const [threadMatchIndex, setThreadMatchIndex] = useState(0);
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteIds, setDeleteIds] = useState<number[]>([]);
@@ -498,6 +509,21 @@ export function ChatModule(): React.JSX.Element {
     return null;
   }, [visibleMessages]);
 
+  // In-conversation search: the whole thread is loaded, so matching is a plain
+  // client-side filter over the visible messages.
+  const threadMatches = useMemo(() => {
+    const q = threadQuery.trim().toLowerCase();
+    if (q.length === 0) return [] as number[];
+    return visibleMessages
+      .filter((message) => message.content.toLowerCase().includes(q))
+      .map((message) => message.id);
+  }, [visibleMessages, threadQuery]);
+  const threadMatchSet = useMemo(() => new Set(threadMatches), [threadMatches]);
+  const currentMatchId =
+    threadMatches.length > 0
+      ? threadMatches[Math.min(threadMatchIndex, threadMatches.length - 1)]
+      : null;
+
   // Message entrance. A wholesale (re)population — opening/switching a chat —
   // cascades in; a plain append only rises the new message. Keyed by id so
   // re-renders never replay it. (The thread is not virtualized, so no
@@ -541,6 +567,41 @@ export function ChatModule(): React.JSX.Element {
     const timer = window.setTimeout(() => setEnteringIds(null), 700);
     return () => window.clearTimeout(timer);
   }, [enteringIds]);
+
+  // Scroll the current search hit into view. The per-message wrapper is
+  // `display: contents` (no box), so scroll its first element child instead.
+  useEffect(() => {
+    if (!threadSearchOpen || currentMatchId === null) return;
+    const wrap = threadRef.current?.querySelector(
+      `[data-message-id="${currentMatchId}"]`,
+    );
+    const target = (wrap?.firstElementChild ?? wrap) as HTMLElement | null;
+    target?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [currentMatchId, threadSearchOpen]);
+
+  // A different conversation starts with a clean search.
+  useEffect(() => {
+    setThreadSearchOpen(false);
+    setThreadQuery("");
+    setThreadMatchIndex(0);
+  }, [selectedId]);
+
+  const stepThreadMatch = useCallback(
+    (delta: number): void => {
+      setThreadMatchIndex((index) => {
+        const total = threadMatches.length;
+        if (total === 0) return 0;
+        return (index + delta + total) % total;
+      });
+    },
+    [threadMatches.length],
+  );
+
+  const closeThreadSearch = useCallback((): void => {
+    setThreadSearchOpen(false);
+    setThreadQuery("");
+    setThreadMatchIndex(0);
+  }, []);
 
   // Auto-scroll to the newest message, but only while the user is pinned to
   // the bottom. Runs before paint (useLayoutEffect) so a chat switch never
@@ -874,43 +935,114 @@ export function ChatModule(): React.JSX.Element {
         <div className="imb-chat-header-avatar">
           <EmployeeAvatar employeeId={0} size={36} />
         </div>
-        {editingTitle ? (
-          <Input
-            className="imb-chat-title-input"
-            value={titleDraft}
-            maxLength={200}
-            autoFocus
-            aria-label={t("Double-click to rename chat")}
-            onChange={(event) => setTitleDraft(event.target.value)}
-            onFocus={(event) => event.currentTarget.select()}
-            onBlur={() => void commitTitleEdit()}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                void commitTitleEdit();
-              } else if (event.key === "Escape") {
-                event.preventDefault();
-                cancelTitleEdit();
-              }
-            }}
-          />
-        ) : (
-          <Tooltip
-            placement="bottom"
-            content={t("Double-click to rename chat")}
-          >
-            <div
-              className="imb-chat-title imb-chat-title-editable"
-              onDoubleClick={beginTitleEdit}
+        {threadSearchOpen ? (
+          <div className="imb-thread-search">
+            <IconSearch className="imb-icon imb-sm" />
+            <input
+              className="imb-thread-search-input"
+              value={threadQuery}
+              autoFocus
+              placeholder={t("Search in conversation")}
+              aria-label={t("Search in conversation")}
+              onChange={(event) => {
+                setThreadQuery(event.target.value);
+                setThreadMatchIndex(0);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  stepThreadMatch(event.shiftKey ? -1 : 1);
+                } else if (event.key === "Escape") {
+                  event.preventDefault();
+                  closeThreadSearch();
+                }
+              }}
+            />
+            <span className="imb-thread-search-count">
+              {threadQuery.trim().length === 0
+                ? ""
+                : threadMatches.length === 0
+                  ? t("No matches")
+                  : `${Math.min(threadMatchIndex, threadMatches.length - 1) + 1}/${threadMatches.length}`}
+            </span>
+            <IconButton
+              label={t("Previous match")}
+              boxSize={26}
+              size={16}
+              disabled={threadMatches.length === 0}
+              onClick={() => stepThreadMatch(-1)}
             >
-              {selectedTitle}
+              <IconChevronDown className="imb-icon imb-xs imb-flip" />
+            </IconButton>
+            <IconButton
+              label={t("Next match")}
+              boxSize={26}
+              size={16}
+              disabled={threadMatches.length === 0}
+              onClick={() => stepThreadMatch(1)}
+            >
+              <IconChevronDown className="imb-icon imb-xs" />
+            </IconButton>
+            <IconButton
+              label={t("Close")}
+              boxSize={26}
+              size={16}
+              onClick={closeThreadSearch}
+            >
+              <IconX className="imb-icon imb-xs" />
+            </IconButton>
+          </div>
+        ) : (
+          <>
+            {editingTitle ? (
+              <Input
+                className="imb-chat-title-input"
+                value={titleDraft}
+                maxLength={200}
+                autoFocus
+                aria-label={t("Double-click to rename chat")}
+                onChange={(event) => setTitleDraft(event.target.value)}
+                onFocus={(event) => event.currentTarget.select()}
+                onBlur={() => void commitTitleEdit()}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    void commitTitleEdit();
+                  } else if (event.key === "Escape") {
+                    event.preventDefault();
+                    cancelTitleEdit();
+                  }
+                }}
+              />
+            ) : (
+              <Tooltip
+                placement="bottom"
+                content={t("Double-click to rename chat")}
+              >
+                <div
+                  className="imb-chat-title imb-chat-title-editable"
+                  onDoubleClick={beginTitleEdit}
+                >
+                  {selectedTitle}
+                </div>
+              </Tooltip>
+            )}
+            {selected.source && (
+              <span className="imb-chat-source">
+                {t(INTEGRATION_LABEL_KEYS[selected.source])}
+              </span>
+            )}
+            <div className="imb-chat-header-actions">
+              <IconButton
+                label={t("Search in conversation")}
+                boxSize={30}
+                size={18}
+                onClick={() => setThreadSearchOpen(true)}
+              >
+                <IconSearch />
+              </IconButton>
             </div>
-          </Tooltip>
-        )}
-        {selected.source && (
-          <span className="imb-chat-source">
-            {t(INTEGRATION_LABEL_KEYS[selected.source])}
-          </span>
+          </>
         )}
       </div>
       <div
@@ -932,9 +1064,9 @@ export function ChatModule(): React.JSX.Element {
               key={`${message.chatId}-${message.id}`}
               data-message-id={message.id}
               data-quote-label={quoteLabel}
-              className={
-                entering ? "imb-thread-item imb-item-in" : "imb-thread-item"
-              }
+              className={`imb-thread-item${entering ? " imb-item-in" : ""}${
+                threadMatchSet.has(message.id) ? " imb-search-hit" : ""
+              }${message.id === currentMatchId ? " imb-search-hit-current" : ""}`}
               style={
                 entering
                   ? ({
