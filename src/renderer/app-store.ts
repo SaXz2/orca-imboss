@@ -28,6 +28,7 @@ import { updateThemeState } from "./theme";
 
 export type AppModule =
   | "chat"
+  | "departments"
   | "employees"
   | "tasks"
   | "usage"
@@ -74,12 +75,7 @@ export function parseSessionKey(
 
 /** Sections of the Settings module. Lifted here so main can deep-link to one. */
 export type SettingsSection =
-  | "general"
-  | "theme"
-  | "providers"
-  | "integrations"
-  | "network"
-  | "about";
+  "general" | "theme" | "providers" | "integrations" | "network" | "about";
 
 /** One place the app can be looking at (what back / forward restores). */
 interface NavView {
@@ -113,6 +109,7 @@ export const contentPaneRef = createRef<HTMLElement | null>();
 
 const VALID_MODULES: AppModule[] = [
   "chat",
+  "departments",
   "employees",
   "tasks",
   "usage",
@@ -775,7 +772,8 @@ export const appStore = proxy({
     }
   },
 
-  async focusChat(chatId: number): Promise<void> {    appStore.focusChatId = chatId;
+  async focusChat(chatId: number): Promise<void> {
+    appStore.focusChatId = chatId;
     appStore.module = "chat";
     await imb.settings.set(SettingKeys.Module, "chat");
   },
@@ -1039,18 +1037,20 @@ export async function initAppStore(): Promise<void> {
     imb.settings.get(SettingKeys.MiniAppActive),
     imb.settings.get(SettingKeys.BrandName),
     imb.settings.get(SettingKeys.BrandLogo),
-  ]).then(([theme, collapsed, storedModule, storedMiniApp, brandName, brandLogo]) => {
-    updateThemeState(theme);
-    if (collapsed === "1") {
-      appStore.navCollapsed = true;
-    }
-    if (storedModule && (VALID_MODULES as string[]).includes(storedModule)) {
-      appStore.module = storedModule as AppModule;
-    }
-    appStore.activeMiniAppId = storedMiniApp;
-    appStore.brandName = brandName ?? "";
-    appStore.brandLogo = brandLogo ?? null;
-  });
+  ]).then(
+    ([theme, collapsed, storedModule, storedMiniApp, brandName, brandLogo]) => {
+      updateThemeState(theme);
+      if (collapsed === "1") {
+        appStore.navCollapsed = true;
+      }
+      if (storedModule && (VALID_MODULES as string[]).includes(storedModule)) {
+        appStore.module = storedModule as AppModule;
+      }
+      appStore.activeMiniAppId = storedMiniApp;
+      appStore.brandName = brandName ?? "";
+      appStore.brandLogo = brandLogo ?? null;
+    },
+  );
   imb.onLocaleChanged(updateLocale);
   imb.theme.onChanged(updateThemeState);
   // Record every place the app lands on, for the back / forward controls.

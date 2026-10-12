@@ -9,6 +9,16 @@ import type {
   ChatSummary,
   CronJob,
   CronJobInfo,
+  Department,
+  DepartmentEdge,
+  DepartmentEdgeInput,
+  DepartmentEdgeMove,
+  DepartmentGraph,
+  DepartmentInput,
+  DepartmentLayout,
+  EmployeeLink,
+  EmployeeLinkInput,
+  LinkPatch,
   Employee,
   EmployeeDeleteResult,
   EmployeeInput,
@@ -170,6 +180,104 @@ const api = {
     onActivity: (cb: () => void) => on<unknown>("agents:activity", () => cb()),
   },
 
+  departments: {
+    /** The whole canvas: department tiles (with members) plus their links. */
+    graph: () =>
+      ipcRenderer.invoke("departments:graph") as Promise<DepartmentGraph>,
+    create: (input: DepartmentInput) =>
+      ipcRenderer.invoke("departments:create", input) as Promise<Department>,
+    update: (id: number, input: DepartmentInput) =>
+      ipcRenderer.invoke(
+        "departments:update",
+        id,
+        input,
+      ) as Promise<Department | null>,
+    remove: (id: number) =>
+      ipcRenderer.invoke("departments:delete", id) as Promise<boolean>,
+    /** Commit a batch of dragged/resized tiles. */
+    setLayout: (layouts: DepartmentLayout[]) =>
+      ipcRenderer.invoke("departments:setLayout", layouts) as Promise<void>,
+    addMember: (
+      departmentId: number,
+      employeeId: number,
+      roleInDept?: string,
+      isLead?: boolean,
+      reportsTo?: number | null,
+    ) =>
+      ipcRenderer.invoke(
+        "departments:addMember",
+        departmentId,
+        employeeId,
+        roleInDept ?? "",
+        isLead ?? false,
+        reportsTo ?? null,
+      ) as Promise<Department | null>,
+    removeMember: (departmentId: number, employeeId: number) =>
+      ipcRenderer.invoke(
+        "departments:removeMember",
+        departmentId,
+        employeeId,
+      ) as Promise<Department | null>,
+    setMemberParent: (
+      departmentId: number,
+      employeeId: number,
+      parentEmployeeId: number | null,
+    ) =>
+      ipcRenderer.invoke(
+        "departments:setMemberParent",
+        departmentId,
+        employeeId,
+        parentEmployeeId,
+      ) as Promise<Department | null>,
+    addPersonLink: (input: EmployeeLinkInput) =>
+      ipcRenderer.invoke(
+        "departments:addPersonLink",
+        input,
+      ) as Promise<EmployeeLink>,
+    updatePersonLink: (id: number, patch: LinkPatch) =>
+      ipcRenderer.invoke(
+        "departments:updatePersonLink",
+        id,
+        patch,
+      ) as Promise<EmployeeLink | null>,
+    removePersonLink: (id: number) =>
+      ipcRenderer.invoke(
+        "departments:removePersonLink",
+        id,
+      ) as Promise<boolean>,
+    addEdge: (input: DepartmentEdgeInput) =>
+      ipcRenderer.invoke(
+        "departments:addEdge",
+        input,
+      ) as Promise<DepartmentEdge>,
+    updateEdge: (id: number, patch: LinkPatch) =>
+      ipcRenderer.invoke(
+        "departments:updateEdge",
+        id,
+        patch,
+      ) as Promise<DepartmentEdge | null>,
+    removeEdge: (id: number) =>
+      ipcRenderer.invoke("departments:removeEdge", id) as Promise<boolean>,
+    moveEdge: (id: number, input: DepartmentEdgeMove) =>
+      ipcRenderer.invoke(
+        "departments:moveEdge",
+        id,
+        input,
+      ) as Promise<DepartmentEdge | null>,
+    movePersonLink: (
+      id: number,
+      input: { fromEmployeeId: number; toEmployeeId: number },
+    ) =>
+      ipcRenderer.invoke(
+        "departments:movePersonLink",
+        id,
+        input,
+      ) as Promise<EmployeeLink | null>,
+    /** Fired when the canvas changes in main (e.g. the agent's tools). */
+    onChanged: (cb: () => void) =>
+      on<unknown>("departments:changed", () => cb()),
+  },
+
   cron: {
     /** Cron jobs owned by an employee, with chat titles resolved (id 0 = assistant). */
     listByEmployee: (employeeId: number) =>
@@ -180,13 +288,14 @@ const api = {
     remove: (id: string) =>
       ipcRenderer.invoke("cron:remove", id) as Promise<boolean>,
     /** Every job across all employees (the scheduled-tasks page). */
-    listAll: () =>
-      ipcRenderer.invoke("cron:listAll") as Promise<CronJobInfo[]>,
+    listAll: () => ipcRenderer.invoke("cron:listAll") as Promise<CronJobInfo[]>,
     /** Turn a job on or off. */
     setEnabled: (id: string, enabled: boolean) =>
-      ipcRenderer.invoke("cron:setEnabled", id, enabled) as Promise<
-        CronJob | null
-      >,
+      ipcRenderer.invoke(
+        "cron:setEnabled",
+        id,
+        enabled,
+      ) as Promise<CronJob | null>,
     /** Edit a job's schedule and/or content. */
     update: (id: string, patch: { schedule?: string; content?: string }) =>
       ipcRenderer.invoke("cron:update", id, patch) as Promise<CronJob | null>,
@@ -204,14 +313,14 @@ const api = {
       ipcRenderer.invoke("chats:archives") as Promise<ChatSummary[]>,
     /** Archive or restore one conversation. */
     setArchived: (id: number, archived: boolean) =>
-      ipcRenderer.invoke("chats:setArchived", id, archived) as Promise<
-        Chat | null
-      >,
+      ipcRenderer.invoke(
+        "chats:setArchived",
+        id,
+        archived,
+      ) as Promise<Chat | null>,
     /** Pin or unpin one conversation (sorts above the rest). */
     setPinned: (id: number, pinned: boolean) =>
-      ipcRenderer.invoke("chats:setPinned", id, pinned) as Promise<
-        Chat | null
-      >,
+      ipcRenderer.invoke("chats:setPinned", id, pinned) as Promise<Chat | null>,
     summariesPage: (page: PageQuery) =>
       ipcRenderer.invoke("chats:summariesPage", page) as Promise<
         PageResult<ChatSummary>
@@ -219,10 +328,9 @@ const api = {
     summary: (id: number) =>
       ipcRenderer.invoke("chats:summary", id) as Promise<ChatSummary | null>,
     latestForEmployee: (employeeId: number) =>
-      ipcRenderer.invoke(
-        "chats:latestForEmployee",
-        employeeId,
-      ) as Promise<number | null>,
+      ipcRenderer.invoke("chats:latestForEmployee", employeeId) as Promise<
+        number | null
+      >,
     rootId: (id: number) =>
       ipcRenderer.invoke("chats:rootId", id) as Promise<number>,
     addUnread: (id: number, delta: number) =>
@@ -319,11 +427,9 @@ const api = {
 
   agentSession: {
     bind: (employeeId: number, chatId: number) =>
-      ipcRenderer.invoke(
-        "agentSession:bind",
-        employeeId,
-        chatId,
-      ) as Promise<ActiveLiveBlock[]>,
+      ipcRenderer.invoke("agentSession:bind", employeeId, chatId) as Promise<
+        ActiveLiveBlock[]
+      >,
     unbind: (employeeId: number, chatId: number) =>
       ipcRenderer.invoke(
         "agentSession:unbind",
@@ -383,7 +489,11 @@ const api = {
     comment: (id: number, input: TaskCommentInput) =>
       ipcRenderer.invoke("tasks:comment", id, input) as Promise<TaskEvent>,
     deleteComment: (id: number, eventId: number) =>
-      ipcRenderer.invoke("tasks:comment:delete", id, eventId) as Promise<boolean>,
+      ipcRenderer.invoke(
+        "tasks:comment:delete",
+        id,
+        eventId,
+      ) as Promise<boolean>,
     link: (fromId: number, toId: number) =>
       ipcRenderer.invoke("tasks:link", fromId, toId) as Promise<{
         out: TaskRef[];
@@ -396,9 +506,10 @@ const api = {
     reopen: (id: number) =>
       ipcRenderer.invoke("tasks:reopen", id) as Promise<Task | null>,
     reopenProgress: (progressKey: string) =>
-      ipcRenderer.invoke("tasks:reopenProgress", progressKey) as Promise<
-        Task | null
-      >,
+      ipcRenderer.invoke(
+        "tasks:reopenProgress",
+        progressKey,
+      ) as Promise<Task | null>,
     archives: () =>
       ipcRenderer.invoke("tasks:archives") as Promise<ArchivedTask[]>,
     archive: (entry: Omit<ArchivedTask, "archivedAt">) =>

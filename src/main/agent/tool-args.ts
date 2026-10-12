@@ -167,6 +167,20 @@ function summarizeKnown(
       return Array.isArray(record.employees)
         ? `${record.employees.length} employees`
         : "";
+    case "imb_set_departments":
+      return Array.isArray(record.departments)
+        ? `${record.departments.length} departments`
+        : "";
+    case "imb_connect_departments": {
+      const from = text(record.fromDepartmentId);
+      const to = text(record.toDepartmentId);
+      return from && to ? `${from} → ${to}` : "";
+    }
+    case "imb_connect_employees": {
+      const from = text(record.fromEmployeeId);
+      const to = text(record.toEmployeeId);
+      return from && to ? `${from} → ${to}` : "";
+    }
     case "imb_set_cronjob": {
       const id = text(record.id);
       const schedule = text(record.schedule);

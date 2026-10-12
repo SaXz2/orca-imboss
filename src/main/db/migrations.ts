@@ -257,6 +257,144 @@ const MIGRATIONS: Array<(db: Database) => void> = [
       ALTER TABLE chats ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0;
     `);
   },
+
+  // 9 — department canvas: department tiles, membership (many-to-many) and links
+  (db) => {
+    db.exec(`
+      -- One draggable department tile on the department board. kind splits a
+      -- regular department from the independent outsourcing pool; x/y/w/h hold
+      -- the tile's canvas layout so it survives a reload.
+      CREATE TABLE IF NOT EXISTS departments (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        name       TEXT NOT NULL DEFAULT '',
+        kind       TEXT NOT NULL DEFAULT 'team',
+        color      TEXT NOT NULL DEFAULT '',
+        x          REAL NOT NULL DEFAULT 0,
+        y          REAL NOT NULL DEFAULT 0,
+        w          REAL NOT NULL DEFAULT 300,
+        h          REAL NOT NULL DEFAULT 220,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL DEFAULT (CAST(strftime('%s', 'now') AS INTEGER))
+      );
+
+      -- Many-to-many: an employee can sit in several departments at once, and
+      -- an employee with no row here is independent (unassigned talent).
+      CREATE TABLE IF NOT EXISTS department_members (
+        department_id INTEGER NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
+        employee_id   INTEGER NOT NULL REFERENCES employees(id)   ON DELETE CASCADE,
+        role_in_dept  TEXT NOT NULL DEFAULT '',
+        is_lead       INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (department_id, employee_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_department_members_employee
+        ON department_members(employee_id);
+
+      -- Directed, labeled links between two department tiles ("需求协作",
+      -- "按需派单" …). One row per ordered pair.
+      CREATE TABLE IF NOT EXISTS department_edges (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        from_dept_id INTEGER NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
+        to_dept_id   INTEGER NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
+        label        TEXT NOT NULL DEFAULT '',
+        created_at   INTEGER NOT NULL DEFAULT (CAST(strftime('%s', 'now') AS INTEGER)),
+        UNIQUE (from_dept_id, to_dept_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_department_edges_from
+        ON department_edges(from_dept_id);
+    `);
+
+    // Seed the independent outsourcing pool so a fresh canvas always has the
+    // one structural node the model assumes. Users may delete or rename it.
+    const count = db.prepare("SELECT COUNT(*) AS c FROM departments").get() as {
+      c: number;
+    };
+    if (count.c === 0) {
+      db.prepare(
+        "INSERT INTO departments (name, kind, x, y, w, h, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      ).run("外包人才池", "pool", 120, 360, 300, 240, 0);
+    }
+  },
+
+  // 10 — within-department reporting (the frame's internal tree) + person links
+  (db) => {
+    db.exec(`
+      -- Who a member reports to INSIDE the same department (null = a root of
+      -- the department's internal tree). Cleared when that person leaves.
+      ALTER TABLE department_members ADD COLUMN reports_to INTEGER;
+
+      -- Person-to-person links, independent of departments and able to cross
+      -- them (e.g. an engineer ↔ a product manager in another department).
+      CREATE TABLE IF NOT EXISTS employee_links (
+        id               INTEGER PRIMARY KEY AUTOINCREMENT,
+        from_employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+        to_employee_id   INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+        label            TEXT NOT NULL DEFAULT '',
+        created_at       INTEGER NOT NULL DEFAULT (CAST(strftime('%s', 'now') AS INTEGER)),
+        UNIQUE (from_employee_id, to_employee_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_employee_links_from
+        ON employee_links(from_employee_id);
+    `);
+  },
+
+  // 11 — generic link kinds on department links and person links
+  (db) => {
+    db.exec(`
+      ALTER TABLE department_edges ADD COLUMN kind TEXT NOT NULL DEFAULT 'collab';
+      ALTER TABLE employee_links ADD COLUMN kind TEXT NOT NULL DEFAULT 'collab';
+    `);
+  },
+
+  // 12 — anchor sides on department links (which port each end attaches to)
+  (db) => {
+    db.exec(`
+      -- 't' | 'b' | 'l' | 'r' (NULL = auto-pick by direction, legacy rows).
+      ALTER TABLE department_edges ADD COLUMN from_side TEXT;
+      ALTER TABLE department_edges ADD COLUMN to_side TEXT;
+    `);
+  },
+
+  // 13 — pin legacy links to a concrete port so they stop flipping on drag
+  (db) => {
+    const rows = db
+      .prepare(
+        "SELECT id, from_dept_id, to_dept_id FROM department_edges WHERE from_side IS NULL OR to_side IS NULL",
+      )
+      .all() as Array<{ id: number; from_dept_id: number; to_dept_id: number }>;
+    if (rows.length === 0) return;
+    const depts = new Map(
+      (
+        db.prepare("SELECT id, x, y, w, h FROM departments").all() as Array<{
+          id: number;
+          x: number;
+          y: number;
+          w: number;
+          h: number;
+        }>
+      ).map((d) => [d.id, d]),
+    );
+    const sideFor = (
+      a: { x: number; y: number; w: number; h: number },
+      b: { x: number; y: number; w: number; h: number },
+    ): string => {
+      const dx = b.x + b.w / 2 - (a.x + a.w / 2);
+      const dy = b.y + b.h / 2 - (a.y + a.h / 2);
+      if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? "r" : "l";
+      return dy >= 0 ? "b" : "t";
+    };
+    const update = db.prepare(
+      "UPDATE department_edges SET from_side = ?, to_side = ? WHERE id = ?",
+    );
+    for (const row of rows) {
+      const a = depts.get(row.from_dept_id);
+      const b = depts.get(row.to_dept_id);
+      if (!a || !b) continue;
+      update.run(sideFor(a, b), sideFor(b, a), row.id);
+    }
+  },
 ];
 
 export function migrate(db: Database): void {

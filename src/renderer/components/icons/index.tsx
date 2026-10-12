@@ -80,6 +80,19 @@ export function IconEmployees(props: IconProps): React.JSX.Element {
   );
 }
 
+/** Departments icon: connected tiles. */
+export function IconDepartments(props: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(props)}>
+      <rect x="3.5" y="4" width="8" height="6.5" rx="1.4" />
+      <rect x="4" y="13.5" width="7.5" height="6.5" rx="1.4" />
+      <rect x="13.5" y="8" width="7" height="6.5" rx="1.4" />
+      <path d="M11.5 7.25h1.5a1 1 0 0 1 1 1v4.5" />
+      <path d="M11.5 16.75h2.5a1 1 0 0 0 1-1v-1.25" />
+    </svg>
+  );
+}
+
 export function IconWorld(props: IconProps): React.JSX.Element {
   return (
     <svg {...base(props)}>
