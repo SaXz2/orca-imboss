@@ -29,6 +29,7 @@ import { Tooltip } from "../../../tooltip";
 import { pairAskAnswers } from "../ask-answer";
 import { ChatInputBar } from "../chat-input-bar";
 import { MessageItem } from "../message-item";
+import { SelectionQuoteLayer } from "../selection-quote";
 import { formatChatTime, previewText } from "../relative-time";
 import "../thread.css";
 import "./index.css";
@@ -138,6 +139,9 @@ export function ChatModule(): React.JSX.Element {
   // Bumped on chat creation so the composer resets and focuses (see
   // `ChatInputBar`). Starts at 0 so ordinary selections never steal focus.
   const [focusToken, setFocusToken] = useState(0);
+  // Bumped when a selection is quoted so the composer takes focus without
+  // resetting the draft (a separate token from `focusToken`).
+  const [quoteFocusToken, setQuoteFocusToken] = useState(0);
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteIds, setDeleteIds] = useState<number[]>([]);
@@ -801,12 +805,25 @@ export function ChatModule(): React.JSX.Element {
           </span>
         )}
       </div>
-      <div className="imb-thread" ref={threadRef} onScroll={handleThreadScroll}>
+      <div
+        className="imb-thread"
+        ref={threadRef}
+        onScroll={handleThreadScroll}
+        data-chat-selection-root=""
+      >
         {visibleMessages.map((message, index) => {
           const entering = enteringIds?.has(message.id) ?? false;
+          const senderId = message.senderEmployeeId;
+          const quoteLabel =
+            senderId === null
+              ? undefined
+              : (data.employees.items.find((e) => e.id === senderId)?.name ??
+                `#${senderId}`);
           return (
             <div
               key={`${message.chatId}-${message.id}`}
+              data-message-id={message.id}
+              data-quote-label={quoteLabel}
               className={
                 entering ? "imb-thread-item imb-item-in" : "imb-thread-item"
               }
@@ -840,7 +857,12 @@ export function ChatModule(): React.JSX.Element {
       <ChatInputBar
         chatId={selected.id}
         focusToken={focusToken}
+        focusRequest={quoteFocusToken}
         onSend={handleSend}
+      />
+      <SelectionQuoteLayer
+        onQuote={(quote) => appStore.addChatDraftQuote(selected.id, quote)}
+        onFocusInput={() => setQuoteFocusToken((token) => token + 1)}
       />
     </>
   ) : null;

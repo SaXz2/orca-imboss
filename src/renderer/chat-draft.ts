@@ -13,6 +13,20 @@ export interface PendingAttachment {
 }
 
 /**
+ * A text selection quoted into the composer. Rendered as a chip above the
+ * textarea and folded into the outgoing message as a leading blockquote, so
+ * the reply keeps the original context.
+ */
+export interface DraftQuote {
+  /** Quoted text (already trimmed and clipped). */
+  text: string;
+  /** Source chat message id when quoted from a bubble; `null` otherwise. */
+  messageId: number | null;
+  /** Display name of the source sender, shown on the quote block header. */
+  sourceLabel?: string;
+}
+
+/**
  * One chat's composer draft. Stored per chat in `appStore.chatDrafts` so it
  * survives a module switch (the chat module is unmounted when another nav
  * module is active).
@@ -20,13 +34,14 @@ export interface PendingAttachment {
 export interface ChatDraft {
   text: string;
   attachments: PendingAttachment[];
+  quotes: DraftQuote[];
 }
 
 /**
  * Shared immutable fallback for a chat that has no draft yet. Never assigned
  * into the store (mutations always allocate a fresh draft) so it stays frozen.
  */
-export const EMPTY_DRAFT: ChatDraft = { text: "", attachments: [] };
+export const EMPTY_DRAFT: ChatDraft = { text: "", attachments: [], quotes: [] };
 
 /**
  * Monotonic attachment id source. Module-scoped (not per mount) so a restored

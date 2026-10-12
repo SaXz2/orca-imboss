@@ -19,6 +19,7 @@ import { proxy, useSnapshot } from "valtio";
 import {
   revokeDraftUrls,
   type ChatDraft,
+  type DraftQuote,
   type PendingAttachment,
 } from "./chat-draft";
 import { updateLocale } from "./locale";
@@ -650,7 +651,7 @@ export const appStore = proxy({
   ensureChatDraft(chatId: number): ChatDraft {
     let draft = appStore.chatDrafts[chatId];
     if (!draft) {
-      draft = { text: "", attachments: [] };
+      draft = { text: "", attachments: [], quotes: [] };
       appStore.chatDrafts[chatId] = draft;
     }
     return draft;
@@ -669,7 +670,33 @@ export const appStore = proxy({
     if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl);
     // Drop the entry entirely once it is empty so the store holds only real
     // drafts and `EMPTY_DRAFT` remains the only empty shape.
-    if (draft.text.length === 0 && draft.attachments.length === 0) {
+    if (
+      draft.text.length === 0 &&
+      draft.attachments.length === 0 &&
+      draft.quotes.length === 0
+    ) {
+      delete appStore.chatDrafts[chatId];
+    }
+  },
+  addChatDraftQuote(chatId: number, quote: DraftQuote): void {
+    const draft = appStore.ensureChatDraft(chatId);
+    // Ignore an exact duplicate so quoting the same span twice is a no-op.
+    const duplicate = draft.quotes.some(
+      (existing) =>
+        existing.messageId === quote.messageId && existing.text === quote.text,
+    );
+    if (duplicate) return;
+    draft.quotes.push(quote);
+  },
+  removeChatDraftQuote(chatId: number, index: number): void {
+    const draft = appStore.chatDrafts[chatId];
+    if (!draft) return;
+    draft.quotes.splice(index, 1);
+    if (
+      draft.text.length === 0 &&
+      draft.attachments.length === 0 &&
+      draft.quotes.length === 0
+    ) {
       delete appStore.chatDrafts[chatId];
     }
   },
