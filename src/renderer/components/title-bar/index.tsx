@@ -2,7 +2,7 @@ import { t } from "@shared/l10n";
 import { useEffect, useState } from "react";
 import { cls } from "reactutils";
 import { appStore, IS_MAC, useApp } from "../../app-store";
-import { IconClock } from "../icons";
+import { IconBack, IconClock, IconForward } from "../icons";
 import "./index.css";
 
 const stroke = { stroke: "currentColor", strokeWidth: 1.4 } as const;
@@ -17,7 +17,9 @@ const stroke = { stroke: "currentColor", strokeWidth: 1.4 } as const;
  */
 export function TitleBar(): React.JSX.Element {
   const [maximized, setMaximized] = useState(false);
-  const { dockOpen } = useApp();
+  const { dockOpen, navHistory, navHistoryIndex } = useApp();
+  const canGoBack = navHistoryIndex > 0;
+  const canGoForward = navHistoryIndex < navHistory.length - 1;
 
   useEffect(() => {
     let alive = true;
@@ -37,6 +39,26 @@ export function TitleBar(): React.JSX.Element {
     <header className="imb-titlebar">
       <div className="imb-titlebar-actions">
         <div className="imb-titlebar-toggles">
+          <button
+            type="button"
+            className="imb-titlebar-toggle"
+            aria-label={t("Back")}
+            title={t("Back")}
+            disabled={!canGoBack}
+            onClick={() => appStore.goBack()}
+          >
+            <IconBack />
+          </button>
+          <button
+            type="button"
+            className="imb-titlebar-toggle"
+            aria-label={t("Forward")}
+            title={t("Forward")}
+            disabled={!canGoForward}
+            onClick={() => appStore.goForward()}
+          >
+            <IconForward />
+          </button>
           <button
             type="button"
             className="imb-titlebar-toggle"

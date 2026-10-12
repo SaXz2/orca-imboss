@@ -56,6 +56,11 @@
   color: var(--imb-fg);
 }
 
+.imb-titlebar-toggle:disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
 .imb-titlebar-toggle[aria-pressed="true"] {
   color: var(--imb-accent);
   background: var(--imb-accent-soft);
