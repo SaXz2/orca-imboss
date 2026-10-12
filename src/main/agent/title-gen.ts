@@ -44,25 +44,53 @@ export function maybeGenerateChatTitle(
   const message = userMessage.trim();
   if (message.length === 0) return;
   if (inFlight.has(chatId)) return;
+
+  // Deterministic title first, so a chat never lingers as "New Chat" while the
+  // model call runs (or if it never succeeds). The model title refines it when
+  // it lands.
+  const fallback = deriveFallbackTitle(message);
+  if (fallback !== null) {
+    updateChatTitle(chatId, fallback);
+    sendToRenderer("chats:changed", { chatId });
+  }
+
   inFlight.add(chatId);
-  void generate(chatId, message).finally(() => {
+  void generate(chatId, message, fallback).finally(() => {
     inFlight.delete(chatId);
   });
 }
 
-async function generate(chatId: number, message: string): Promise<void> {
+/** First non-empty line of the message, condensed and capped, as a fallback title. */
+function deriveFallbackTitle(message: string): string | null {
+  const line = message
+    .split("\n")
+    .map((part) => part.trim())
+    .find((part) => part.length > 0);
+  if (!line) return null;
+  const cleaned = line.replace(/\s+/g, " ").trim();
+  if (cleaned.length === 0) return null;
+  return cleaned.length > 40 ? `${cleaned.slice(0, 40)}…` : cleaned;
+}
+
+async function generate(
+  chatId: number,
+  message: string,
+  fallback: string | null,
+): Promise<void> {
   try {
     const title = await requestTitle(chatId, message);
     if (title === null) return;
-    // The chat may have been renamed (or deleted) while the call was in
-    // flight — never clobber a title that appeared meanwhile.
     const current = getChat(chatId);
-    if (!current || current.title.trim().length > 0) return;
+    if (!current) return;
+    const currentTitle = current.title.trim();
+    // Refine only our own fallback; never clobber a manual rename (or a title
+    // that already matched).
+    if (fallback === null || currentTitle !== fallback) return;
+    if (currentTitle === title) return;
     updateChatTitle(chatId, title);
     sendToRenderer("chats:changed", { chatId });
   } catch (err) {
-    // Stay untitled; the next message retries. The send itself already
-    // succeeded, so this is logged and swallowed.
+    // Stay with the fallback title; the send itself already succeeded.
     console.error(
       "[title-gen] failed to generate chat title:",
       err instanceof Error ? err.message : err,
