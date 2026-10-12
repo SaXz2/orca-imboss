@@ -17,6 +17,8 @@ export interface MessageBubbleProps {
   messageId: number;
   chatId?: number;
   content: string;
+  /** Selected text quoted into this message, shown above the body. */
+  quotedText?: string | null;
   attachments: MessageAttachment[] | null;
   /**
    * True attachment count. May exceed `attachments.length` when an agent only
@@ -48,6 +50,7 @@ export function MessageBubble({
   messageId,
   chatId,
   content,
+  quotedText,
   attachments,
   attachmentsTotal,
   avatar,
@@ -101,6 +104,14 @@ export function MessageBubble({
           </div>
         )}
         <div className="imb-bubble">
+        {quotedText !== undefined && quotedText !== null && quotedText.length > 0 && (
+          <div className="imb-bubble-quote">
+            <span className="imb-bubble-quote-mark" aria-hidden="true">
+              “
+            </span>
+            <span className="imb-bubble-quote-text">{quotedText}</span>
+          </div>
+        )}
         {hasAttachments && (
           <div className="imb-bubble-attachments">
             {visible.map((attachment, index) => {

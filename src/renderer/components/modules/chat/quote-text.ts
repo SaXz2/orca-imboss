@@ -10,26 +10,13 @@ export function clipQuoteText(raw: string): string {
 }
 
 /**
- * Fold the composer's quoted selections into the outgoing message as a leading
- * markdown blockquote. The model sees the quoted context and the user's bubble
- * renders it as a quote block, with the user's own text below.
+ * Join the composer's quoted selections into the single quoted-selection
+ * string stored on the outgoing message (kept separate from `content`, so the
+ * quote never pollutes the message body).
  */
-export function appendQuotesToText(
-  text: string,
+export function joinQuoteTexts(
   quotes: readonly DraftQuote[],
-): string {
-  if (quotes.length === 0) return text;
-  const block = quotes
-    .map((quote) => {
-      const body = quote.text
-        .split(/\r?\n/)
-        .map((line) => `> ${line}`)
-        .join("\n");
-      return quote.sourceLabel
-        ? `> **引用 · ${quote.sourceLabel}**\n>\n${body}`
-        : body;
-    })
-    .join("\n\n>\n\n");
-  const trimmed = text.trim();
-  return trimmed.length > 0 ? `${block}\n\n${trimmed}` : block;
+): string | undefined {
+  if (quotes.length === 0) return undefined;
+  return quotes.map((quote) => quote.text).join("\n\n");
 }

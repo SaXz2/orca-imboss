@@ -299,12 +299,14 @@ const api = {
       chatId: number,
       content: string,
       attachments?: MessageAttachment[],
+      quotedText?: string,
     ) =>
       ipcRenderer.invoke(
         "chat:send",
         chatId,
         content,
         attachments,
+        quotedText,
       ) as Promise<Message>,
     interrupt: (chatId: number) =>
       ipcRenderer.invoke("chat:interrupt", chatId) as Promise<boolean>,

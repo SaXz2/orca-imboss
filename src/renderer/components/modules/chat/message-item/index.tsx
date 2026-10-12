@@ -121,6 +121,7 @@ export function MessageItem({
           messageId={message.id}
           chatId={message.chatId}
           content={message.content}
+          quotedText={message.quotedText}
           attachments={message.attachments}
           attachmentsTotal={message.attachmentsTotal}
           markdown={message.kind === "text" || message.kind === "report"}

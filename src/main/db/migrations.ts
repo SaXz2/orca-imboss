@@ -243,6 +243,13 @@ const MIGRATIONS: Array<(db: Database) => void> = [
       CREATE INDEX IF NOT EXISTS idx_chats_archived ON chats(archived);
     `);
   },
+
+  // 7 — per-message quoted selection (composer "quote to chat")
+  (db) => {
+    db.exec(`
+      ALTER TABLE messages ADD COLUMN quoted_text TEXT;
+    `);
+  },
 ];
 
 export function migrate(db: Database): void {

@@ -647,7 +647,11 @@ export function ChatModule(): React.JSX.Element {
   }, []);
 
   const handleSend = useCallback(
-    async (text: string, attachments: MessageAttachment[]): Promise<void> => {
+    async (
+      text: string,
+      attachments: MessageAttachment[],
+      quotedText?: string,
+    ): Promise<void> => {
       if (selectedId === null) return;
       const chatId = selectedId;
       // Sending always jumps to the bottom, even if the user had scrolled up.
@@ -663,7 +667,7 @@ export function ChatModule(): React.JSX.Element {
         return map;
       });
       try {
-        await imb.chat.send(chatId, text, attachments);
+        await imb.chat.send(chatId, text, attachments, quotedText);
         void loadMessages(chatId);
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));

@@ -16,7 +16,7 @@ import { useDropdownPosition } from "../../../../hooks/use-dropdown-position";
 import { useEscapeKey } from "../../../../hooks/use-escape-key";
 import { IconAttach, IconFile, IconImage, IconSend } from "../../../icons";
 import { Textarea } from "../../../textarea";
-import { appendQuotesToText } from "../quote-text";
+import { joinQuoteTexts } from "../quote-text";
 import { MentionPopup } from "./mention-popup";
 import "./index.css";
 
@@ -35,7 +35,11 @@ export interface ChatInputBarProps {
    * after a selection is quoted). Unlike `focusToken`, it never clears input.
    */
   focusRequest?: number;
-  onSend: (text: string, attachments: MessageAttachment[]) => void;
+  onSend: (
+    text: string,
+    attachments: MessageAttachment[],
+    quotedText?: string,
+  ) => void;
 }
 
 const IMAGE_EXTENSIONS = /\.(png|jpe?g|gif|webp|bmp|svg|avif|ico|heic|heif)$/i;
@@ -186,11 +190,12 @@ export function ChatInputBar({
     const value = text.trim();
     if (disabled) return;
     if (!value && attachments.length === 0 && quotes.length === 0) return;
-    // Fold quoted selections into the message as a leading blockquote so the
-    // reply keeps the original context.
+    // The quote rides as its own field on the message (never mixed into the
+    // body) so the bubble shows it separately and the model still gets it.
     onSend(
-      appendQuotesToText(value, quotes),
+      value,
       attachments.map((item) => toPlainAttachment(item.attachment)),
+      joinQuoteTexts(quotes),
     );
     // Clear the per-chat draft; the store revokes its preview URLs.
     appStore.clearChatDraft(chatId);

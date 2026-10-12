@@ -23,6 +23,7 @@ interface MessageRow {
   sender_employee_id: number | null;
   kind: string;
   content: string;
+  quoted_text: string | null;
   steps: string | null;
   attachments: string | null;
   created_at: number;
@@ -36,6 +37,20 @@ const MAX_STEP_NAME_LENGTH = 256;
 const MAX_STEP_ROLE_LENGTH = 256;
 const MAX_ATTACH_NAME_LENGTH = 256;
 const MAX_ATTACH_TYPE_LENGTH = 128;
+const MAX_QUOTED_TEXT_LENGTH = 4000;
+
+/** Trim + cap a quoted selection; empty becomes `null`. */
+function validateQuotedText(value: string | undefined): string | null {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== "string") {
+    throw new Error("Quoted text must be a string.");
+  }
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return null;
+  return trimmed.length > MAX_QUOTED_TEXT_LENGTH
+    ? trimmed.slice(0, MAX_QUOTED_TEXT_LENGTH)
+    : trimmed;
+}
 const MAX_ATTACH_PATH_LENGTH = 4096;
 const MAX_ATTACH_SIZE = 50 * 1024 * 1024; // metadata only
 
@@ -148,11 +163,13 @@ export function appendMessage(
   if (typeof content !== "string") {
     throw new Error("Message content must be a string.");
   }
-  if (content.length === 0 && kind !== "ack") {
-    throw new Error("Message content must be a non-empty string.");
-  }
   if (content.length > MAX_CONTENT_LENGTH) {
     throw new Error("Message is too long.");
+  }
+  // A quote-only send keeps an empty body but is still valid.
+  const quotedText = validateQuotedText(options.quotedText);
+  if (content.length === 0 && kind !== "ack" && quotedText === null) {
+    throw new Error("Message content must be a non-empty string.");
   }
   // Resolve the owning chat's root/group nature while validating it: the
   // renderer gates the notification beep on root chats only, and this is the
@@ -183,14 +200,15 @@ export function appendMessage(
   const attachmentsJson = serializeAttachments(attachments, attachmentTotal);
   const result = db
     .prepare(
-      "INSERT INTO messages (chat_id, sender_employee_id, kind, content, steps, attachments, created_at) " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO messages (chat_id, sender_employee_id, kind, content, quoted_text, steps, attachments, created_at) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .run(
       chatId,
       senderEmployeeId,
       kind,
       content,
+      quotedText,
       steps !== undefined ? JSON.stringify({ steps }) : null,
       attachmentsJson,
       createdAt,
@@ -223,6 +241,7 @@ export function appendMessage(
     sender_employee_id: senderEmployeeId,
     kind,
     content,
+    quoted_text: quotedText,
     steps: steps !== undefined ? JSON.stringify({ steps }) : null,
     attachments: attachmentsJson,
     created_at: createdAt,
@@ -295,6 +314,7 @@ function toMessage(row: MessageRow): Message {
     senderEmployeeId: row.sender_employee_id,
     kind: row.kind || "text",
     content: row.content,
+    quotedText: row.quoted_text ?? null,
     steps: parseSteps(row.steps),
     attachments,
     attachmentsTotal:
