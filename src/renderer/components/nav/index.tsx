@@ -3,6 +3,7 @@ import { t } from "@shared/l10n";
 import { useEffect, useRef, useState } from "react";
 import { cls } from "reactutils";
 import { appStore, sessionKey, useApp, type AppModule } from "../../app-store";
+import { displayChatTitle } from "../../chat-title";
 import { employeeLabel } from "../../employee-label";
 import { BrandLogo } from "../brand-logo";
 import { ContextMenu, type ContextMenuState } from "../context-menu";
@@ -14,6 +15,7 @@ import {
   IconChevronDown,
   IconClock,
   IconCollapse,
+  IconDepartments,
   IconEmployees,
   IconGear,
   IconMcp,
@@ -47,6 +49,12 @@ const NAV_ITEMS: NavItem[] = [
     icon: IconChat,
     section: "main",
     browse: "chats",
+  },
+  {
+    module: "departments",
+    labelKey: "Departments",
+    icon: IconDepartments,
+    section: "main",
   },
   {
     module: "employees",
@@ -495,7 +503,7 @@ function NavBrowseGroup({
                   </span>
                   <span className="imb-nav-browse-text">
                     <span className="imb-nav-label">
-                      {chat.title || t("Untitled")}
+                      {displayChatTitle(chat.title, "Untitled")}
                     </span>
                     <span className="imb-nav-sub">
                       {formatChatTime(chat.lastAt, locale)}
@@ -590,7 +598,7 @@ function NavChatButton({
   onContextMenu,
 }: NavChatButtonProps): React.JSX.Element {
   return (
-    <Tooltip content={chat.title} placement="right">
+    <Tooltip content={displayChatTitle(chat.title, "Untitled")} placement="right">
       <button
         type="button"
         className={cls(
@@ -599,7 +607,9 @@ function NavChatButton({
           dragging && "imb-is-dragging",
         )}
         aria-current={active ? "page" : undefined}
-        aria-label={collapsed ? chat.title : undefined}
+        aria-label={
+          collapsed ? displayChatTitle(chat.title, "Untitled") : undefined
+        }
         draggable
         onClick={onClick}
         onDragStart={onDragStart}
@@ -610,7 +620,9 @@ function NavChatButton({
       >
         <GroupAvatar participants={chat.participants} size={24} />
         <span className="imb-nav-text">
-          <span className="imb-nav-label">{chat.title}</span>
+          <span className="imb-nav-label">
+            {displayChatTitle(chat.title, "Untitled")}
+          </span>
           <span className="imb-nav-sub">
             {t("${count} members", {
               count: String(chat.participants.length),

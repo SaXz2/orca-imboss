@@ -2,6 +2,7 @@ import { t } from "@shared/l10n";
 import type { Message } from "@shared/types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useApp } from "../../../../app-store";
+import { displayChatTitle } from "../../../../chat-title";
 import { ModuleView } from "../../../app-shell";
 import { GroupAvatar } from "../../../group-avatar";
 import { MessageItem } from "../../chat/message-item";
@@ -100,10 +101,12 @@ export function GroupChatModule({
           <GroupAvatar
             participants={chat?.participants ?? []}
             size={36}
-            title={chat?.title}
+            title={displayChatTitle(chat?.title, "Conversation")}
           />
         </div>
-        <div className="imb-chat-title">{chat?.title ?? t("Conversation")}</div>
+        <div className="imb-chat-title">
+          {displayChatTitle(chat?.title, "Conversation")}
+        </div>
       </div>
       <div className="imb-thread" ref={threadRef} onScroll={handleScroll}>
         {messages.length === 0 ? (

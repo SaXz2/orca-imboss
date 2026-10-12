@@ -11,6 +11,7 @@ import type {
 } from "@shared/types";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { appStore, IS_MAC, useApp } from "../../../../app-store";
+import { displayChatTitle } from "../../../../chat-title";
 import { useInfiniteList } from "../../../../hooks/use-infinite-list";
 import { useMultiSelect } from "../../../../hooks/use-multi-select";
 import { ModuleView } from "../../../app-shell";
@@ -50,7 +51,7 @@ const PAGE_SIZE = 50;
  * locale switches — unlike a title baked in at creation time).
  */
 function displayTitle(title: string): string {
-  return title.trim().length > 0 ? title : t("New Chat");
+  return displayChatTitle(title, "New Chat");
 }
 
 /** Transient per-chat run status driven by bound agent events. */

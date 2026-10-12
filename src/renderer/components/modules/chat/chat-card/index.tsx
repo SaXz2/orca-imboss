@@ -2,6 +2,7 @@ import { t } from "@shared/l10n";
 import type { ChatSummary, Message } from "@shared/types";
 import { useEffect, useState } from "react";
 import { appStore } from "../../../../app-store";
+import { displayChatTitle } from "../../../../chat-title";
 import { EmployeeAvatar } from "../../../employee-avatar";
 import { GroupAvatar } from "../../../group-avatar";
 import "./index.css";
@@ -106,9 +107,11 @@ export function ChatCard({
           <GroupAvatar
             participants={summary.participants}
             size={40}
-            title={summary.title}
+            title={displayChatTitle(summary.title)}
           />
-          <span className="imb-chat-card-title">{summary.title}</span>
+          <span className="imb-chat-card-title">
+            {displayChatTitle(summary.title)}
+          </span>
         </button>
       ) : (
         <div className="imb-chat-card imb-is-disabled" aria-disabled="true">
