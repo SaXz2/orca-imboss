@@ -16,7 +16,7 @@ export function TaskArchiveList({
 }: {
   archived: readonly ArchivedTask[];
   onBack: () => void;
-  onRestore: (key: string) => void;
+  onRestore: (entry: ArchivedTask) => void;
 }): React.JSX.Element {
   const openChat = (chatId: number): void => {
     appStore.focusChatId = chatId;
@@ -90,7 +90,7 @@ export function TaskArchiveList({
                     <button
                       type="button"
                       className="imb-detail-action imb-is-accent"
-                      onClick={() => onRestore(entry.key)}
+                      onClick={() => onRestore(entry)}
                     >
                       {t("Restore")}
                     </button>

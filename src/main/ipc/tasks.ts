@@ -103,6 +103,16 @@ export function registerTaskHandlers(): void {
     dbTasks.reopenTask(assertInteger(id, "task id")),
   );
 
+  // Restoring a closed card: reopen the promoted task it belonged to.
+  ipcMain.handle(
+    "tasks:reopenProgress",
+    (_event, chatId: unknown, title: unknown) =>
+      dbTasks.reopenProgressTask(
+        assertInteger(chatId, "chat id"),
+        assertString(title, "title"),
+      ),
+  );
+
   ipcMain.handle(
     "tasks:comment:delete",
     (_event, id: unknown, eventId: unknown) => {

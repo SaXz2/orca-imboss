@@ -329,6 +329,20 @@ export function closeTask(id: number, reason: unknown): Task | null {
   return getTask(id);
 }
 
+/**
+ * Reopen a promoted task named by its progress identity (a closed card whose
+ * archive entry is being restored). Null when no such task exists.
+ */
+export function reopenProgressTask(
+  chatId: number,
+  title: string,
+): Task | null {
+  const row = getDB()
+    .prepare("SELECT id FROM tasks WHERE progress_key = ?")
+    .get(`${chatId}:${title}`) as { id: number } | undefined;
+  return row ? reopenTask(row.id) : null;
+}
+
 /** Reopen a closed task back to the pending column. */
 export function reopenTask(id: number): Task | null {
   const current = getTask(id);

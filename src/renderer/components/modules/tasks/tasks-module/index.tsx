@@ -155,9 +155,13 @@ export function TasksModule(): React.JSX.Element {
     }
   };
 
-  const restore = async (key: string): Promise<void> => {
+  const restore = async (entry: ArchivedTask): Promise<void> => {
     try {
-      setArchived(await imb.tasks.unarchive(key));
+      setArchived(await imb.tasks.unarchive(entry.key));
+      // A card that was closed to dismiss it comes back to the board too.
+      if (entry.chatId !== null) {
+        await imb.tasks.reopenProgress(entry.chatId, entry.title);
+      }
       await reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -168,7 +172,7 @@ export function TasksModule(): React.JSX.Element {
     <TaskArchiveList
       archived={archived}
       onBack={() => setShowArchive(false)}
-      onRestore={(key) => void restore(key)}
+      onRestore={(entry) => void restore(entry)}
     />
   ) : progressCard ? (
     <TaskStepsDetail

@@ -364,6 +364,10 @@ const api = {
       ipcRenderer.invoke("tasks:close", id, reason) as Promise<Task | null>,
     reopen: (id: number) =>
       ipcRenderer.invoke("tasks:reopen", id) as Promise<Task | null>,
+    reopenProgress: (chatId: number, title: string) =>
+      ipcRenderer.invoke("tasks:reopenProgress", chatId, title) as Promise<
+        Task | null
+      >,
     archives: () =>
       ipcRenderer.invoke("tasks:archives") as Promise<ArchivedTask[]>,
     archive: (entry: {

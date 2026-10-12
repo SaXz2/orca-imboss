@@ -106,7 +106,9 @@ export function TaskStepsDetail({
     try {
       setCloseOpen(false);
       await imb.tasks.close(threadId, reason);
-      await onChanged();
+      // Closing dismisses the card from the board; it stays recoverable in the
+      // archive, where restoring it also reopens the task.
+      onArchive(card);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
