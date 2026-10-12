@@ -123,6 +123,21 @@ export function addTaskComment(
   return toEvent(row);
 }
 
+/** Delete an authored timeline entry (comments only; lifecycle events stay). */
+export function deleteTaskEvent(taskId: number, eventId: number): boolean {
+  const db = getDB();
+  const row = db
+    .prepare("SELECT kind FROM task_events WHERE id = ? AND task_id = ?")
+    .get(eventId, taskId) as { kind: string } | undefined;
+  if (!row) return false;
+  if (!TASK_AUTHORED_KINDS.includes(row.kind as TaskEventKind)) return false;
+  return (
+    db
+      .prepare("DELETE FROM task_events WHERE id = ? AND task_id = ?")
+      .run(eventId, taskId).changes > 0
+  );
+}
+
 /** Task ids referenced as `#123` in a body of text, de-duplicated. */
 export function parseTaskRefs(body: string): number[] {
   const ids = new Set<number>();

@@ -15,6 +15,7 @@ import {
   unarchiveTask,
 } from "../task-archive";
 import { listBoardCards } from "../task-board";
+import { notifyMentionedEmployees } from "../task-notify";
 import { assertInteger, assertString } from "./helpers";
 
 /**
@@ -69,8 +70,15 @@ export function registerTaskHandlers(): void {
 
   ipcMain.handle("tasks:comment", (_event, id: unknown, input: unknown) => {
     const taskId = assertInteger(id, "task id");
-    const event = dbTaskThread.addTaskComment(taskId, input as TaskCommentInput);
+    const comment = input as TaskCommentInput;
+    const event = dbTaskThread.addTaskComment(taskId, comment);
     dbTasks.touchTask(taskId);
+    // An @-mention is delivered for real: post into the task's working chat and
+    // wake the mentioned employees there, so somebody actually reads it.
+    notifyMentionedEmployees(
+      dbTasks.getTask(taskId)?.workChatId ?? null,
+      comment.body,
+    );
     return event;
   });
 
@@ -91,10 +99,32 @@ export function registerTaskHandlers(): void {
   ipcMain.handle("tasks:close", (_event, id: unknown, reason: unknown) =>
     dbTasks.closeTask(assertInteger(id, "task id"), reason),
   );
-
   ipcMain.handle("tasks:reopen", (_event, id: unknown) =>
     dbTasks.reopenTask(assertInteger(id, "task id")),
   );
+
+  ipcMain.handle(
+    "tasks:comment:delete",
+    (_event, id: unknown, eventId: unknown) => {
+      const taskId = assertInteger(id, "task id");
+      const removed = dbTaskThread.deleteTaskEvent(
+        taskId,
+        assertInteger(eventId, "event id"),
+      );
+      if (removed) dbTasks.touchTask(taskId);
+      return removed;
+    },
+  );
+
+  // Manual cross-reference between two tasks (the `#id` path is automatic).
+  ipcMain.handle("tasks:link", (_event, fromId: unknown, toId: unknown) => {
+    const from = assertInteger(fromId, "task id");
+    const to = assertInteger(toId, "task id");
+    dbTaskThread.linkTasks(from, to, "references");
+    dbTasks.touchTask(from);
+    dbTasks.touchTask(to);
+    return dbTaskThread.taskReferences(from);
+  });
 
   // Archive: hide a task from the board while keeping it listed.
   ipcMain.handle("tasks:archives", () => listArchivedTasks());

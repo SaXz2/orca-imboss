@@ -228,6 +228,13 @@ const MIGRATIONS: Array<(db: Database) => void> = [
         WHERE progress_key IS NOT NULL;
     `);
   },
+
+  // 5 — the working group chat a promoted task's people actually work in
+  (db) => {
+    db.exec(`
+      ALTER TABLE tasks ADD COLUMN work_chat_id INTEGER;
+    `);
+  },
 ];
 
 export function migrate(db: Database): void {

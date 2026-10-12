@@ -12,7 +12,6 @@ export const COLUMNS: Array<{ status: TaskStatus; labelKey: string }> = [
   { status: "pending", labelKey: "Pending" },
   { status: "running", labelKey: "In progress" },
   { status: "done", labelKey: "Done" },
-  { status: "closed", labelKey: "Closed" },
 ];
 
 /** Board tag palette (GitHub-like; tint derived from the tag text). */

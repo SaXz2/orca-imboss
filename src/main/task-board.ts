@@ -158,12 +158,14 @@ export function listBoardCards(): BoardCard[] {
     const progressKey = `${row.chat_id}:${title}`;
     const flow = owned.map((step) => step.name).join(" → ");
     const derived = live ? "running" : statusFromSteps(owned);
+    const workChatId = taskGroupChatId(row.chat_id, row.id) ?? row.chat_id;
     const task = ensureProgressTask({
       progressKey,
       title: title || t("Untitled"),
       flow,
       status: derived,
       assignees,
+      workChatId,
     });
     const closed = task.status === "closed";
 
@@ -181,7 +183,7 @@ export function listBoardCards(): BoardCard[] {
       updatedAt: row.created_at,
       steps: owned,
       chatId: row.chat_id,
-      workChatId: taskGroupChatId(row.chat_id, row.id) ?? row.chat_id,
+      workChatId,
       commentCount: 0,
       reactions: { ...EMPTY_REACTIONS },
       progressKey,

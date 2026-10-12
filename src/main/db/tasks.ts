@@ -52,6 +52,7 @@ function toTask(row: TaskRow): Task {
     assignees: parseNumberArray(row.assignees),
     sortOrder: row.sort_order,
     progressKey: row.progress_key,
+    workChatId: row.work_chat_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -88,6 +89,7 @@ export function ensureProgressTask(input: {
   flow?: string;
   status?: TaskStatus;
   assignees?: number[];
+  workChatId?: number | null;
 }): Task {
   const key = input.progressKey.slice(0, 200);
   if (key.length === 0) throw new Error("A progress key is required.");
@@ -102,12 +104,14 @@ export function ensureProgressTask(input: {
     const nextStatus = existing.status === "closed" ? "closed" : status;
     db.prepare(
       "UPDATE tasks SET title = ?, flow = ?, status = ?, assignees = ?, " +
+        "work_chat_id = ?, " +
         "updated_at = CAST(strftime('%s', 'now') AS INTEGER) WHERE id = ?",
     ).run(
       cleanText(input.title, MAX_TITLE) || "—",
       cleanText(input.flow, MAX_FLOW),
       nextStatus,
       stringifyArray(cleanAssignees(input.assignees)),
+      typeof input.workChatId === "number" ? input.workChatId : null,
       existing.id,
     );
     const updated = getTask(existing.id);
@@ -119,7 +123,7 @@ export function ensureProgressTask(input: {
   const result = db
     .prepare(
       "INSERT INTO tasks (title, detail, category, flow, status, assignees, " +
-        "sort_order, progress_key) VALUES (?, '', '', ?, ?, ?, ?, ?)",
+        "sort_order, progress_key, work_chat_id) VALUES (?, '', '', ?, ?, ?, ?, ?, ?)",
     )
     .run(
       cleanText(input.title, MAX_TITLE) || "—",
@@ -128,6 +132,7 @@ export function ensureProgressTask(input: {
       stringifyArray(cleanAssignees(input.assignees)),
       maxRow.m + 1,
       key,
+      typeof input.workChatId === "number" ? input.workChatId : null,
     );
   const id = Number(result.lastInsertRowid);
   logTaskEvent(id, "created", { meta: { title: input.title, status } });

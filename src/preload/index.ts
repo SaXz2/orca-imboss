@@ -38,6 +38,7 @@ import type {
   TaskPromoteInput,
   TaskReactionKind,
   TaskReactions,
+  TaskRef,
   TaskStatus,
   TaskThread,
   ThemeState,
@@ -350,6 +351,13 @@ const api = {
       ipcRenderer.invoke("tasks:thread", id) as Promise<TaskThread>,
     comment: (id: number, input: TaskCommentInput) =>
       ipcRenderer.invoke("tasks:comment", id, input) as Promise<TaskEvent>,
+    deleteComment: (id: number, eventId: number) =>
+      ipcRenderer.invoke("tasks:comment:delete", id, eventId) as Promise<boolean>,
+    link: (fromId: number, toId: number) =>
+      ipcRenderer.invoke("tasks:link", fromId, toId) as Promise<{
+        out: TaskRef[];
+        in: TaskRef[];
+      }>,
     react: (id: number, kind: TaskReactionKind) =>
       ipcRenderer.invoke("tasks:react", id, kind) as Promise<TaskReactions>,
     close: (id: number, reason: string) =>

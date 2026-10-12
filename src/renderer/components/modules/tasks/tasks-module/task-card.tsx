@@ -5,7 +5,6 @@ import { EmployeeAvatar } from "../../../employee-avatar";
 import {
   IconArchive,
   IconComment,
-  IconLike,
   IconPencil,
 } from "../../../icons";
 import { CLOSE_REASON_KEYS, labelColor } from "./task-meta";
@@ -45,7 +44,6 @@ export function TaskCard({
   const totalSteps = card.steps.length;
   const shown = card.assignees.slice(0, 4);
   const extra = card.assignees.length - shown.length;
-  const reactions = card.reactions;
 
   return (
     <div
@@ -108,12 +106,6 @@ export function TaskCard({
           <span className="imb-gh-stat" title={t("Comments")}>
             <IconComment />
             {card.commentCount}
-          </span>
-        )}
-        {reactions.like > 0 && (
-          <span className="imb-gh-stat" title={t("Likes")}>
-            <IconLike />
-            {reactions.like}
           </span>
         )}
         <span className="imb-gh-assignees">

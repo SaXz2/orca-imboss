@@ -668,6 +668,69 @@
   color: var(--imb-fg);
 }
 
+/* Delete affordance on an authored comment (hover-revealed). */
+.imb-tl-del {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--imb-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--imb-motion-fast) var(--imb-ease-standard),
+    color var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-tl-del svg {
+  width: 13px;
+  height: 13px;
+}
+
+.imb-tl-body:hover .imb-tl-del {
+  opacity: 1;
+}
+
+.imb-tl-del:hover {
+  color: var(--imb-danger);
+}
+
+/* Manual task-linking picker. */
+.imb-link-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--imb-space-3);
+}
+
+.imb-link-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.imb-link-item {
+  display: flex;
+  align-items: center;
+  gap: var(--imb-space-2);
+  padding: 7px 10px;
+  text-align: left;
+  border: 1px solid var(--imb-border-soft);
+  border-radius: var(--imb-radius-md);
+  background: transparent;
+  color: var(--imb-fg);
+  font-size: var(--imb-text-sm);
+  cursor: pointer;
+  transition: all var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-link-item:hover {
+  border-color: var(--imb-accent);
+  background: var(--imb-accent-soft);
+}
+
 /* Inline `#123` task references inside text. */
 .imb-ref-link {
   display: inline;
@@ -690,6 +753,13 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.imb-task-refs-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--imb-space-2);
 }
 
 .imb-task-ref-row {

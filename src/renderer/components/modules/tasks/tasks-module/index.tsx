@@ -81,9 +81,11 @@ export function TasksModule(): React.JSX.Element {
 
   const visible = useMemo(
     () =>
-      categoryFilter === null
-        ? cards
-        : cards.filter((card) => card.category === categoryFilter),
+      cards.filter(
+        (card) =>
+          card.status !== "closed" &&
+          (categoryFilter === null || card.category === categoryFilter),
+      ),
     [cards, categoryFilter],
   );
 

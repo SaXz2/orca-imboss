@@ -79,6 +79,8 @@ export interface Task {
    * progress card, not as a separate card.
    */
   progressKey: string | null;
+  /** The working group chat this task's people work in (mentions land here). */
+  workChatId: number | null;
   createdAt: number;
   updatedAt: number;
 }
@@ -95,6 +97,7 @@ export interface TaskRow {
   assignees: string;
   sort_order: number;
   progress_key: string | null;
+  work_chat_id: number | null;
   created_at: number;
   updated_at: number;
 }
