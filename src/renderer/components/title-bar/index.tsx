@@ -2,7 +2,7 @@ import { t } from "@shared/l10n";
 import { useEffect, useState } from "react";
 import { cls } from "reactutils";
 import { appStore, IS_MAC, useApp } from "../../app-store";
-import { IconBack, IconClock, IconForward } from "../icons";
+import { IconBack, IconForward } from "../icons";
 import "./index.css";
 
 const stroke = { stroke: "currentColor", strokeWidth: 1.4 } as const;
@@ -12,12 +12,12 @@ const stroke = { stroke: "currentColor", strokeWidth: 1.4 } as const;
  * macOS: empty draggable strip; the native traffic lights sit on its left.
  * Windows/Linux: custom small min/max/close buttons on the right (native
  * controls are hidden via the absence of `titleBarOverlay`).
- * Both platforms get the scheduled-tasks toggle just left of the window
+ * Both platforms get the back / forward controls just left of the window
  * controls.
  */
 export function TitleBar(): React.JSX.Element {
   const [maximized, setMaximized] = useState(false);
-  const { dockOpen, navHistory, navHistoryIndex } = useApp();
+  const { navHistory, navHistoryIndex } = useApp();
   const canGoBack = navHistoryIndex > 0;
   const canGoForward = navHistoryIndex < navHistory.length - 1;
 
@@ -58,16 +58,6 @@ export function TitleBar(): React.JSX.Element {
             onClick={() => appStore.goForward()}
           >
             <IconForward />
-          </button>
-          <button
-            type="button"
-            className="imb-titlebar-toggle"
-            aria-label={t("Scheduled tasks")}
-            aria-pressed={dockOpen}
-            title={t("Scheduled tasks")}
-            onClick={() => appStore.toggleDock()}
-          >
-            <IconClock />
           </button>
         </div>
         {!IS_MAC && (

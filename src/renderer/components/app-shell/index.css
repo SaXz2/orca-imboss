@@ -22,16 +22,6 @@
   grid-template-columns: 1fr;
 }
 
-/* Scheduled-tasks dock: a real third column, so opening it pushes the content
-   aside instead of covering it. */
-.imb-app.imb-has-dock {
-  grid-template-columns: 208px 1fr 380px;
-}
-
-.imb-app.imb-is-collapsed.imb-has-dock {
-  grid-template-columns: 76px 1fr 380px;
-}
-
 /* The content pane stays mounted (portaled mini-app iframes live in it) but is
    removed from the grid while a list/detail module is active. */
 .imb-contentpane.imb-pane-hidden {

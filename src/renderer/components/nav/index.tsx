@@ -1,5 +1,6 @@
 import { SettingKeys } from "@shared/constants/settings";
 import { t } from "@shared/l10n";
+import type { CronJobInfo } from "@shared/types";
 import { useEffect, useRef, useState } from "react";
 import { cls } from "reactutils";
 import { appStore, sessionKey, useApp, type AppModule } from "../../app-store";
@@ -104,6 +105,27 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
   const [chatDragId, setChatDragId] = useState<number | null>(null);
   const [sessionDragKey, setSessionDragKey] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<AppModule | null>(null);
+  const [cronJobs, setCronJobs] = useState<CronJobInfo[]>([]);
+
+  // Scheduled tasks live in the rail so automation is visible from anywhere.
+  // Refreshed on a slow timer: one indexed query, and jobs change rarely.
+  useEffect(() => {
+    let alive = true;
+    const load = async (): Promise<void> => {
+      try {
+        const jobs = await imb.cron.listAll();
+        if (alive) setCronJobs(jobs);
+      } catch {
+        // Best-effort: keep the last snapshot.
+      }
+    };
+    void load();
+    const timer = window.setInterval(() => void load(), 60_000);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+    };
+  }, []);
   const [brandEditing, setBrandEditing] = useState(false);
   const [brandDraft, setBrandDraft] = useState("");
   const brandLogoInputRef = useRef<HTMLInputElement>(null);
@@ -250,6 +272,34 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
                     }}
                   />
                 ))}
+              </div>
+            </div>
+          )}
+          {cronJobs.length > 0 && (
+            <div className="imb-nav-group">
+              <div className="imb-nav-section">{t("Scheduled tasks")}</div>
+              <div className="imb-nav-items">
+                {cronJobs.map((job) => {
+                  const employee = data.employees.items.find(
+                    (person) => person.id === job.employeeId,
+                  );
+                  return (
+                    <NavCronButton
+                      key={job.id}
+                      job={job}
+                      label={
+                        employee ? employeeLabel(employee) : `#${job.employeeId}`
+                      }
+                      collapsed={collapsed}
+                      onClick={() =>
+                        void appStore.openAgentSession(
+                          job.employeeId,
+                          job.chatId,
+                        )
+                      }
+                    />
+                  );
+                })}
               </div>
             </div>
           )}
@@ -520,6 +570,42 @@ function NavButton({ item, collapsed }: NavButtonProps): React.JSX.Element {
       >
         <Icon className="imb-icon" />
         <span className="imb-nav-label">{t(item.labelKey)}</span>
+      </button>
+    </Tooltip>
+  );
+}
+
+type NavCronButtonProps = {
+  job: CronJobInfo;
+  label: string;
+  collapsed: boolean;
+  onClick: () => void;
+};
+
+/** Nav entry for one scheduled task: who runs it, when, and what it does. */
+function NavCronButton({
+  job,
+  label,
+  collapsed,
+  onClick,
+}: NavCronButtonProps): React.JSX.Element {
+  const preview = job.content.replace(/\s+/g, " ").trim();
+  return (
+    <Tooltip content={preview} placement="right">
+      <button
+        type="button"
+        className="imb-nav-item"
+        aria-label={collapsed ? label : undefined}
+        onClick={onClick}
+      >
+        <EmployeeAvatar employeeId={job.employeeId} size={24} />
+        <span className="imb-nav-text">
+          <span className="imb-nav-label">{label}</span>
+          <span className="imb-nav-sub">
+            {job.schedule}
+            {preview.length > 0 ? ` · ${preview}` : ""}
+          </span>
+        </span>
       </button>
     </Tooltip>
   );

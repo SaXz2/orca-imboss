@@ -156,10 +156,6 @@ export const appStore = proxy({
   // notification click). Cleared once consumed.
   focusChatId: null as number | null,
 
-  // Right dock visibility (today it holds the scheduled tasks). Session-only: a
-  // restart starts closed.
-  dockOpen: false,
-
   // View history for the title-bar back / forward controls. Session-only: one
   // entry per place you actually landed on, with the index pointing at the
   // current one. Forward entries are dropped once you navigate away from them.
@@ -789,11 +785,6 @@ export const appStore = proxy({
     await imb.settings.set(SettingKeys.Module, "employees");
   },
 
-  /** Show or hide the right dock. */
-  setDockOpen(open: boolean): void {
-    appStore.dockOpen = open;
-  },
-
   /** Go back to the previous place you were looking at. */
   goBack(): void {
     applyNavView(appStore.navHistoryIndex - 1);
@@ -802,11 +793,6 @@ export const appStore = proxy({
   /** Go forward again after a back. */
   goForward(): void {
     applyNavView(appStore.navHistoryIndex + 1);
-  },
-
-  /** Toggle the right dock. */
-  toggleDock(): void {
-    appStore.dockOpen = !appStore.dockOpen;
   },
 
   /** Open the Settings module on a section (persists the active module). */
