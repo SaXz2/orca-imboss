@@ -13,6 +13,7 @@ import {
   IconApp,
   IconChat,
   IconChevronDown,
+  IconClock,
   IconCollapse,
   IconEmployees,
   IconGear,
@@ -26,12 +27,18 @@ import { Tooltip } from "../tooltip";
 import "./index.css";
 
 interface NavItem {
-  module: AppModule;
+  /** Module this entry opens; omitted for browse-only entries (scheduled tasks). */
+  module?: AppModule;
   labelKey: string;
   icon: (props: { className?: string }) => React.JSX.Element;
   section?: "main" | "miniapp" | "bottom";
   /** Renders an expandable browse list under the entry (what is inside). */
-  browse?: "chats" | "employees";
+  browse?: "chats" | "employees" | "cron";
+}
+
+/** Stable key for a nav entry (browse-only entries have no module). */
+function navItemKey(item: NavItem): string {
+  return item.module ?? item.labelKey;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -60,6 +67,12 @@ const NAV_ITEMS: NavItem[] = [
     labelKey: "Usage",
     icon: IconUsage,
     section: "main",
+  },
+  {
+    labelKey: "Scheduled tasks",
+    icon: IconClock,
+    section: "main",
+    browse: "cron",
   },
   { module: "mcp", labelKey: "MCP", icon: IconMcp, section: "main" },
   {
@@ -104,7 +117,7 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
   const [dragId, setDragId] = useState<string | null>(null);
   const [chatDragId, setChatDragId] = useState<number | null>(null);
   const [sessionDragKey, setSessionDragKey] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState<AppModule | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
   const [cronJobs, setCronJobs] = useState<CronJobInfo[]>([]);
 
   // Scheduled tasks live in the rail so automation is visible from anywhere.
@@ -235,18 +248,23 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
           {main.map((item) =>
             item.browse ? (
               <NavBrowseGroup
-                key={item.module}
+                key={navItemKey(item)}
                 item={item}
                 collapsed={collapsed}
-                expanded={expanded === item.module}
+                expanded={expanded === navItemKey(item)}
+                cronJobs={cronJobs}
                 onToggle={() =>
                   setExpanded((current) =>
-                    current === item.module ? null : item.module,
+                    current === navItemKey(item) ? null : navItemKey(item),
                   )
                 }
               />
             ) : (
-              <NavButton key={item.module} item={item} collapsed={collapsed} />
+              <NavButton
+                key={navItemKey(item)}
+                item={item}
+                collapsed={collapsed}
+              />
             ),
           )}
         </div>
@@ -272,34 +290,6 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
                     }}
                   />
                 ))}
-              </div>
-            </div>
-          )}
-          {cronJobs.length > 0 && (
-            <div className="imb-nav-group">
-              <div className="imb-nav-section">{t("Scheduled tasks")}</div>
-              <div className="imb-nav-items">
-                {cronJobs.map((job) => {
-                  const employee = data.employees.items.find(
-                    (person) => person.id === job.employeeId,
-                  );
-                  return (
-                    <NavCronButton
-                      key={job.id}
-                      job={job}
-                      label={
-                        employee ? employeeLabel(employee) : `#${job.employeeId}`
-                      }
-                      collapsed={collapsed}
-                      onClick={() =>
-                        void appStore.openAgentSession(
-                          job.employeeId,
-                          job.chatId,
-                        )
-                      }
-                    />
-                  );
-                })}
               </div>
             </div>
           )}
@@ -424,6 +414,7 @@ type NavBrowseGroupProps = {
   item: NavItem;
   collapsed: boolean;
   expanded: boolean;
+  cronJobs: readonly CronJobInfo[];
   onToggle: () => void;
 };
 
@@ -439,11 +430,12 @@ function NavBrowseGroup({
   item,
   collapsed,
   expanded,
+  cronJobs,
   onToggle,
 }: NavBrowseGroupProps): React.JSX.Element {
   const { module, locale, data } = useApp();
   const Icon = item.icon;
-  const active = module === item.module;
+  const active = item.module !== undefined && module === item.module;
 
   // Chat summaries load lazily (the chat module normally owns that fetch).
   useEffect(() => {
@@ -461,6 +453,45 @@ function NavBrowseGroup({
   const employees = data.employees.items.slice(0, BROWSE_LIMIT);
   const open = expanded && !collapsed;
 
+  /** One row of the scheduled-tasks list. */
+  const renderCronRows = (): React.JSX.Element | React.JSX.Element[] => {
+    if (cronJobs.length === 0) {
+      return (
+        <div className="imb-nav-browse-empty">
+          {t("No scheduled tasks yet")}
+        </div>
+      );
+    }
+    return cronJobs.map((job) => {
+      const employee = data.employees.items.find(
+        (person) => person.id === job.employeeId,
+      );
+      const preview = job.content.replace(/\s+/g, " ").trim();
+      return (
+        <button
+          key={job.id}
+          type="button"
+          className="imb-nav-browse-item"
+          title={preview}
+          onClick={() =>
+            void appStore.openAgentSession(job.employeeId, job.chatId)
+          }
+        >
+          <EmployeeAvatar employeeId={job.employeeId} size={18} />
+          <span className="imb-nav-browse-text">
+            <span className="imb-nav-label">
+              {employee ? employeeLabel(employee) : `#${job.employeeId}`}
+            </span>
+            <span className="imb-nav-sub">
+              {job.schedule}
+              {preview.length > 0 ? ` · ${preview}` : ""}
+            </span>
+          </span>
+        </button>
+      );
+    });
+  };
+
   return (
     <div className={cls("imb-nav-browse", open && "imb-is-open")}>
       <div className="imb-nav-browse-head">
@@ -474,7 +505,12 @@ function NavBrowseGroup({
             className={cls("imb-nav-item", active && "imb-is-active")}
             aria-current={active ? "page" : undefined}
             aria-label={collapsed ? t(item.labelKey) : undefined}
-            onClick={() => void setModule(item.module)}
+            onClick={() => {
+              // Browse-only entries (scheduled tasks) own no page, so the row
+              // itself opens the list.
+              if (item.module) void setModule(item.module);
+              else onToggle();
+            }}
           >
             <Icon className="imb-icon" />
             <span className="imb-nav-label">{t(item.labelKey)}</span>
@@ -495,7 +531,9 @@ function NavBrowseGroup({
 
       {open && (
         <div className="imb-nav-browse-list">
-          {item.browse === "chats"
+          {item.browse === "cron"
+            ? renderCronRows()
+            : item.browse === "chats"
             ? chats.map((chat) => (
                 <button
                   key={`chat:${chat.id}`}
@@ -547,6 +585,7 @@ type NavButtonProps = {
 
 function NavButton({ item, collapsed }: NavButtonProps): React.JSX.Element {
   const { module } = useApp();
+  const target = item.module;
 
   async function setModule(value: AppModule): Promise<void> {
     // Entering Settings via the nav opens its default section; the updater's
@@ -557,7 +596,7 @@ function NavButton({ item, collapsed }: NavButtonProps): React.JSX.Element {
   }
 
   const Icon = item.icon;
-  const active = module === item.module;
+  const active = target !== undefined && module === target;
 
   return (
     <Tooltip content={t(item.labelKey)} placement="right" disabled={!collapsed}>
@@ -566,46 +605,12 @@ function NavButton({ item, collapsed }: NavButtonProps): React.JSX.Element {
         className={cls("imb-nav-item", active && "imb-is-active")}
         aria-current={active ? "page" : undefined}
         aria-label={collapsed ? t(item.labelKey) : undefined}
-        onClick={() => setModule(item.module)}
+        onClick={() => {
+          if (target !== undefined) void setModule(target);
+        }}
       >
         <Icon className="imb-icon" />
         <span className="imb-nav-label">{t(item.labelKey)}</span>
-      </button>
-    </Tooltip>
-  );
-}
-
-type NavCronButtonProps = {
-  job: CronJobInfo;
-  label: string;
-  collapsed: boolean;
-  onClick: () => void;
-};
-
-/** Nav entry for one scheduled task: who runs it, when, and what it does. */
-function NavCronButton({
-  job,
-  label,
-  collapsed,
-  onClick,
-}: NavCronButtonProps): React.JSX.Element {
-  const preview = job.content.replace(/\s+/g, " ").trim();
-  return (
-    <Tooltip content={preview} placement="right">
-      <button
-        type="button"
-        className="imb-nav-item"
-        aria-label={collapsed ? label : undefined}
-        onClick={onClick}
-      >
-        <EmployeeAvatar employeeId={job.employeeId} size={24} />
-        <span className="imb-nav-text">
-          <span className="imb-nav-label">{label}</span>
-          <span className="imb-nav-sub">
-            {job.schedule}
-            {preview.length > 0 ? ` · ${preview}` : ""}
-          </span>
-        </span>
       </button>
     </Tooltip>
   );

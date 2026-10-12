@@ -341,6 +341,12 @@ button.imb-nav-brandname:hover {
   white-space: nowrap;
 }
 
+.imb-nav-browse-empty {
+  padding: 6px 10px;
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+}
+
 .imb-nav-divider {
   height: 1px;
   background: var(--imb-border);
