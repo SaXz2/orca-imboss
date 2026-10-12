@@ -913,3 +913,145 @@ span.imb-task-step-name {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* --- Quiet inline actions (task detail bar, archive rows) --- */
+.imb-detail-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.imb-detail-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-pill);
+  background: transparent;
+  color: var(--imb-text-2);
+  font-size: var(--imb-text-xs);
+  cursor: pointer;
+  transition:
+    border-color var(--imb-motion-fast) var(--imb-ease-standard),
+    color var(--imb-motion-fast) var(--imb-ease-standard),
+    background var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-detail-action svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+
+.imb-detail-action:hover:not(:disabled) {
+  border-color: var(--imb-accent);
+  color: var(--imb-accent);
+}
+
+.imb-detail-action:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.imb-detail-action.imb-is-accent {
+  color: var(--imb-accent);
+  border-color: color-mix(in oklch, var(--imb-accent) 45%, transparent);
+}
+
+/* --- Board header: archive toggle --- */
+.imb-task-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.imb-task-archive-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-pill);
+  background: transparent;
+  color: var(--imb-text-2);
+  font-size: var(--imb-text-sm);
+  cursor: pointer;
+  transition:
+    border-color var(--imb-motion-fast) var(--imb-ease-standard),
+    color var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-task-archive-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.imb-task-archive-btn:hover,
+.imb-task-archive-btn.imb-is-on {
+  border-color: var(--imb-accent);
+  color: var(--imb-accent);
+}
+
+.imb-task-archive-n {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Archive list --- */
+.imb-archive-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--imb-border-soft);
+  border-radius: var(--imb-radius-lg);
+  overflow: hidden;
+}
+
+.imb-archive-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--imb-border-soft);
+}
+
+.imb-archive-row:last-child {
+  border-bottom: none;
+}
+
+.imb-archive-icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--imb-muted);
+}
+
+.imb-archive-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.imb-archive-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.imb-archive-title {
+  font-size: var(--imb-text-sm);
+  font-weight: 550;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.imb-archive-time {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+}

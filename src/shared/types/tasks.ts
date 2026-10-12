@@ -92,6 +92,22 @@ export interface TaskRow {
   updated_at: number;
 }
 
+/**
+ * An archived task: just enough to list it and jump back into it. Archiving is
+ * a board-level hide, so it stores the board key rather than the task itself.
+ */
+export interface ArchivedTask {
+  /** Board key of the archived card (`progress:<id>`). */
+  key: string;
+  title: string;
+  /** Conversation to open (root chat, present in the chat list). */
+  chatId: number | null;
+  /** The task's working group chat. */
+  workChatId: number | null;
+  /** Epoch milliseconds the task was archived. */
+  archivedAt: number;
+}
+
 /** Create/update payload; omitted fields are left untouched on update. */
 export interface TaskInput {
   title?: string;

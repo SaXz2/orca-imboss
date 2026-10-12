@@ -1,4 +1,5 @@
 import type {
+  ArchivedTask,
   TaskCommentInput,
   TaskInput,
   TaskReactionKind,
@@ -7,8 +8,13 @@ import type {
 import { ipcMain } from "electron";
 import * as dbTaskThread from "../db/task-thread";
 import * as dbTasks from "../db/tasks";
+import {
+  archiveTask,
+  listArchivedTasks,
+  unarchiveTask,
+} from "../task-archive";
 import { listBoardCards } from "../task-board";
-import { assertInteger } from "./helpers";
+import { assertInteger, assertString } from "./helpers";
 
 /**
  * Task-center IPC handlers: the board plus the task *thread* (timeline,
@@ -82,5 +88,24 @@ export function registerTaskHandlers(): void {
 
   ipcMain.handle("tasks:reopen", (_event, id: unknown) =>
     dbTasks.reopenTask(assertInteger(id, "task id")),
+  );
+
+  // Archive: hide a task from the board while keeping it listed.
+  ipcMain.handle("tasks:archives", () => listArchivedTasks());
+
+  ipcMain.handle("tasks:archive", (_event, entry: unknown) => {
+    const record = entry as Partial<ArchivedTask>;
+    return archiveTask({
+      key: assertString(record.key, "key"),
+      title: assertString(record.title, "title"),
+      chatId: typeof record.chatId === "number" ? record.chatId : null,
+      workChatId:
+        typeof record.workChatId === "number" ? record.workChatId : null,
+      archivedAt: Date.now(),
+    });
+  });
+
+  ipcMain.handle("tasks:unarchive", (_event, key: unknown) =>
+    unarchiveTask(assertString(key, "key")),
   );
 }

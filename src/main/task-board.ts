@@ -11,6 +11,7 @@ import * as dbEmployees from "./db/employees";
 import { parseJsonObject } from "./db/json";
 import { authoredCounts, reactionsFor } from "./db/task-thread";
 import { listTasks } from "./db/tasks";
+import { listArchivedTasks } from "./task-archive";
 
 /**
  * Task Center board composition.
@@ -111,6 +112,7 @@ export function listBoardCards(): BoardCard[] {
     .all() as ProgressRow[];
 
   const people = dbEmployees.listEmployees();
+  const archived = new Set(listArchivedTasks().map((entry) => entry.key));
   const seen = new Set<string>();
 
   for (const row of rows) {
@@ -122,6 +124,9 @@ export function listBoardCards(): BoardCard[] {
     const groupKey = `${row.chat_id}\u0000${title}`;
     if (seen.has(groupKey)) continue;
     seen.add(groupKey);
+
+    // Archived tasks are hidden from the board (they live in the archive view).
+    if (archived.has(`progress:${row.id}`)) continue;
 
     // Owner names may arrive without an id (older cards); resolve them once so
     // the board, the steps view and the per-employee tallies all agree.

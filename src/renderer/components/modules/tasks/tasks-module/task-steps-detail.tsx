@@ -1,12 +1,12 @@
 import { employeeColor } from "@shared/constants/employee-colors";
 import { t } from "@shared/l10n";
 import type { BoardCard, MessageStep, StepStatus } from "@shared/types";
+import { useState } from "react";
 import { cls } from "reactutils";
 import { appStore } from "../../../../app-store";
 import { employeeLabel } from "../../../../employee-label";
-import { Button } from "../../../button";
 import { EmployeeAvatar } from "../../../employee-avatar";
-import { IconBack, IconChat } from "../../../icons";
+import { IconArchive, IconBack, IconChat, IconEmployees } from "../../../icons";
 import { COLUMNS } from "./task-meta";
 
 /** Translation key per step status; rendered through `t()` for locale switches. */
@@ -32,15 +32,21 @@ export function TaskStepsDetail({
   card,
   employees,
   onBack,
+  onArchive,
 }: {
   card: BoardCard;
   employees: EmployeeList;
   onBack: () => void;
+  onArchive: (card: BoardCard) => void;
 }): React.JSX.Element {
+  const [busy, setBusy] = useState(false);
   const statusLabel =
     COLUMNS.find((column) => column.status === card.status)?.labelKey ??
     "Pending";
   const doneCount = card.steps.filter((step) => step.status === "done").length;
+  // A separate working group is what makes a task readable end to end.
+  const hasWorkChat =
+    card.workChatId !== null && card.workChatId !== card.chatId;
 
   const openSession = (employeeId: number): void => {
     const chatId = card.workChatId ?? card.chatId;
@@ -49,13 +55,25 @@ export function TaskStepsDetail({
   };
 
   /**
-   * Open the conversation the way the chat list does: select it in the chat
-   * module instead of pushing a new entry into the sidebar.
+   * Open the task's conversation the way the chat list does: select it in the
+   * chat module instead of pushing a new entry into the sidebar.
    */
   const openChat = (): void => {
     if (card.chatId === null) return;
     appStore.focusChatId = card.chatId;
     appStore.module = "chat";
+  };
+
+  /** Open the task's working group chat, where the whole result is recorded. */
+  const openWorkChat = async (): Promise<void> => {
+    if (card.workChatId === null || busy) return;
+    setBusy(true);
+    try {
+      const summary = await imb.chats.summary(card.workChatId);
+      if (summary) appStore.openChat(summary);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -65,12 +83,38 @@ export function TaskStepsDetail({
           <IconBack />
           {t("Back to board")}
         </button>
-        {card.chatId !== null && (
-          <Button variant="secondary" onClick={openChat}>
-            <IconChat className="imb-icon imb-xs" />
-            {t("Open chat")}
-          </Button>
-        )}
+
+        <div className="imb-detail-actions">
+          {card.chatId !== null && (
+            <button
+              type="button"
+              className="imb-detail-action"
+              onClick={openChat}
+            >
+              <IconChat />
+              {t("Open chat")}
+            </button>
+          )}
+          {hasWorkChat && (
+            <button
+              type="button"
+              className="imb-detail-action"
+              disabled={busy}
+              onClick={() => void openWorkChat()}
+            >
+              <IconEmployees />
+              {t("Open task group")}
+            </button>
+          )}
+          <button
+            type="button"
+            className="imb-detail-action"
+            onClick={() => onArchive(card)}
+          >
+            <IconArchive />
+            {t("Archive")}
+          </button>
+        </div>
       </div>
 
       <div className="imb-task-detail-scroll">

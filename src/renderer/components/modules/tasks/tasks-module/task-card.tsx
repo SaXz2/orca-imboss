@@ -3,6 +3,7 @@ import type { BoardCard } from "@shared/types";
 import { cls } from "reactutils";
 import { EmployeeAvatar } from "../../../employee-avatar";
 import {
+  IconArchive,
   IconComment,
   IconLike,
   IconPencil,
@@ -27,6 +28,7 @@ export function TaskCard({
   onDragEnd,
   onOpen,
   onEdit,
+  onArchive,
 }: {
   card: BoardCard;
   employees: EmployeeList;
@@ -35,6 +37,7 @@ export function TaskCard({
   onDragEnd: () => void;
   onOpen: () => void;
   onEdit: () => void;
+  onArchive: () => void;
 }): React.JSX.Element {
   const isProgress = card.source === "progress";
   const closed = card.status === "closed";
@@ -133,6 +136,20 @@ export function TaskCard({
             }}
           >
             <IconPencil />
+          </button>
+        )}
+        {isProgress && (
+          <button
+            type="button"
+            className="imb-gh-edit"
+            title={t("Archive")}
+            aria-label={t("Archive")}
+            onClick={(e) => {
+              e.stopPropagation();
+              onArchive();
+            }}
+          >
+            <IconArchive />
           </button>
         )}
       </div>

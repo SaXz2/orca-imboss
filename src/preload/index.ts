@@ -3,6 +3,7 @@ import type {
   ActiveLiveBlock,
   AgentSessionViewEntry,
   AgentStreamPayload,
+  ArchivedTask,
   Chat,
   ChatParticipantUpdate,
   ChatSummary,
@@ -352,6 +353,17 @@ const api = {
       ipcRenderer.invoke("tasks:close", id, reason) as Promise<Task | null>,
     reopen: (id: number) =>
       ipcRenderer.invoke("tasks:reopen", id) as Promise<Task | null>,
+    archives: () =>
+      ipcRenderer.invoke("tasks:archives") as Promise<ArchivedTask[]>,
+    archive: (entry: {
+      key: string;
+      title: string;
+      chatId: number | null;
+      workChatId: number | null;
+    }) =>
+      ipcRenderer.invoke("tasks:archive", entry) as Promise<ArchivedTask[]>,
+    unarchive: (key: string) =>
+      ipcRenderer.invoke("tasks:unarchive", key) as Promise<ArchivedTask[]>,
   },
 
   providers: {

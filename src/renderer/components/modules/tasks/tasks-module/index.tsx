@@ -1,11 +1,12 @@
 import { t } from "@shared/l10n";
-import type { BoardCard, Task, TaskInput, TaskStatus } from "@shared/types";
+import type { ArchivedTask, BoardCard, Task, TaskInput, TaskStatus } from "@shared/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { cls } from "reactutils";
 import { appStore, useApp } from "../../../../app-store";
 import { ModuleView } from "../../../app-shell";
 import { Button } from "../../../button";
-import { IconPlus } from "../../../icons";
+import { IconArchive, IconPlus } from "../../../icons";
+import { TaskArchiveList } from "./archive-list";
 import { TaskCard } from "./task-card";
 import { TaskDetail } from "./task-detail";
 import { TaskStepsDetail } from "./task-steps-detail";
@@ -32,11 +33,18 @@ export function TasksModule(): React.JSX.Element {
   const [createStatus, setCreateStatus] = useState<TaskStatus>("pending");
   const [detailId, setDetailId] = useState<number | null>(null);
   const [progressCard, setProgressCard] = useState<BoardCard | null>(null);
+  const [archived, setArchived] = useState<ArchivedTask[]>([]);
+  const [showArchive, setShowArchive] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
   const reload = useCallback(async (): Promise<void> => {
     try {
-      setCards(await imb.tasks.board());
+      const [cards, archives] = await Promise.all([
+        imb.tasks.board(),
+        imb.tasks.archives(),
+      ]);
+      setCards(cards);
+      setArchived(archives);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -138,12 +146,44 @@ export function TasksModule(): React.JSX.Element {
     await reload();
   };
 
-  const content = progressCard ? (
+  const archiveCurrent = async (card: BoardCard): Promise<void> => {
+    try {
+      const list = await imb.tasks.archive({
+        key: card.key,
+        title: card.title,
+        chatId: card.chatId,
+        workChatId: card.workChatId,
+      });
+      setArchived(list);
+      setProgressCard(null);
+      await reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const restore = async (key: string): Promise<void> => {
+    try {
+      setArchived(await imb.tasks.unarchive(key));
+      await reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const content = showArchive ? (
+    <TaskArchiveList
+      archived={archived}
+      onBack={() => setShowArchive(false)}
+      onRestore={(key) => void restore(key)}
+    />
+  ) : progressCard ? (
     <TaskStepsDetail
       key={progressCard.key}
       card={progressCard}
       employees={employees}
       onBack={() => setProgressCard(null)}
+      onArchive={(card) => void archiveCurrent(card)}
     />
   ) : detailId !== null ? (
       <TaskDetail
@@ -167,10 +207,26 @@ export function TasksModule(): React.JSX.Element {
               {t("${count} tasks", { count: String(visible.length) })}
             </div>
           </div>
-          <Button onClick={() => openCreate("pending")}>
-            <IconPlus className="imb-icon imb-sm" />
-            {t("New task")}
-          </Button>
+          <div className="imb-task-head-actions">
+            <button
+              type="button"
+              className={cls(
+                "imb-task-archive-btn",
+                showArchive && "imb-is-on",
+              )}
+              onClick={() => setShowArchive((on) => !on)}
+            >
+              <IconArchive />
+              {t("Archive")}
+              {archived.length > 0 && (
+                <span className="imb-task-archive-n">{archived.length}</span>
+              )}
+            </button>
+            <Button onClick={() => openCreate("pending")}>
+              <IconPlus className="imb-icon imb-sm" />
+              {t("New task")}
+            </Button>
+          </div>
         </div>
 
         {categories.length > 0 && (
@@ -267,6 +323,7 @@ export function TasksModule(): React.JSX.Element {
                         : setDetailId(card.refId)
                     }
                     onEdit={() => openEdit(card)}
+                    onArchive={() => void archiveCurrent(card)}
                   />
                 ))}
                 {!loading && byStatus[column.status].length === 0 && (
