@@ -4,6 +4,17 @@
   margin: var(--imb-space-2) 0;
 }
 
+/* Detail column wrapper: keeps the header/thread/input flex layout while
+   remounting per selection, so switching chats cross-fades. Opacity-only so it
+   never creates a containing block for fixed-position descendants. */
+.imb-chat-detail {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  animation: imb-fade-in var(--imb-duration-fast) var(--imb-ease-out);
+}
+
 /* Live run-status indicator appended below the thread while a run is active.
    The fixed height keeps the layout stable while showing real-time activity. */
 .imb-run-status {

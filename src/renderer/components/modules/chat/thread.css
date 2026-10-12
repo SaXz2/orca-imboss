@@ -38,6 +38,12 @@
   min-height: 0;
 }
 
+/* Only the newest message plays an entrance, so appending one animates it while
+   scrolling through history never replays anything. */
+.imb-thread > .imb-msg:last-child {
+  animation: imb-soft-up-in var(--imb-duration-slow) var(--imb-ease-out);
+}
+
 .imb-chat-empty-detail {
   padding: 48px 24px;
   text-align: center;

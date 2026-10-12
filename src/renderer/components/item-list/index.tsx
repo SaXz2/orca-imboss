@@ -35,6 +35,8 @@ export interface ItemListProps<T, K extends React.Key> {
   selectable?: boolean;
   selectedKeys?: ReadonlySet<K>;
   onItemClick?: (item: T, index: number, mods: ClickModifiers) => void;
+  /** One-shot entrance for a genuinely new top row (newest-first lists). */
+  animateNewTop?: boolean;
 }
 
 /**
@@ -57,6 +59,7 @@ export function ItemList<T, K extends React.Key>({
   selectable = false,
   selectedKeys,
   onItemClick,
+  animateNewTop = false,
 }: ItemListProps<T, K>): React.JSX.Element {
   if (loading) {
     return <EmptyState>{loadingMessage ?? t("Loading…")}</EmptyState>;
@@ -81,6 +84,7 @@ export function ItemList<T, K extends React.Key>({
         ) : undefined
       }
       onNearEnd={loadMore}
+      animateNewTop={animateNewTop}
       renderItem={(item, index) => (
         <div
           className="imb-item-list-row"

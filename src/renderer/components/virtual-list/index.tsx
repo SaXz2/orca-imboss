@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cls } from "reactutils";
 import "./index.css";
 import { useVirtualList } from "./use-virtual-list";
@@ -26,6 +26,14 @@ export interface VirtualListProps<T> {
   footer?: ReactNode;
   /** Invoked when the last real row becomes (nearly) visible. */
   onNearEnd?: () => void;
+  /**
+   * One-shot entrance animation for a genuinely-new top row (see
+   * `.imb-vlist-row-enter`). Fires only when a *new* item is pushed onto the
+   * head of the list while the previous head is still present — so scroll
+   * remounts and filter/replace updates never replay it. Intended for
+   * newest-first lists.
+   */
+  animateNewTop?: boolean;
   className?: string;
 }
 
@@ -45,6 +53,7 @@ export function VirtualList<T>({
   gap,
   footer,
   onNearEnd,
+  animateNewTop = false,
   className,
 }: VirtualListProps<T>): React.JSX.Element {
   const { scrollRef, virtualizer } = useVirtualList({
@@ -57,6 +66,34 @@ export function VirtualList<T>({
   const virtualItems = virtualizer.getVirtualItems();
   const lastIndex =
     virtualItems.length > 0 ? virtualItems[virtualItems.length - 1].index : -1;
+
+  // Track the head key so a freshly-prepended row can animate once. The
+  // previous head must still exist in the list (otherwise the change was a
+  // filter/replace, not a prepend).
+  const topKey = items.length > 0 ? getItemKey(items[0], 0) : null;
+  const prevTopRef = useRef<React.Key | null | undefined>(undefined);
+  const [enterKey, setEnterKey] = useState<React.Key | null>(null);
+
+  useEffect(() => {
+    if (!animateNewTop) return;
+    if (prevTopRef.current === undefined) {
+      prevTopRef.current = topKey;
+      return;
+    }
+    if (topKey === prevTopRef.current) return;
+    const previous = prevTopRef.current;
+    prevTopRef.current = topKey;
+    const previousStillPresent =
+      previous !== null &&
+      items.some((item, index) => getItemKey(item, index) === previous);
+    if (previousStillPresent && topKey !== null) setEnterKey(topKey);
+  }, [topKey, animateNewTop, items, getItemKey]);
+
+  useEffect(() => {
+    if (enterKey === null) return;
+    const timer = window.setTimeout(() => setEnterKey(null), 600);
+    return () => window.clearTimeout(timer);
+  }, [enterKey]);
 
   // Lazy loading: fetch the next page when the user scrolls close to the
   // bottom (or when the loaded rows don't fill the viewport — the sentinel is
@@ -91,12 +128,19 @@ export function VirtualList<T>({
             );
           }
           const item = items[virtualItem.index];
+          const key = getItemKey(item, virtualItem.index);
           return (
             <div
-              key={getItemKey(item, virtualItem.index)}
+              key={key}
               ref={virtualizer.measureElement}
               data-index={virtualItem.index}
-              className="imb-vlist-row"
+              className={cls(
+                "imb-vlist-row",
+                enterKey !== null &&
+                  virtualItem.index === 0 &&
+                  key === enterKey &&
+                  "imb-vlist-row-enter",
+              )}
               style={rowStyle}
             >
               {renderItem(item, virtualItem.index)}

@@ -272,6 +272,18 @@
   }
 }
 
+/* ── 列表行入场 ──
+   仅透明度（不含 transform），因此可安全用于被虚拟化定位（行内联
+   transform: translateY）的行上；只在真正新增时播放，滚动重挂载不重放。 */
+@keyframes imb-row-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* ── 加载微光（骨架屏 / 忙碌条） ── */
 @keyframes imb-shimmer {
   from {

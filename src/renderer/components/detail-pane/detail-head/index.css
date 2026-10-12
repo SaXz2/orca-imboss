@@ -2,6 +2,7 @@
   padding: 0 var(--imb-space-6) var(--imb-space-4);
   border-bottom: 1px solid var(--imb-border);
   position: relative;
+  animation: imb-soft-up-in var(--imb-duration-slow) var(--imb-ease-out);
 }
 
 .imb-detail-head-eyebrow {

@@ -610,6 +610,7 @@ export function ChatModule(): React.JSX.Element {
         hasMore={listHasMore}
         loadMore={() => void search.loadMore()}
         loadError={listError}
+        animateNewTop
         selectable
         selectedKeys={multi.selectedKeys}
         onItemClick={(chat, index, mods) =>
@@ -683,7 +684,7 @@ export function ChatModule(): React.JSX.Element {
   );
 
   const detail = selected ? (
-    <>
+    <div className="imb-chat-detail" key={selected.id}>
       <div className="imb-chat-header">
         <div className="imb-chat-header-avatar">
           <EmployeeAvatar employeeId={0} size={36} />
@@ -750,7 +751,7 @@ export function ChatModule(): React.JSX.Element {
         focusToken={focusToken}
         onSend={handleSend}
       />
-    </>
+    </div>
   ) : null;
 
   return (
