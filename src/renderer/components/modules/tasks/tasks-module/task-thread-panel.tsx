@@ -5,7 +5,7 @@ import {
   type TaskEventKind,
   type TaskRef,
 } from "@shared/types";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cls } from "reactutils";
 import { Button } from "../../../button";
 import { EmployeeAvatar } from "../../../employee-avatar";
@@ -15,6 +15,7 @@ import { Input } from "../../../input";
 import { Modal } from "../../../modal";
 import { Select } from "../../../select";
 import { Textarea } from "../../../textarea";
+import { MentionPopup } from "../../chat/chat-input-bar/mention-popup";
 import { formatMessageTime } from "../../chat/relative-time";
 import {
   actorName,
@@ -62,6 +63,31 @@ export function TaskThreadPanel({
     Array<{ id: number; title: string }>
   >([]);
 
+  // `@` mention picker — the same component and keyboard model as the chat
+  // composer, so a mention behaves identically in both places.
+  const [mentionOpen, setMentionOpen] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const [mentionCaret, setMentionCaret] = useState({ start: 0, end: 0 });
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const mentionCandidates = useMemo(() => {
+    if (!mentionOpen) return [];
+    const query = mentionQuery.toLowerCase().trim();
+    const list = employees.map((e) => ({
+      id: e.id,
+      name: e.name,
+      role: e.role,
+    }));
+    if (query.length === 0) return list;
+    return list.filter(
+      (e) =>
+        (e.name ?? "").toLowerCase().includes(query) ||
+        (e.role ?? "").toLowerCase().includes(query) ||
+        String(e.id).includes(query),
+    );
+  }, [mentionOpen, mentionQuery, employees]);
+
   const load = useCallback(async (): Promise<void> => {
     try {
       const thread = await imb.tasks.thread(taskId);
@@ -85,6 +111,7 @@ export function TaskThreadPanel({
       await imb.tasks.comment(taskId, { body: text, kind });
       setBody("");
       setKind("comment");
+      setMentionOpen(false);
       await load();
       await onChanged();
     } catch (err) {
@@ -101,6 +128,73 @@ export function TaskThreadPanel({
       await onChanged();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const checkMentionTrigger = (value: string, cursor: number): void => {
+    const before = value.slice(0, cursor);
+    const match = /(?:^|\s)@([^\s@]*)$/.exec(before);
+    if (match) {
+      setMentionQuery(match[1]);
+      const atStart = match.index + (match[0].startsWith("@") ? 0 : 1);
+      setMentionCaret({ start: atStart, end: cursor });
+      setMentionOpen(true);
+      setMentionIndex(0);
+    } else {
+      setMentionOpen(false);
+    }
+  };
+
+  /** Insert `@<id> <name>` — the raw form the model parses (body contains @ID). */
+  const insertMention = (employee: {
+    id: number;
+    name?: string;
+    role?: string;
+  }): void => {
+    const label = employee.name || employee.role || `#${employee.id}`;
+    const tag = `@${employee.id} ${label} `;
+    const next =
+      body.slice(0, mentionCaret.start) + tag + body.slice(mentionCaret.end);
+    setBody(next);
+    setMentionOpen(false);
+    setTimeout(() => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+      textarea.focus();
+      const pos = mentionCaret.start + tag.length;
+      textarea.setSelectionRange(pos, pos);
+    }, 0);
+  };
+
+  const onComposerKeyDown = (event: React.KeyboardEvent): void => {
+    if (mentionOpen && mentionCandidates.length > 0) {
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setMentionIndex((i) => (i + 1) % mentionCandidates.length);
+        return;
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setMentionIndex(
+          (i) => (i - 1 + mentionCandidates.length) % mentionCandidates.length,
+        );
+        return;
+      }
+      if (event.key === "Enter" || event.key === "Tab") {
+        event.preventDefault();
+        const chosen = mentionCandidates[mentionIndex] ?? mentionCandidates[0];
+        if (chosen) insertMention(chosen);
+        return;
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setMentionOpen(false);
+        return;
+      }
+    }
+    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+      event.preventDefault();
+      void send();
     }
   };
 
@@ -194,21 +288,33 @@ export function TaskThreadPanel({
       </div>
 
       <div className="imb-task-composer">
-        <Field label={t("Add to the discussion")}>
-          <Textarea
-            value={body}
-            rows={3}
-            minHeight={64}
-            maxHeight={220}
-            placeholder={t("Write a comment… (@ID to involve someone)")}            onChange={(e) => setBody(e.target.value)}
-            onKeyDown={(e) => {
-              if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-                e.preventDefault();
-                void send();
-              }
-            }}
+        <div className="imb-task-composer-field">
+          <MentionPopup
+            open={mentionOpen}
+            employees={mentionCandidates}
+            selectedIndex={mentionIndex}
+            onSelect={insertMention}
+            onHoverIndex={setMentionIndex}
           />
-        </Field>
+          <Field label={t("Add to the discussion")}>
+            <Textarea
+              ref={textareaRef}
+              value={body}
+              rows={3}
+              minHeight={64}
+              maxHeight={220}
+              placeholder={t("Write a comment… (@ID to involve someone)")}
+              onChange={(e) => {
+                setBody(e.target.value);
+                checkMentionTrigger(
+                  e.target.value,
+                  e.target.selectionStart ?? e.target.value.length,
+                );
+              }}
+              onKeyDown={onComposerKeyDown}
+            />
+          </Field>
+        </div>
         <div className="imb-task-composer-foot">
           <Select
             value={kind}
@@ -235,11 +341,6 @@ export function TaskThreadPanel({
         open={linkOpen}
         onClose={() => setLinkOpen(false)}
         title={t("Link task")}
-        actions={
-          <Button variant="secondary" onClick={() => setLinkOpen(false)}>
-            {t("Cancel")}
-          </Button>
-        }
       >
         <div className="imb-link-picker">
           <Input
@@ -250,17 +351,23 @@ export function TaskThreadPanel({
           />
           <div className="imb-link-list">
             {filteredCandidates.length === 0 ? (
-              <div className="imb-board-empty">{t("No tasks")}</div>
+              <div className="imb-mention-empty">{t("No tasks")}</div>
             ) : (
               filteredCandidates.map((candidate) => (
                 <button
                   key={candidate.id}
                   type="button"
-                  className="imb-link-item"
+                  className="imb-mention-item"
                   onClick={() => void link(candidate.id)}
                 >
-                  <span className="imb-gh-ref">#{candidate.id}</span>
-                  <span className="imb-task-ref-title">{candidate.title}</span>
+                  <div className="imb-mention-info">
+                    <div className="imb-mention-row-head">
+                      <span className="imb-mention-name">{candidate.title}</span>
+                      <span className="imb-mention-badge">
+                        #{candidate.id}
+                      </span>
+                    </div>
+                  </div>
                 </button>
               ))
             )}
