@@ -1,4 +1,5 @@
 import { t } from "@shared/l10n";
+import { describeSchedule } from "@shared/cron-describe";
 import type { CronJobInfo } from "@shared/types";
 import { useEffect, useState } from "react";
 import { Button } from "../../../button";
@@ -96,6 +97,12 @@ export function JobEditor({
             onChange={(event) => setSchedule(event.target.value)}
           />
         </Field>
+
+        <p className="imb-module-note">
+          {schedule.trim().length === 0
+            ? t("Enter a schedule to see when it runs.")
+            : describeSchedule(schedule)}
+        </p>
 
         <Field
           label={t("Instruction")}
