@@ -29,6 +29,8 @@ export interface MessageBubbleProps {
   avatar: React.ReactNode;
   /** Sender display name (group chats); renders a coloured name line above the bubble. */
   senderName?: string;
+  /** Sender's role, shown muted after the name (group chats). */
+  senderRole?: string;
   /** Accent colour for the sender name. */
   senderColor?: string;
   /** Show the `Admin` tag next to the sender name (the assistant). */
@@ -55,6 +57,7 @@ export function MessageBubble({
   attachmentsTotal,
   avatar,
   senderName,
+  senderRole,
   senderColor,
   isAdmin = false,
   markdown = false,
@@ -98,6 +101,9 @@ export function MessageBubble({
         {senderName !== undefined && (
           <div className="imb-bubble-sender" style={{ color: senderColor }}>
             <span className="imb-bubble-sender-name">{senderName}</span>
+            {senderRole !== undefined && senderRole.length > 0 && (
+              <span className="imb-bubble-sender-role">{senderRole}</span>
+            )}
             {isAdmin && (
               <span className="imb-bubble-admin">{t("Admin")}</span>
             )}

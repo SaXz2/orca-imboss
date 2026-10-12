@@ -5,6 +5,7 @@ import { cls } from "reactutils";
 import { useApp } from "../../../../app-store";
 import { resolveEmployeeLabel } from "../../../../employee-label";
 import { EmployeeAvatar } from "../../../employee-avatar";
+import { IconCheck } from "../../../icons";
 import "./index.css";
 
 /** Translation key per step status; rendered through `t()` for locale switches. */
@@ -32,6 +33,8 @@ export function ProgressCard({
   const [interrupting, setInterrupting] = useState(false);
   const employees = data.employees.items;
   const hasBusyStep = isLatest && steps.some((s) => s.status === "busy");
+  const doneCount = steps.filter((s) => s.status === "done").length;
+  const totalCount = steps.length;
 
   const handleInterrupt = async (): Promise<void> => {
     if (!chatId || interrupting) return;
@@ -47,19 +50,40 @@ export function ProgressCard({
     <div className={cls("imb-progress-card", isLatest && "imb-is-latest")}>
       <div className="imb-progress-header">
         <div className="imb-progress-card-title">{title}</div>
-        {hasBusyStep && chatId !== undefined && isLatest && (
-          <button
-            type="button"
-            className="imb-progress-interrupt-btn"
-            disabled={interrupting}
-            onClick={() => void handleInterrupt()}
-            title={t("Interrupt active task")}
-            aria-label={t("Interrupt active task")}
-          >
-            {interrupting ? t("Stopping…") : t("Interrupt")}
-          </button>
-        )}
+        <div className="imb-progress-meta">
+          {totalCount > 0 && (
+            <span className="imb-progress-count">
+              {doneCount}/{totalCount}
+            </span>
+          )}
+          {hasBusyStep && chatId !== undefined && isLatest && (
+            <button
+              type="button"
+              className="imb-progress-interrupt-btn"
+              disabled={interrupting}
+              onClick={() => void handleInterrupt()}
+              title={t("Interrupt active task")}
+              aria-label={t("Interrupt active task")}
+            >
+              {interrupting ? t("Stopping…") : t("Interrupt")}
+            </button>
+          )}
+        </div>
       </div>
+      {totalCount > 0 && (
+        <div
+          className="imb-progress-bar"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={totalCount}
+          aria-valuenow={doneCount}
+        >
+          <div
+            className="imb-progress-bar-fill"
+            style={{ width: `${(doneCount / totalCount) * 100}%` }}
+          />
+        </div>
+      )}
       {steps.map((step, index) => {
         const employeeLabelInfo = resolveEmployeeLabel(
           step.name,
@@ -96,7 +120,11 @@ export function ProgressCard({
               <span
                 className={cls("imb-progress-tag", `imb-${step.status}`)}
               >
-                <span className="imb-status-dot" aria-hidden="true" />
+                {step.status === "done" ? (
+                  <IconCheck className="imb-icon imb-xs imb-progress-tag-icon" />
+                ) : (
+                  <span className="imb-status-dot" aria-hidden="true" />
+                )}
                 {t(STEP_LABEL_KEYS[step.status] ?? step.status)}
               </span>
             </div>

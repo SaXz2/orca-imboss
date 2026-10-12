@@ -16,8 +16,38 @@
 }
 
 .imb-progress-card-title {
+  flex: 1;
+  min-width: 0;
   font-size: var(--imb-text-sm);
   color: var(--imb-muted);
+}
+
+.imb-progress-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+.imb-progress-count {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.imb-progress-bar {
+  height: 4px;
+  margin-top: 8px;
+  border-radius: var(--imb-radius-pill);
+  background: var(--imb-surface-sunken, var(--imb-bg));
+  overflow: hidden;
+}
+
+.imb-progress-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--imb-accent);
+  transition: width var(--imb-duration-slow) var(--imb-ease-out);
 }
 
 .imb-progress-interrupt-btn {
@@ -141,6 +171,20 @@
   border-radius: 50%;
   background: currentColor;
   transition: background-color var(--imb-duration-fast) var(--imb-ease-standard);
+}
+
+/* Pending reads as an unstarted ring rather than a filled dot. */
+.imb-progress-tag.imb-pending .imb-status-dot {
+  width: 7px;
+  height: 7px;
+  background: transparent;
+  border: 1.5px solid currentColor;
+}
+
+.imb-progress-tag .imb-progress-tag-icon {
+  width: 12px;
+  height: 12px;
+  margin-right: 2px;
 }
 
 .imb-progress-card.imb-is-latest .imb-progress-tag.imb-busy .imb-status-dot {

@@ -57,6 +57,11 @@ export function MessageItem({
     showSender && sender !== null
       ? senderEmployee?.name || senderEmployee?.role || `#${sender}`
       : undefined;
+  // Only surface the role when a distinct name is shown (avoids "Role · Role").
+  const senderRole =
+    showSender && senderEmployee?.name
+      ? senderEmployee.role || undefined
+      : undefined;
   const senderColor = sender === null ? undefined : employeeColor(sender);
   const isAdmin = sender === ASSISTANT_ID;
 
@@ -103,6 +108,7 @@ export function MessageItem({
           attachments={null}
           attachmentsTotal={null}
           senderName={senderName}
+          senderRole={senderRole}
           senderColor={senderColor}
           isAdmin={isAdmin}
           avatar={
@@ -126,6 +132,7 @@ export function MessageItem({
           attachmentsTotal={message.attachmentsTotal}
           markdown={message.kind === "text" || message.kind === "report"}
           senderName={senderName}
+          senderRole={senderRole}
           senderColor={senderColor}
           isAdmin={isAdmin}
           resolveMention={mentions.resolveMention}

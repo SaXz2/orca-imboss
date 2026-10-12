@@ -37,6 +37,12 @@
   white-space: nowrap;
 }
 
+.imb-bubble-sender-role {
+  font-weight: 400;
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+}
+
 .imb-bubble-admin {
   flex: none;
   font-size: 10px;
