@@ -287,6 +287,18 @@
   }
 }
 
+/* ── 消息入场 ── 新消息浮起；打开对话时轻量级联 */
+@keyframes imb-msg-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* ── 列表行入场 ──
    仅透明度（不含 transform），因此可安全用于被虚拟化定位（行内联
    transform: translateY）的行上；只在真正新增时播放，滚动重挂载不重放。 */

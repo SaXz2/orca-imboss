@@ -49,10 +49,16 @@
   min-height: 100%;
 }
 
-/* Only the newest message plays an entrance, so appending one animates it while
-   scrolling through history never replays anything. */
-.imb-thread-inner > .imb-msg:last-child {
-  animation: imb-soft-up-in var(--imb-duration-slow) var(--imb-ease-out);
+/* Per-message wrapper: always present, so toggling the entrance class never
+   remounts the message. Kept as a plain block; the bubble keeps its own
+   max-width + auto-margin alignment inside. */
+.imb-thread-item {
+  min-width: 0;
+}
+
+.imb-thread-item.imb-item-in {
+  animation: imb-msg-in var(--imb-duration-slow) var(--imb-ease-out) both;
+  animation-delay: var(--enter-delay, 0ms);
 }
 
 .imb-chat-empty-detail {

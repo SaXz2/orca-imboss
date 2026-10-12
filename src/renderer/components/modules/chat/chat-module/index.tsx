@@ -461,6 +461,50 @@ export function ChatModule(): React.JSX.Element {
     return null;
   }, [visibleMessages]);
 
+  // Message entrance. A wholesale (re)population — opening/switching a chat —
+  // cascades in; a plain append only rises the new message. Keyed by id so
+  // re-renders never replay it. (The thread is not virtualized, so no
+  // scroll-replay concern.)
+  const visibleIdsKey = useMemo(
+    () => visibleMessages.map((message) => message.id).join(","),
+    [visibleMessages],
+  );
+  const [enteringIds, setEnteringIds] = useState<ReadonlySet<number> | null>(
+    null,
+  );
+  const [cascade, setCascade] = useState(false);
+  const prevMessageIdsRef = useRef<Set<number> | null>(null);
+
+  useEffect(() => {
+    const ids =
+      visibleIdsKey === "" ? [] : visibleIdsKey.split(",").map(Number);
+    const prev = prevMessageIdsRef.current;
+    prevMessageIdsRef.current = new Set(ids);
+    if (prev === null) {
+      if (ids.length > 0) {
+        setCascade(true);
+        setEnteringIds(new Set(ids));
+      }
+      return;
+    }
+    const added = ids.filter((id) => !prev.has(id));
+    if (added.length === 0) return;
+    const removedCount = [...prev].filter((id) => !ids.includes(id)).length;
+    if (removedCount === 0 && prev.size > 0) {
+      setCascade(false);
+      setEnteringIds(new Set(added));
+    } else {
+      setCascade(true);
+      setEnteringIds(new Set(ids));
+    }
+  }, [visibleIdsKey]);
+
+  useEffect(() => {
+    if (enteringIds === null) return;
+    const timer = window.setTimeout(() => setEnteringIds(null), 700);
+    return () => window.clearTimeout(timer);
+  }, [enteringIds]);
+
   // Auto-scroll to the newest message, but only while the user is pinned to
   // the bottom. Runs before paint (useLayoutEffect) so a chat switch never
   // shows a frame parked at the previous chat's scroll offset before snapping
@@ -755,15 +799,33 @@ export function ChatModule(): React.JSX.Element {
       </div>
       <div className="imb-thread" ref={threadRef} onScroll={handleThreadScroll}>
         <div className="imb-thread-inner">
-          {visibleMessages.map((message) => (
-            <MessageItem
-              key={`${message.chatId}-${message.id}`}
-              message={message}
-              isLatestProgress={message.id === latestProgressId}
-              onAnswered={() => void loadMessages(message.chatId)}
-              askAnswer={pairing.answerByAskId.get(message.id)}
-            />
-          ))}
+          {visibleMessages.map((message, index) => {
+            const entering = enteringIds?.has(message.id) ?? false;
+            return (
+              <div
+                key={`${message.chatId}-${message.id}`}
+                className={
+                  entering ? "imb-thread-item imb-item-in" : "imb-thread-item"
+                }
+                style={
+                  entering
+                    ? ({
+                        "--enter-delay": cascade
+                          ? `${Math.min(index, 10) * 18}ms`
+                          : "0ms",
+                      } as React.CSSProperties)
+                    : undefined
+                }
+              >
+                <MessageItem
+                  message={message}
+                  isLatestProgress={message.id === latestProgressId}
+                  onAnswered={() => void loadMessages(message.chatId)}
+                  askAnswer={pairing.answerByAskId.get(message.id)}
+                />
+              </div>
+            );
+          })}
           {selectedRunStatus !== undefined &&
             (selectedRunStatus.running || selectedRunStatus.compacting) && (
               <div className="imb-run-status" role="status">

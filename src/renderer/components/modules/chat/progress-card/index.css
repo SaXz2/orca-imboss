@@ -114,6 +114,7 @@
   flex: none;
   display: inline-flex;
   align-items: center;
+  transition: color var(--imb-duration-fast) var(--imb-ease-standard);
 }
 
 .imb-progress-tag.imb-done {
@@ -139,6 +140,7 @@
   height: 6px;
   border-radius: 50%;
   background: currentColor;
+  transition: background-color var(--imb-duration-fast) var(--imb-ease-standard);
 }
 
 .imb-progress-card.imb-is-latest .imb-progress-tag.imb-busy .imb-status-dot {
