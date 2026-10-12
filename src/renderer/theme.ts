@@ -1,18 +1,37 @@
-import type { ThemeMode, ThemeState } from "@shared/types";
+import type { ThemeMode, ThemePalette, ThemeState } from "@shared/types";
 import { appStore } from "./app-store";
 
 /**
- * Renderer theme helpers: the 18 accent presets and the CSS-variable
- * injection that drives the app's color accent (mirrors the prototype's
- * `applyThemeAccent`). Mode persistence lives in the main process
- * (`theme:set` → nativeTheme), the renderer only re-applies the attribute
- * for explicit light/dark and lets `prefers-color-scheme` do the rest.
+ * Renderer theme helpers: accent presets, the named surface palettes, and the
+ * CSS-variable / attribute injection that drives the app's appearance.
+ * Mode persistence lives in the main process (`theme:set` → nativeTheme); the
+ * renderer only re-applies the attributes and lets `prefers-color-scheme` do
+ * the rest for `system`.
  */
 
 export interface ThemeColor {
   id: string;
   hex: string;
 }
+
+/** Named surface palette shown in Settings → Theme. */
+export interface ThemePaletteOption {
+  id: ThemePalette;
+  /** Suggested accent applied when the palette is picked (user can re-pick). */
+  accent: string;
+  /** [background, surface] preview colors for the palette card (light variant). */
+  swatch: [string, string];
+}
+
+export const THEME_PALETTES: ThemePaletteOption[] = [
+  { id: "default", accent: "#07C160", swatch: ["#ededed", "#f7f7f7"] },
+  { id: "paper", accent: "#B07A3C", swatch: ["#f4f1ea", "#faf7f1"] },
+  { id: "sepia", accent: "#A8763A", swatch: ["#f0e7d5", "#f7f0e2"] },
+  { id: "forest", accent: "#3A8A4A", swatch: ["#eef1ea", "#f6f8f3"] },
+  { id: "sakura", accent: "#D8678C", swatch: ["#f7eef1", "#fcf4f6"] },
+  { id: "ocean", accent: "#3370FF", swatch: ["#eaeef3", "#f4f7fa"] },
+  { id: "mono", accent: "#4B5563", swatch: ["#ffffff", "#f4f4f5"] },
+];
 
 export const THEME_COLORS: ThemeColor[] = [
   { id: "Emerald", hex: "#07C160" },
@@ -37,14 +56,17 @@ export const THEME_COLORS: ThemeColor[] = [
 
 export async function setTheme(patch: Partial<ThemeState>): Promise<void> {
   const next = await imb.theme.set(patch);
+  flashThemeTransition();
   applyThemeAccent(next.color);
   applyThemeModeAttr(next.mode);
+  applyThemePaletteAttr(next.theme);
   appStore.theme = next;
 }
 
 export function updateThemeState(state: ThemeState): void {
   applyThemeAccent(state.color);
   applyThemeModeAttr(state.mode);
+  applyThemePaletteAttr(state.theme);
   appStore.theme = state;
 }
 
@@ -81,6 +103,30 @@ function applyThemeModeAttr(mode: ThemeMode): void {
   } else {
     root.setAttribute("data-theme-mode", mode);
   }
+}
+
+/** Set/clear the `data-theme` palette attribute (default = clear). */
+function applyThemePaletteAttr(theme: ThemePalette): void {
+  const root = document.documentElement;
+  if (!theme || theme === "default") {
+    root.removeAttribute("data-theme");
+  } else {
+    root.setAttribute("data-theme", theme);
+  }
+}
+
+/**
+ * Briefly enable a whole-UI color transition so switching palette/mode/accent
+ * cross-fades instead of snapping. Applied only on a user-driven change.
+ */
+let themeAnimTimer: number | undefined;
+function flashThemeTransition(): void {
+  const root = document.documentElement;
+  root.setAttribute("data-theme-anim", "");
+  window.clearTimeout(themeAnimTimer);
+  themeAnimTimer = window.setTimeout(() => {
+    root.removeAttribute("data-theme-anim");
+  }, 340);
 }
 
 function hexToHsl(hex: string): { h: number; s: number; l: number } {

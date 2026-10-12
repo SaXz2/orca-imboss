@@ -1,5 +1,10 @@
 import { SettingKeys } from "@shared/constants/settings";
-import type { ThemeMode, ThemeState } from "@shared/types";
+import {
+  THEME_PALETTES,
+  type ThemeMode,
+  type ThemePalette,
+  type ThemeState,
+} from "@shared/types";
 import { nativeTheme } from "electron";
 import { getSetting, setSetting } from "./db/settings";
 
@@ -12,6 +17,7 @@ import { getSetting, setSetting } from "./db/settings";
 
 const VALID_MODES: ThemeMode[] = ["light", "dark", "system"];
 const DEFAULT_COLOR = "#07C160";
+const DEFAULT_PALETTE: ThemePalette = "default";
 const COLOR_RE = /^#[0-9a-fA-F]{6}$/;
 
 export function sanitizeMode(value: string | null | undefined): ThemeMode {
@@ -30,6 +36,22 @@ export function getThemeColor(): string {
   return stored && COLOR_RE.test(stored) ? stored.toUpperCase() : DEFAULT_COLOR;
 }
 
+export function sanitizePalette(
+  value: string | null | undefined,
+): ThemePalette {
+  return value && (THEME_PALETTES as readonly string[]).includes(value)
+    ? (value as ThemePalette)
+    : DEFAULT_PALETTE;
+}
+
+export function getThemePalette(): ThemePalette {
+  return sanitizePalette(getSetting(SettingKeys.ThemePalette));
+}
+
+export function setThemePalette(theme: ThemePalette): void {
+  setSetting(SettingKeys.ThemePalette, sanitizePalette(theme));
+}
+
 export function setThemeMode(mode: ThemeMode): void {
   const safe = sanitizeMode(mode);
   setSetting(SettingKeys.ThemeMode, safe);
@@ -44,7 +66,11 @@ export function setThemeColor(color: string): void {
 }
 
 export function getThemeState(): ThemeState {
-  return { mode: getThemeMode(), color: getThemeColor() };
+  return {
+    mode: getThemeMode(),
+    color: getThemeColor(),
+    theme: getThemePalette(),
+  };
 }
 
 /** Apply the persisted mode at startup (called after DB init). */

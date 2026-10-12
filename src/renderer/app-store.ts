@@ -104,7 +104,7 @@ const VALID_MODULES: AppModule[] = [
 /** Global renderer app state (valtio proxy — replaces the former context). */
 export const appStore = proxy({
   locale: imb.initialLocale,
-  theme: { mode: "system", color: "#07C160" } as ThemeState,
+  theme: { mode: "system", color: "#07C160", theme: "default" } as ThemeState,
   navCollapsed: false,
   /** Custom brand name shown in the sidebar (empty = the built-in "imboss"). */
   brandName: "",

@@ -1,4 +1,5 @@
 .imb-list-row {
+  position: relative;
   width: 100%;
   text-align: left;
   display: flex;
@@ -10,8 +11,35 @@
   transition: background var(--imb-motion-fast) var(--imb-ease-standard);
 }
 
+/* Active-row accent indicator slides in from the left edge. */
+.imb-list-row::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 0;
+  border-radius: var(--imb-radius-pill);
+  background: var(--imb-accent);
+  transform: translateY(-50%);
+  transition:
+    height var(--imb-duration-fast) var(--imb-ease-out),
+    opacity var(--imb-duration-fast) var(--imb-ease-out);
+  opacity: 0;
+}
+
+.imb-list-row.imb-is-active::before,
+.imb-list-row.imb-is-selected::before {
+  height: 22px;
+  opacity: 1;
+}
+
 .imb-list-row:hover {
   background: var(--imb-fg-soft);
+}
+
+.imb-list-row:active {
+  background: var(--imb-overlay-medium);
 }
 
 .imb-list-row:focus-visible {

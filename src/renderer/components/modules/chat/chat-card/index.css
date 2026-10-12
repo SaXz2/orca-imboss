@@ -14,12 +14,20 @@
   cursor: pointer;
   transition:
     background var(--imb-motion-fast) var(--imb-ease-standard),
-    border-color var(--imb-motion-fast) var(--imb-ease-standard);
+    border-color var(--imb-motion-fast) var(--imb-ease-standard),
+    transform var(--imb-duration-fast) var(--imb-ease-standard),
+    box-shadow var(--imb-motion-fast) var(--imb-ease-standard);
 }
 
 .imb-chat-card:hover {
   background: var(--imb-fg-soft);
   border-color: var(--imb-accent-soft);
+  transform: translateY(-1px);
+  box-shadow: var(--imb-elev-2);
+}
+
+.imb-chat-card:active {
+  transform: translateY(0);
 }
 
 .imb-chat-card:focus-visible {

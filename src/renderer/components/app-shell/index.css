@@ -6,6 +6,7 @@
   width: 100vw;
   position: relative;
   user-select: none;
+  transition: grid-template-columns var(--imb-duration-slow) var(--imb-ease-standard);
 }
 
 /* Content region next to the nav rail. Holds the list/detail split for

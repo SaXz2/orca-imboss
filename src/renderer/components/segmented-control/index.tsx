@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes, CSSProperties } from "react";
 import { cls } from "reactutils";
 import "./index.css";
 
@@ -16,7 +16,20 @@ export function SegmentedControl<T extends string>({
   label,
 }: SegmentedControlProps<T>): React.JSX.Element {
   return (
-    <div className="imb-segmented-group" role="group" aria-label={label}>
+    <div
+      className="imb-segmented-group"
+      role="group"
+      aria-label={label}
+      style={
+        {
+          "--imb-seg-count": options.length,
+          "--imb-seg-index": Math.max(
+            0,
+            options.findIndex((option) => option.value === value),
+          ),
+        } as CSSProperties
+      }
+    >
       {options.map((option) => (
         <SegmentedButton
           key={option.value}

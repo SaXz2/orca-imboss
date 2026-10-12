@@ -1,0 +1,308 @@
+/* ============================================================
+   主题系统 · Named Themes
+   ------------------------------------------------------------
+   命名主题只重着色「面」：背景 / 卡片 / 文字 / 边框 / 气泡。
+   强调色（accent）与明暗模式（mode）由用户独立控制，主题不接管，
+   因此每套主题都提供浅色与暗色两版。
+
+   选择器优先级说明（务必保持）：
+   - 浅色版用双选择器，同时覆盖「无 mode（系统）」与「显式 light」；
+   - 暗色版用 [data-theme-mode="dark"] 与 prefers-color-scheme 两条，
+     优先级均高于 tokens.css 的基础色板，确保主题色在两种模式下都生效。
+   - 本文件须在 tokens.css 之后加载。
+   默认主题 default 不设 data-theme，沿用基础中性色。
+   ============================================================ */
+
+/* ─────────────── 暖纸 · paper ─────────────── */
+:root[data-theme="paper"],
+:root[data-theme="paper"][data-theme-mode="light"] {
+  --imb-bg: #f4f1ea;
+  --imb-surface: #faf7f1;
+  --imb-surface-raised: #ffffff;
+  --imb-surface-sunken: #ece7dc;
+  --imb-fg: #2b2620;
+  --imb-fg-2: #2b2620;
+  --imb-muted: #8a8175;
+  --imb-meta: #8a8175;
+  --imb-border: #e3dccf;
+  --imb-border-soft: #e3dccf;
+  --imb-bubble-self: #d8e9b8;
+  --imb-bubble-text: #2b2620;
+}
+
+:root[data-theme="paper"][data-theme-mode="dark"] {
+  --imb-bg: #211f1c;
+  --imb-surface: #2b2823;
+  --imb-surface-raised: #332f29;
+  --imb-surface-sunken: #17150f;
+  --imb-fg: #f2ede4;
+  --imb-fg-2: #f2ede4;
+  --imb-muted: #a49a8a;
+  --imb-meta: #a49a8a;
+  --imb-border: #3d382f;
+  --imb-border-soft: #3d382f;
+  --imb-bubble-self: #4a6b3a;
+  --imb-bubble-text: #f2ede4;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="paper"]:not([data-theme-mode="light"]) {
+    --imb-bg: #211f1c;
+    --imb-surface: #2b2823;
+    --imb-surface-raised: #332f29;
+    --imb-surface-sunken: #17150f;
+    --imb-fg: #f2ede4;
+    --imb-fg-2: #f2ede4;
+    --imb-muted: #a49a8a;
+    --imb-meta: #a49a8a;
+    --imb-border: #3d382f;
+    --imb-border-soft: #3d382f;
+    --imb-bubble-self: #4a6b3a;
+    --imb-bubble-text: #f2ede4;
+  }
+}
+
+/* ─────────────── 赭墨 · sepia ─────────────── */
+:root[data-theme="sepia"],
+:root[data-theme="sepia"][data-theme-mode="light"] {
+  --imb-bg: #f0e7d5;
+  --imb-surface: #f7f0e2;
+  --imb-surface-raised: #fffaf0;
+  --imb-surface-sunken: #e6dcc4;
+  --imb-fg: #3b2f22;
+  --imb-fg-2: #3b2f22;
+  --imb-muted: #8d7c63;
+  --imb-meta: #8d7c63;
+  --imb-border: #ddd0b6;
+  --imb-border-soft: #ddd0b6;
+  --imb-bubble-self: #d6e2b0;
+  --imb-bubble-text: #3b2f22;
+}
+
+:root[data-theme="sepia"][data-theme-mode="dark"] {
+  --imb-bg: #241d14;
+  --imb-surface: #2f271b;
+  --imb-surface-raised: #3a3123;
+  --imb-surface-sunken: #1a140d;
+  --imb-fg: #ede2cd;
+  --imb-fg-2: #ede2cd;
+  --imb-muted: #a6957a;
+  --imb-meta: #a6957a;
+  --imb-border: #443826;
+  --imb-border-soft: #443826;
+  --imb-bubble-self: #4c5f34;
+  --imb-bubble-text: #ede2cd;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="sepia"]:not([data-theme-mode="light"]) {
+    --imb-bg: #241d14;
+    --imb-surface: #2f271b;
+    --imb-surface-raised: #3a3123;
+    --imb-surface-sunken: #1a140d;
+    --imb-fg: #ede2cd;
+    --imb-fg-2: #ede2cd;
+    --imb-muted: #a6957a;
+    --imb-meta: #a6957a;
+    --imb-border: #443826;
+    --imb-border-soft: #443826;
+    --imb-bubble-self: #4c5f34;
+    --imb-bubble-text: #ede2cd;
+  }
+}
+
+/* ─────────────── 苔森 · forest ─────────────── */
+:root[data-theme="forest"],
+:root[data-theme="forest"][data-theme-mode="light"] {
+  --imb-bg: #eef1ea;
+  --imb-surface: #f6f8f3;
+  --imb-surface-raised: #ffffff;
+  --imb-surface-sunken: #e3e8dc;
+  --imb-fg: #1f2a20;
+  --imb-fg-2: #1f2a20;
+  --imb-muted: #77836f;
+  --imb-meta: #77836f;
+  --imb-border: #dbe2d3;
+  --imb-border-soft: #dbe2d3;
+  --imb-bubble-self: #b8e0a6;
+  --imb-bubble-text: #1f2a20;
+}
+
+:root[data-theme="forest"][data-theme-mode="dark"] {
+  --imb-bg: #171c17;
+  --imb-surface: #20271f;
+  --imb-surface-raised: #283127;
+  --imb-surface-sunken: #101310;
+  --imb-fg: #e7efe4;
+  --imb-fg-2: #e7efe4;
+  --imb-muted: #93a08a;
+  --imb-meta: #93a08a;
+  --imb-border: #313b30;
+  --imb-border-soft: #313b30;
+  --imb-bubble-self: #3f5f34;
+  --imb-bubble-text: #e7efe4;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="forest"]:not([data-theme-mode="light"]) {
+    --imb-bg: #171c17;
+    --imb-surface: #20271f;
+    --imb-surface-raised: #283127;
+    --imb-surface-sunken: #101310;
+    --imb-fg: #e7efe4;
+    --imb-fg-2: #e7efe4;
+    --imb-muted: #93a08a;
+    --imb-meta: #93a08a;
+    --imb-border: #313b30;
+    --imb-border-soft: #313b30;
+    --imb-bubble-self: #3f5f34;
+    --imb-bubble-text: #e7efe4;
+  }
+}
+
+/* ─────────────── 樱粉 · sakura ─────────────── */
+:root[data-theme="sakura"],
+:root[data-theme="sakura"][data-theme-mode="light"] {
+  --imb-bg: #f7eef1;
+  --imb-surface: #fcf4f6;
+  --imb-surface-raised: #ffffff;
+  --imb-surface-sunken: #f0e2e7;
+  --imb-fg: #33232a;
+  --imb-fg-2: #33232a;
+  --imb-muted: #977a86;
+  --imb-meta: #977a86;
+  --imb-border: #ecd8df;
+  --imb-border-soft: #ecd8df;
+  --imb-bubble-self: #f7d3de;
+  --imb-bubble-text: #33232a;
+}
+
+:root[data-theme="sakura"][data-theme-mode="dark"] {
+  --imb-bg: #201619;
+  --imb-surface: #2b1f23;
+  --imb-surface-raised: #35272c;
+  --imb-surface-sunken: #170f12;
+  --imb-fg: #f5e8ec;
+  --imb-fg-2: #f5e8ec;
+  --imb-muted: #b596a1;
+  --imb-meta: #b596a1;
+  --imb-border: #402d34;
+  --imb-border-soft: #402d34;
+  --imb-bubble-self: #7a4353;
+  --imb-bubble-text: #f5e8ec;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="sakura"]:not([data-theme-mode="light"]) {
+    --imb-bg: #201619;
+    --imb-surface: #2b1f23;
+    --imb-surface-raised: #35272c;
+    --imb-surface-sunken: #170f12;
+    --imb-fg: #f5e8ec;
+    --imb-fg-2: #f5e8ec;
+    --imb-muted: #b596a1;
+    --imb-meta: #b596a1;
+    --imb-border: #402d34;
+    --imb-border-soft: #402d34;
+    --imb-bubble-self: #7a4353;
+    --imb-bubble-text: #f5e8ec;
+  }
+}
+
+/* ─────────────── 海雾 · ocean ─────────────── */
+:root[data-theme="ocean"],
+:root[data-theme="ocean"][data-theme-mode="light"] {
+  --imb-bg: #eaeef3;
+  --imb-surface: #f4f7fa;
+  --imb-surface-raised: #ffffff;
+  --imb-surface-sunken: #dde5ec;
+  --imb-fg: #1b2530;
+  --imb-fg-2: #1b2530;
+  --imb-muted: #6e7f8f;
+  --imb-meta: #6e7f8f;
+  --imb-border: #d5dee7;
+  --imb-border-soft: #d5dee7;
+  --imb-bubble-self: #c3ddf0;
+  --imb-bubble-text: #1b2530;
+}
+
+:root[data-theme="ocean"][data-theme-mode="dark"] {
+  --imb-bg: #141a21;
+  --imb-surface: #1d242c;
+  --imb-surface-raised: #252e37;
+  --imb-surface-sunken: #0e1218;
+  --imb-fg: #e4ebf1;
+  --imb-fg-2: #e4ebf1;
+  --imb-muted: #8a99a8;
+  --imb-meta: #8a99a8;
+  --imb-border: #2c3641;
+  --imb-border-soft: #2c3641;
+  --imb-bubble-self: #2f5875;
+  --imb-bubble-text: #e4ebf1;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="ocean"]:not([data-theme-mode="light"]) {
+    --imb-bg: #141a21;
+    --imb-surface: #1d242c;
+    --imb-surface-raised: #252e37;
+    --imb-surface-sunken: #0e1218;
+    --imb-fg: #e4ebf1;
+    --imb-fg-2: #e4ebf1;
+    --imb-muted: #8a99a8;
+    --imb-meta: #8a99a8;
+    --imb-border: #2c3641;
+    --imb-border-soft: #2c3641;
+    --imb-bubble-self: #2f5875;
+    --imb-bubble-text: #e4ebf1;
+  }
+}
+
+/* ─────────────── 墨白 · mono ─────────────── */
+:root[data-theme="mono"],
+:root[data-theme="mono"][data-theme-mode="light"] {
+  --imb-bg: #ffffff;
+  --imb-surface: #f4f4f5;
+  --imb-surface-raised: #ffffff;
+  --imb-surface-sunken: #ececec;
+  --imb-fg: #0a0a0a;
+  --imb-fg-2: #0a0a0a;
+  --imb-muted: #77777a;
+  --imb-meta: #77777a;
+  --imb-border: #dfdfe1;
+  --imb-border-soft: #dfdfe1;
+  --imb-bubble-self: #e6e6e8;
+  --imb-bubble-text: #0a0a0a;
+}
+
+:root[data-theme="mono"][data-theme-mode="dark"] {
+  --imb-bg: #0c0c0d;
+  --imb-surface: #18181a;
+  --imb-surface-raised: #212123;
+  --imb-surface-sunken: #09090a;
+  --imb-fg: #fafafa;
+  --imb-fg-2: #fafafa;
+  --imb-muted: #8e8e93;
+  --imb-meta: #8e8e93;
+  --imb-border: #2a2a2d;
+  --imb-border-soft: #2a2a2d;
+  --imb-bubble-self: #3a3a3d;
+  --imb-bubble-text: #fafafa;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="mono"]:not([data-theme-mode="light"]) {
+    --imb-bg: #0c0c0d;
+    --imb-surface: #18181a;
+    --imb-surface-raised: #212123;
+    --imb-surface-sunken: #09090a;
+    --imb-fg: #fafafa;
+    --imb-fg-2: #fafafa;
+    --imb-muted: #8e8e93;
+    --imb-meta: #8e8e93;
+    --imb-border: #2a2a2d;
+    --imb-border-soft: #2a2a2d;
+    --imb-bubble-self: #3a3a3d;
+    --imb-bubble-text: #fafafa;
+  }
+}

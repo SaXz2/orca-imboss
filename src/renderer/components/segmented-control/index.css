@@ -1,9 +1,26 @@
 .imb-segmented-group {
+  position: relative;
   display: flex;
   border: 1px solid var(--imb-border);
   border-radius: var(--imb-radius-md);
   overflow: hidden;
   background: var(--imb-surface);
+}
+
+/* Sliding selection thumb. Position is driven by --imb-seg-index /
+   --imb-seg-count (set on the group), so switching segments glides instead
+   of snapping. */
+.imb-segmented-group::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: calc(2px + var(--imb-seg-index, 0) * ((100% - 4px) / var(--imb-seg-count, 1)));
+  width: calc((100% - 4px) / var(--imb-seg-count, 1));
+  border-radius: calc(var(--imb-radius-md) - 2px);
+  background: var(--imb-accent);
+  z-index: 0;
+  transition: left var(--imb-duration-fast) var(--imb-ease-spring);
 }
 
 .imb-segmented-btn {
@@ -15,35 +32,24 @@
   border: none;
   color: var(--imb-muted);
   cursor: pointer;
-  transition:
-    background var(--imb-motion-fast) var(--imb-ease-standard),
-    color var(--imb-motion-fast) var(--imb-ease-standard);
+  transition: color var(--imb-duration-fast) var(--imb-ease-standard);
   position: relative;
-}
-
-.imb-segmented-btn + .imb-segmented-btn {
-  border-left: 1px solid var(--imb-border);
+  z-index: 1;
 }
 
 .imb-segmented-btn:hover:not(:disabled) {
-  background: var(--imb-fg-soft);
   color: var(--imb-fg);
 }
 
 .imb-segmented-btn:focus-visible {
   outline: none;
   box-shadow: var(--imb-focus-ring);
-  z-index: 1;
+  z-index: 2;
 }
 
 .imb-segmented-btn.imb-is-active {
-  background: var(--imb-accent);
   color: var(--imb-accent-on);
   font-weight: 500;
-}
-
-.imb-segmented-btn.imb-is-active:hover {
-  background: var(--imb-accent-hover);
 }
 
 .imb-segmented-btn:disabled {

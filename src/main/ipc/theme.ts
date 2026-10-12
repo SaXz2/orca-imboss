@@ -2,8 +2,10 @@ import { ipcMain } from "electron";
 import {
   getThemeState,
   sanitizeMode,
+  sanitizePalette,
   setThemeColor,
   setThemeMode,
+  setThemePalette,
 } from "../theme";
 
 export function registerThemeHandlers(): void {
@@ -25,6 +27,13 @@ export function registerThemeHandlers(): void {
         throw new Error("theme color must be a string.");
       }
       setThemeColor(record["color"]);
+    }
+    if (record["theme"] !== undefined) {
+      setThemePalette(
+        sanitizePalette(
+          typeof record["theme"] === "string" ? record["theme"] : undefined,
+        ),
+      );
     }
     const state = getThemeState();
     return state;

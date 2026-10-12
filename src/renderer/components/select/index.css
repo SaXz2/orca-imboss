@@ -72,14 +72,16 @@
 }
 
 .imb-select-panel {
-  background: var(--imb-surface);
+  background: var(--imb-surface-raised, var(--imb-surface));
   border: 1px solid var(--imb-border);
   border-radius: var(--imb-radius-md);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--imb-elev-2);
   overflow-y: auto;
   padding: 6px;
   margin: 0;
   list-style: none;
+  transform-origin: top center;
+  animation: imb-popout var(--imb-duration-fast) var(--imb-ease-out);
 }
 
 .imb-select-option {
@@ -92,6 +94,7 @@
   cursor: pointer;
   font-size: var(--imb-text-base);
   color: var(--imb-fg);
+  transition: background var(--imb-duration-instant) var(--imb-ease-standard);
 }
 
 .imb-select-option:hover,

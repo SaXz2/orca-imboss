@@ -89,6 +89,7 @@
 }
 
 .imb-nav-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 11px;
@@ -107,6 +108,38 @@
     color var(--imb-motion-fast) var(--imb-ease-standard);
 }
 
+/* Active rail: a short accent bar that grows in from the left. */
+.imb-nav-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 0;
+  border-radius: var(--imb-radius-pill);
+  background: var(--imb-accent);
+  transform: translateY(-50%);
+  opacity: 0;
+  transition:
+    height var(--imb-duration-fast) var(--imb-ease-out),
+    opacity var(--imb-duration-fast) var(--imb-ease-out);
+}
+
+.imb-nav-item.imb-is-active::before {
+  height: 18px;
+  opacity: 1;
+}
+
+.imb-nav-item .imb-icon {
+  color: currentColor;
+  flex: none;
+  transition: transform var(--imb-duration-fast) var(--imb-ease-spring);
+}
+
+.imb-nav-item:hover .imb-icon {
+  transform: scale(1.1);
+}
+
 .imb-nav-item:hover {
   background: var(--imb-fg-soft);
   color: var(--imb-fg);
@@ -117,15 +150,20 @@
   box-shadow: var(--imb-focus-ring);
 }
 
+.imb-nav-item .imb-icon {
+  color: currentColor;
+  flex: none;
+  transition: transform var(--imb-duration-fast) var(--imb-ease-spring);
+}
+
+.imb-nav-item:hover .imb-icon {
+  transform: scale(1.1);
+}
+
 .imb-nav-item.imb-is-active {
   color: var(--imb-accent-active);
   font-weight: 600;
   background: var(--imb-accent-soft);
-}
-
-.imb-nav-item .imb-icon {
-  color: currentColor;
-  flex: none;
 }
 
 .imb-nav-appicon {

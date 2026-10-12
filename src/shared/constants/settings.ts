@@ -9,6 +9,7 @@ export const SettingKeys = {
   HttpProxy: "network.httpProxy",
   ThemeMode: "ui.theme.mode",
   ThemeColor: "ui.theme.color",
+  ThemePalette: "ui.theme.palette",
   NavCollapse: "ui.navCollapsed",
   Module: "ui.module",
   WindowState: "ui.window",

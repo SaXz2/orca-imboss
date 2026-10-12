@@ -1,4 +1,5 @@
 import "./styles/tokens.css";
+import "./styles/themes.css";
 import "./styles/animations.css";
 import "./styles/base.css";
 

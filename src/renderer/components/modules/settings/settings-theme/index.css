@@ -64,3 +64,87 @@
   flex-direction: column;
   align-items: center;
 }
+
+/* Named surface palettes: a row of preview cards. */
+.imb-theme-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  gap: var(--imb-space-3);
+}
+
+.imb-theme-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  background: transparent;
+  border: 1.5px solid var(--imb-border);
+  border-radius: var(--imb-radius-lg);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    transform var(--imb-duration-fast) var(--imb-ease-standard),
+    border-color var(--imb-duration-fast) var(--imb-ease-standard),
+    box-shadow var(--imb-duration-fast) var(--imb-ease-standard);
+}
+
+.imb-theme-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--imb-elev-2);
+}
+
+.imb-theme-card:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.imb-theme-card:focus-visible {
+  outline: none;
+  box-shadow: var(--imb-focus-ring);
+}
+
+.imb-theme-card.imb-is-active {
+  border-color: var(--imb-accent);
+  box-shadow: 0 0 0 1px var(--imb-accent),
+    var(--imb-focus-ring);
+}
+
+.imb-theme-card-preview {
+  position: relative;
+  display: block;
+  height: 46px;
+  border-radius: var(--imb-radius-sm);
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.imb-theme-card-surface {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  width: 46%;
+  height: 18px;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+.imb-theme-card-dot {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+.imb-theme-card-name {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-text-2);
+  text-align: center;
+}
+
+.imb-theme-card.imb-is-active .imb-theme-card-name {
+  color: var(--imb-accent);
+  font-weight: 600;
+}

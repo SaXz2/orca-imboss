@@ -65,6 +65,17 @@ h4 {
   background: var(--imb-selection);
 }
 
+/* 主题切换时的短暂全局过渡（由 renderer/theme.ts 在用户切换时挂载） */
+html[data-theme-anim],
+html[data-theme-anim] *,
+html[data-theme-anim] *::before,
+html[data-theme-anim] *::after {
+  transition:
+    background-color var(--imb-duration-slow) var(--imb-ease-standard),
+    color var(--imb-duration-slow) var(--imb-ease-standard),
+    border-color var(--imb-duration-slow) var(--imb-ease-standard) !important;
+}
+
 /* 细滚动条：桌面端统一质感，`.imb-scroll` 另行隐藏 */
 * {
   scrollbar-width: thin;

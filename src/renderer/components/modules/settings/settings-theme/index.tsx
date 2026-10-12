@@ -2,7 +2,7 @@ import { t } from "@shared/l10n";
 import type { ThemeMode } from "@shared/types";
 import { cls } from "reactutils";
 import { useApp } from "../../../../app-store";
-import { setTheme, THEME_COLORS } from "../../../../theme";
+import { setTheme, THEME_COLORS, THEME_PALETTES } from "../../../../theme";
 import { DetailBody } from "../../../detail-pane/detail-body";
 import { DetailHead } from "../../../detail-pane/detail-head";
 import { SegmentedControl } from "../../../segmented-control";
@@ -20,9 +20,53 @@ export function SettingsTheme(): React.JSX.Element {
       <DetailHead
         eyebrow="Theme"
         title={t("Theme")}
-        sub={t("Accent color and theme mode")}
+        sub={t("Palette, accent color and mode")}
       />
       <DetailBody>
+        <div className="imb-theme-section">
+          <label>{t("Surface palette")}</label>
+          <div
+            className="imb-theme-cards"
+            role="radiogroup"
+            aria-label={t("Surface palette")}
+          >
+            {THEME_PALETTES.map((palette) => (
+              <button
+                key={palette.id}
+                type="button"
+                role="radio"
+                aria-checked={theme.theme === palette.id}
+                title={t(`theme.${palette.id}`)}
+                aria-label={t(`theme.${palette.id}`)}
+                className={cls(
+                  "imb-theme-card",
+                  theme.theme === palette.id && "imb-is-active",
+                )}
+                onClick={() =>
+                  void setTheme({ theme: palette.id, color: palette.accent })
+                }
+              >
+                <span
+                  className="imb-theme-card-preview"
+                  style={{ background: palette.swatch[0] }}
+                >
+                  <span
+                    className="imb-theme-card-surface"
+                    style={{ background: palette.swatch[1] }}
+                  />
+                  <span
+                    className="imb-theme-card-dot"
+                    style={{ background: palette.accent }}
+                  />
+                </span>
+                <span className="imb-theme-card-name">
+                  {t(`theme.${palette.id}`)}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="imb-theme-section">
           <label>{t("Accent color")}</label>
           <div
