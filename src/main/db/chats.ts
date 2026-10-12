@@ -38,7 +38,7 @@ export function listChats(): Chat[] {
     getDB()
       .prepare(
         "SELECT * FROM chats WHERE from_chat_id IS NULL AND archived = 0 " +
-          "ORDER BY last_message_at DESC, id DESC",
+          "ORDER BY pinned DESC, last_message_at DESC, id DESC",
       )
       .all() as ChatRow[]
   ).map(toChat);
@@ -49,6 +49,14 @@ export function setArchived(id: number, archived: boolean): Chat | null {
   const changes = getDB()
     .prepare("UPDATE chats SET archived = ? WHERE id = ?")
     .run(archived ? 1 : 0, id).changes;
+  return changes > 0 ? getChat(id) : null;
+}
+
+/** Pin or unpin a conversation; returns the updated chat. */
+export function setPinned(id: number, pinned: boolean): Chat | null {
+  const changes = getDB()
+    .prepare("UPDATE chats SET pinned = ? WHERE id = ?")
+    .run(pinned ? 1 : 0, id).changes;
   return changes > 0 ? getChat(id) : null;
 }
 
@@ -95,7 +103,7 @@ function queryChatSummaries(archived: 0 | 1): ChatSummary[] {
   const rows = getDB()
     .prepare(
       `SELECT c.id, c.title, c.participants, c.unread, c.created_at, c.from_chat_id,
-              c.source, c.archived, c.last_message_at,
+              c.source, c.archived, c.pinned, c.last_message_at,
               (SELECT m.content FROM messages m
                WHERE m.chat_id = c.id AND m.kind <> 'ack'
                ORDER BY m.created_at DESC, m.id DESC LIMIT 1) AS preview,
@@ -104,7 +112,7 @@ function queryChatSummaries(archived: 0 | 1): ChatSummary[] {
                ORDER BY m.created_at DESC, m.id DESC LIMIT 1) AS last_at
        FROM chats c
        WHERE c.from_chat_id IS NULL AND c.archived = ?
-       ORDER BY c.last_message_at DESC, c.id DESC`,
+       ORDER BY c.pinned DESC, c.last_message_at DESC, c.id DESC`,
     )
     .all(archived) as ChatSummaryRow[];
   return rows.map(toChatSummary);
@@ -118,7 +126,7 @@ export function getChatSummary(id: number): ChatSummary | null {
   const row = getDB()
     .prepare(
       `SELECT c.id, c.title, c.participants, c.unread, c.created_at, c.from_chat_id,
-              c.source, c.last_message_at,
+              c.pinned, c.source, c.last_message_at,
               (SELECT m.content FROM messages m
                WHERE m.chat_id = c.id AND m.kind <> 'ack'
                ORDER BY m.created_at DESC, m.id DESC LIMIT 1) AS preview,
@@ -187,7 +195,7 @@ export function listChatSummariesPage(
   const rows = db
     .prepare(
       `SELECT c.id, c.title, c.participants, c.unread, c.created_at, c.from_chat_id,
-              c.source, c.last_message_at,
+              c.pinned, c.source, c.last_message_at,
               (SELECT m.content FROM messages m
                WHERE m.chat_id = c.id AND m.kind <> 'ack'
                ORDER BY m.created_at DESC, m.id DESC LIMIT 1) AS preview,
@@ -409,6 +417,7 @@ function toChat(row: ChatRow): Chat {
     fromChatId: row.from_chat_id ?? null,
     source: normalizeSource(row.source),
     archived: (row.archived ?? 0) === 1,
+    pinned: (row.pinned ?? 0) === 1,
   };
 }
 

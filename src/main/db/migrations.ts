@@ -250,6 +250,13 @@ const MIGRATIONS: Array<(db: Database) => void> = [
       ALTER TABLE messages ADD COLUMN quoted_text TEXT;
     `);
   },
+
+  // 8 — pinned conversations (sort above the rest of the chat list)
+  (db) => {
+    db.exec(`
+      ALTER TABLE chats ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0;
+    `);
+  },
 ];
 
 export function migrate(db: Database): void {

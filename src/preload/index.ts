@@ -207,6 +207,11 @@ const api = {
       ipcRenderer.invoke("chats:setArchived", id, archived) as Promise<
         Chat | null
       >,
+    /** Pin or unpin one conversation (sorts above the rest). */
+    setPinned: (id: number, pinned: boolean) =>
+      ipcRenderer.invoke("chats:setPinned", id, pinned) as Promise<
+        Chat | null
+      >,
     summariesPage: (page: PageQuery) =>
       ipcRenderer.invoke("chats:summariesPage", page) as Promise<
         PageResult<ChatSummary>

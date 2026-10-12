@@ -27,6 +27,18 @@ export function registerChatHandlers(): void {
       dbChats.setArchived(assertInteger(id, "chat id"), archived === true),
   );
 
+  ipcMain.handle(
+    "chats:setPinned",
+    (_event, id: unknown, pinned: unknown) => {
+      const safeId = assertInteger(id, "chat id");
+      const updated = dbChats.setPinned(safeId, pinned === true);
+      if (updated !== null) {
+        sendToRenderer("chats:changed", { chatId: safeId });
+      }
+      return updated;
+    },
+  );
+
   ipcMain.handle("chats:summariesPage", (_event, page: unknown) =>
     dbChats.listChatSummariesPage(parsePageQuery(page)),
   );

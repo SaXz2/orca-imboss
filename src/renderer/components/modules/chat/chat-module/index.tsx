@@ -182,6 +182,19 @@ export function ChatModule(): React.JSX.Element {
     [reloadArchived],
   );
 
+  /** Pin or unpin one conversation, then refresh the list order. */
+  const togglePin = useCallback(
+    async (id: number, pinned: boolean): Promise<void> => {
+      try {
+        await imb.chats.setPinned(id, pinned);
+        await appStore.reloadChats();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
     void reloadArchived();
   }, [reloadArchived]);
@@ -886,6 +899,9 @@ export function ChatModule(): React.JSX.Element {
             }
             name={
               <span className="imb-chat-name-wrap">
+                {chat.pinned && (
+                  <PinGlyph className="imb-chat-pin" aria-hidden="true" />
+                )}
                 <span className="imb-chat-name-text">
                   {displayTitle(chat.title)}
                 </span>
@@ -915,6 +931,11 @@ export function ChatModule(): React.JSX.Element {
                     key: "select-all",
                     label: t("Select all"),
                     onSelect: toggleSelectAll,
+                  },
+                  {
+                    key: "pin",
+                    label: chat.pinned ? t("Unpin") : t("Pin"),
+                    onSelect: () => void togglePin(chat.id, !chat.pinned),
                   },
                   {
                     key: "archive",
@@ -1153,5 +1174,21 @@ export function ChatModule(): React.JSX.Element {
         <p className="imb-error-text imb-chat-error">{error}</p>
       )}
     </>
+  );
+}
+
+/** Small push-pin marking a pinned conversation. */
+function PinGlyph({ className }: { className?: string }): React.JSX.Element {
+  return (
+    <svg
+      className={className}
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M16 9V4h1a1 1 0 0 0 0-2H7a1 1 0 0 0 0 2h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z" />
+    </svg>
   );
 }
