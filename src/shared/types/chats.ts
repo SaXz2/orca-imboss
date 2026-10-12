@@ -15,6 +15,8 @@ export interface Chat {
    * Doubles as the conversation's platform label in the UI.
    */
   source: IntegrationPlatform | null;
+  /** Archived conversations are hidden from the list but kept restorable. */
+  archived: boolean;
 }
 
 /** List item of the chat module: chat + derived last-message preview. */
@@ -44,6 +46,7 @@ export interface ChatRow {
   created_at: number;
   from_chat_id: number | null;
   source: string | null;
+  archived: number;
 }
 
 export interface ChatSummaryRow extends ChatRow {

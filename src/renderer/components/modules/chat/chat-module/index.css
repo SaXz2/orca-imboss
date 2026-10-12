@@ -80,3 +80,68 @@
   font-size: var(--imb-text-xl);
   font-weight: 600;
 }
+
+/* --- Archived conversations --- */
+.imb-chat-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.imb-chat-archive-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-md);
+  background: transparent;
+  color: var(--imb-text-2);
+  cursor: pointer;
+  transition:
+    border-color var(--imb-motion-fast) var(--imb-ease-standard),
+    color var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-chat-archive-btn:hover {
+  border-color: var(--imb-accent);
+  color: var(--imb-accent);
+}
+
+.imb-chat-archive-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.imb-chat-archive-count {
+  font-size: var(--imb-text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--imb-muted);
+}
+
+.imb-chat-archive-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: none;
+  background: transparent;
+  color: var(--imb-text-2);
+  font-size: var(--imb-text-sm);
+  border-radius: var(--imb-radius-md);
+  cursor: pointer;
+}
+
+.imb-chat-archive-back:hover {
+  background: var(--imb-fg-soft);
+  color: var(--imb-fg);
+}
+
+.imb-chat-empty-list {
+  padding: var(--imb-space-5) var(--imb-space-4);
+  text-align: center;
+  font-size: var(--imb-text-sm);
+  color: var(--imb-muted);
+}

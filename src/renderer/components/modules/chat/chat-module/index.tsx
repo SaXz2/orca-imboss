@@ -18,6 +18,7 @@ import { Avatar } from "../../../avatar";
 import { Button } from "../../../button";
 import { ContextMenu, type ContextMenuState } from "../../../context-menu";
 import { EmployeeAvatar } from "../../../employee-avatar";
+import { IconArchive, IconBack } from "../../../icons";
 import { Input } from "../../../input";
 import { ItemList } from "../../../item-list";
 import { useMentionResolver } from "../../../markdown/use-mention";
@@ -145,6 +146,34 @@ export function ChatModule(): React.JSX.Element {
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteIds, setDeleteIds] = useState<number[]>([]);
+  const [showArchive, setShowArchive] = useState(false);
+  const [archivedChats, setArchivedChats] = useState<ChatSummary[]>([]);
+
+  const reloadArchived = useCallback(async (): Promise<void> => {
+    try {
+      setArchivedChats(await imb.chats.archives());
+    } catch {
+      // Best-effort: keep the last snapshot.
+    }
+  }, []);
+
+  /** Archive or restore one conversation, then refresh both lists. */
+  const setArchived = useCallback(
+    async (id: number, archived: boolean): Promise<void> => {
+      try {
+        await imb.chats.setArchived(id, archived);
+        await appStore.reloadChats();
+        await reloadArchived();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [reloadArchived],
+  );
+
+  useEffect(() => {
+    void reloadArchived();
+  }, [reloadArchived]);
   const [error, setError] = useState<string | null>(null);
   const [runStatus, setRunStatus] = useState<Map<number, ChatRunStatus>>(
     () => new Map(),
@@ -663,15 +692,76 @@ export function ChatModule(): React.JSX.Element {
     }
   }, [selectedId, selectedRawTitle, titleDraft]);
 
-  const listPane = (
+  const listPane = showArchive ? (
+    <ListPane
+      title={t("Archived chats")}
+      search={
+        <button
+          type="button"
+          className="imb-chat-archive-back"
+          onClick={() => setShowArchive(false)}
+        >
+          <IconBack className="imb-icon imb-xs" />
+          {t("Back to chats")}
+        </button>
+      }
+    >
+      {archivedChats.length === 0 ? (
+        <div className="imb-chat-empty-list">{t("Nothing archived yet")}</div>
+      ) : (
+        <ItemList
+          items={archivedChats}
+          getItemKey={(chat) => chat.id}
+          renderItem={(chat) => (
+            <ListRow
+              avatar={
+                <Avatar
+                  letter={displayTitle(chat.title).slice(0, 1)}
+                  name={displayTitle(chat.title)}
+                />
+              }
+              name={displayTitle(chat.title)}
+              meta={formatChatTime(chat.lastAt, locale)}
+              sub={previewText(chat.preview ?? "", 80, resolveMention)}
+              extra={
+                <button
+                  type="button"
+                  className="imb-detail-action"
+                  onClick={() => void setArchived(chat.id, false)}
+                >
+                  {t("Restore")}
+                </button>
+              }
+            />
+          )}
+        />
+      )}
+    </ListPane>
+  ) : (
     <ListPane
       title={t("Chats")}
       search={
-        <SearchInput
-          value={query}
-          onValueChange={setQuery}
-          placeholder={t("Search chats")}
-        />
+        <div className="imb-chat-search-row">
+          <SearchInput
+            value={query}
+            onValueChange={setQuery}
+            placeholder={t("Search chats")}
+          />
+          <button
+            type="button"
+            className="imb-chat-archive-btn"
+            title={t("Archived chats")}
+            aria-label={t("Archived chats")}
+            onClick={() => setShowArchive(true)}
+          >
+            <IconArchive />
+            {archivedChats.length > 0 && (
+              <span className="imb-chat-archive-count">
+                {archivedChats.length}
+              </span>
+            )}
+          </button>
+        </div>
       }
       footer={
         <Button block onClick={() => void newChat()}>
@@ -734,6 +824,11 @@ export function ChatModule(): React.JSX.Element {
                     key: "select-all",
                     label: t("Select all"),
                     onSelect: toggleSelectAll,
+                  },
+                  {
+                    key: "archive",
+                    label: t("Archive"),
+                    onSelect: () => void setArchived(chat.id, true),
                   },
                   {
                     key: "delete",

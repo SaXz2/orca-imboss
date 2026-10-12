@@ -235,6 +235,14 @@ const MIGRATIONS: Array<(db: Database) => void> = [
       ALTER TABLE tasks ADD COLUMN work_chat_id INTEGER;
     `);
   },
+
+  // 6 — archived conversations: hidden from the chat list, kept restorable
+  (db) => {
+    db.exec(`
+      ALTER TABLE chats ADD COLUMN archived INTEGER NOT NULL DEFAULT 0;
+      CREATE INDEX IF NOT EXISTS idx_chats_archived ON chats(archived);
+    `);
+  },
 ];
 
 export function migrate(db: Database): void {

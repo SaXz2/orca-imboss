@@ -37,11 +37,19 @@ export function listChats(): Chat[] {
   return (
     getDB()
       .prepare(
-        "SELECT * FROM chats WHERE from_chat_id IS NULL " +
+        "SELECT * FROM chats WHERE from_chat_id IS NULL AND archived = 0 " +
           "ORDER BY last_message_at DESC, id DESC",
       )
       .all() as ChatRow[]
   ).map(toChat);
+}
+
+/** Archive or restore a conversation; returns the updated chat. */
+export function setArchived(id: number, archived: boolean): Chat | null {
+  const changes = getDB()
+    .prepare("UPDATE chats SET archived = ? WHERE id = ?")
+    .run(archived ? 1 : 0, id).changes;
+  return changes > 0 ? getChat(id) : null;
 }
 
 export function getChat(id: number): Chat | null {
@@ -74,10 +82,20 @@ export function getRootChatId(chatId: number): number {
  * insert, so a fresh chat tops the list).
  */
 export function listChatSummaries(): ChatSummary[] {
+  return queryChatSummaries(0);
+}
+
+/** The archived conversations, newest first (the archive view). */
+export function listArchivedSummaries(): ChatSummary[] {
+  return queryChatSummaries(1);
+}
+
+/** Root-chat summaries for one archive state (0 = live, 1 = archived). */
+function queryChatSummaries(archived: 0 | 1): ChatSummary[] {
   const rows = getDB()
     .prepare(
       `SELECT c.id, c.title, c.participants, c.unread, c.created_at, c.from_chat_id,
-              c.source, c.last_message_at,
+              c.source, c.archived, c.last_message_at,
               (SELECT m.content FROM messages m
                WHERE m.chat_id = c.id AND m.kind <> 'ack'
                ORDER BY m.created_at DESC, m.id DESC LIMIT 1) AS preview,
@@ -85,10 +103,10 @@ export function listChatSummaries(): ChatSummary[] {
                WHERE m.chat_id = c.id AND m.kind <> 'ack'
                ORDER BY m.created_at DESC, m.id DESC LIMIT 1) AS last_at
        FROM chats c
-       WHERE c.from_chat_id IS NULL
+       WHERE c.from_chat_id IS NULL AND c.archived = ?
        ORDER BY c.last_message_at DESC, c.id DESC`,
     )
-    .all() as ChatSummaryRow[];
+    .all(archived) as ChatSummaryRow[];
   return rows.map(toChatSummary);
 }
 
@@ -136,7 +154,7 @@ export function listChatSummariesPage(
   const needle = (page.query ?? "").trim().slice(0, MAX_QUERY_LENGTH);
   const db = getDB();
   const params: Array<string | number> = [];
-  const conditions: string[] = ["c.from_chat_id IS NULL"];
+  const conditions: string[] = ["c.from_chat_id IS NULL", "c.archived = 0"];
 
   // Keyset seek — always the first predicate so the index is usable.
   if (page.cursor) {
@@ -390,6 +408,7 @@ function toChat(row: ChatRow): Chat {
     createdAt: row.created_at,
     fromChatId: row.from_chat_id ?? null,
     source: normalizeSource(row.source),
+    archived: (row.archived ?? 0) === 1,
   };
 }
 
