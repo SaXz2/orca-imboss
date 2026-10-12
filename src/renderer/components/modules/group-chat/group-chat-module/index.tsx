@@ -106,7 +106,7 @@ export function GroupChatModule({
         <div className="imb-chat-title">{chat?.title ?? t("Conversation")}</div>
       </div>
       <div className="imb-thread" ref={threadRef} onScroll={handleScroll}>
-        <div className="imb-thread-inner" key={chat?.id ?? 0}>
+        <div className="imb-thread-inner">
           {messages.length === 0 ? (
             <div className="imb-chat-empty-detail">{t("No messages yet")}</div>
           ) : (

@@ -38,15 +38,15 @@
   scrollbar-gutter: stable;
 }
 
-/* Content layer. The cross-fade on conversation switch lives here rather than
-   on the scroll container, so the scrollbar itself never fades. Re-keyed per
-   conversation by the caller. */
+/* Content layer: keeps the message column's flex/gap. Deliberately NO entrance
+   animation here — any fade of the message area on conversation switch reads as
+   a flicker, and the previous chat's messages would be caught mid-fade before
+   the new ones arrive. */
 .imb-thread-inner {
   display: flex;
   flex-direction: column;
   gap: var(--imb-space-4);
   min-height: 100%;
-  animation: imb-fade-in var(--imb-duration-fast) var(--imb-ease-out);
 }
 
 /* Only the newest message plays an entrance, so appending one animates it while
