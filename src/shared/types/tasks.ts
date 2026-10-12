@@ -73,6 +73,12 @@ export interface Task {
   assignees: number[];
   /** Manual ordering within a column (ascending). */
   sortOrder: number;
+  /**
+   * Stable key of the progress card this task was promoted from, or null for a
+   * hand-written task. Promoted tasks are shown on the board through their
+   * progress card, not as a separate card.
+   */
+  progressKey: string | null;
   createdAt: number;
   updatedAt: number;
 }
@@ -88,6 +94,7 @@ export interface TaskRow {
   close_reason: string | null;
   assignees: string;
   sort_order: number;
+  progress_key: string | null;
   created_at: number;
   updated_at: number;
 }
@@ -118,6 +125,18 @@ export interface TaskInput {
   closeReason?: TaskCloseReason | null;
   assignees?: number[];
   sortOrder?: number;
+}
+
+/**
+ * Promote a progress-derived board card into a real task so it can carry a
+ * thread. Idempotent on `progressKey`.
+ */
+export interface TaskPromoteInput {
+  progressKey: string;
+  title: string;
+  flow?: string;
+  status?: TaskStatus;
+  assignees?: number[];
 }
 
 /**
@@ -238,4 +257,15 @@ export interface BoardCard {
   commentCount: number;
   /** Feedback rollup (task cards only; chat cards report zeros). */
   reactions: TaskReactions;
+  /**
+   * Id of the task backing this card's thread. For `task` cards it is `refId`;
+   * for `progress` cards it is set once the card has been promoted, and null
+   * until then (clicking promotes it).
+   */
+  threadId: number | null;
+  /**
+   * Stable promotion key for a `progress` card (`<chatId>:<title>`), unchanged
+   * when the assistant re-posts the card. Null for `task` cards.
+   */
+  progressKey: string | null;
 }

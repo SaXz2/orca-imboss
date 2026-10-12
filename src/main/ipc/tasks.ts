@@ -2,6 +2,7 @@ import type {
   ArchivedTask,
   TaskCommentInput,
   TaskInput,
+  TaskPromoteInput,
   TaskReactionKind,
   TaskStatus,
 } from "@shared/types";
@@ -32,6 +33,11 @@ export function registerTaskHandlers(): void {
 
   ipcMain.handle("tasks:create", (_event, input: unknown) =>
     dbTasks.createTask(input as TaskInput),
+  );
+
+  // Give a progress-derived board card a real task (and thus a thread).
+  ipcMain.handle("tasks:promote", (_event, input: unknown) =>
+    dbTasks.ensureProgressTask(input as TaskPromoteInput),
   );
 
   ipcMain.handle("tasks:update", (_event, id: unknown, input: unknown) =>

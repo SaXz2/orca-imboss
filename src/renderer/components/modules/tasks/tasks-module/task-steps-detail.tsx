@@ -1,13 +1,14 @@
 import { employeeColor } from "@shared/constants/employee-colors";
 import { t } from "@shared/l10n";
 import type { BoardCard, MessageStep, StepStatus } from "@shared/types";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cls } from "reactutils";
 import { appStore } from "../../../../app-store";
 import { employeeLabel } from "../../../../employee-label";
 import { EmployeeAvatar } from "../../../employee-avatar";
 import { IconArchive, IconBack, IconChat, IconEmployees } from "../../../icons";
 import { COLUMNS } from "./task-meta";
+import { TaskThreadPanel } from "./task-thread-panel";
 
 /** Translation key per step status; rendered through `t()` for locale switches. */
 const STEP_LABEL_KEYS: Record<StepStatus, string> = {
@@ -33,13 +34,18 @@ export function TaskStepsDetail({
   employees,
   onBack,
   onArchive,
+  onChanged,
+  onOpenTask,
 }: {
   card: BoardCard;
   employees: EmployeeList;
   onBack: () => void;
   onArchive: (card: BoardCard) => void;
+  onChanged: () => Promise<void>;
+  onOpenTask: (id: number) => void;
 }): React.JSX.Element {
   const [busy, setBusy] = useState(false);
+  const [threadId, setThreadId] = useState<number | null>(card.threadId);
   const statusLabel =
     COLUMNS.find((column) => column.status === card.status)?.labelKey ??
     "Pending";
@@ -53,6 +59,35 @@ export function TaskStepsDetail({
     if (chatId === null) return;
     void appStore.openAgentSession(employeeId, chatId);
   };
+
+  // A progress card carries no task of its own; promote it once so the thread
+  // (discussion, feedback, references) has something to attach to.
+  useEffect(() => {
+    if (card.threadId !== null) {
+      setThreadId(card.threadId);
+      return;
+    }
+    const progressKey = card.progressKey;
+    if (progressKey === null) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const task = await imb.tasks.promote({
+          progressKey,
+          title: card.title,
+          flow: card.flow,
+          status: card.status,
+          assignees: card.assignees,
+        });
+        if (!cancelled) setThreadId(task.id);
+      } catch {
+        // Leave the thread unavailable; the steps still render.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [card.threadId, card.progressKey, card.title, card.flow, card.status, card.assignees]);
 
   /**
    * Open the task's conversation the way the chat list does: select it in the
@@ -149,6 +184,15 @@ export function TaskStepsDetail({
                 />
               ))}
             </div>
+          )}
+
+          {threadId !== null && (
+            <TaskThreadPanel
+              taskId={threadId}
+              employees={employees}
+              onChanged={onChanged}
+              onOpenTask={onOpenTask}
+            />
           )}
         </div>
       </div>

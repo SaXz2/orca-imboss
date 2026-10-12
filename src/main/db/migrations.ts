@@ -214,6 +214,20 @@ const MIGRATIONS: Array<(db: Database) => void> = [
         ON task_links(to_task_id, kind);
     `);
   },
+
+  // 4 — promote progress-derived board cards into real tasks
+  (db) => {
+    db.exec(`
+      -- A board card derived from an assistant progress card can be promoted
+      -- into a real task so it can carry a thread (comments, feedback, refs).
+      -- The key is stable across re-posts: "<chatId>:<title>".
+      ALTER TABLE tasks ADD COLUMN progress_key TEXT;
+
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_tasks_progress_key
+        ON tasks(progress_key)
+        WHERE progress_key IS NOT NULL;
+    `);
+  },
 ];
 
 export function migrate(db: Database): void {

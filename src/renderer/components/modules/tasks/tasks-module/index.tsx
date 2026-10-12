@@ -184,6 +184,11 @@ export function TasksModule(): React.JSX.Element {
       employees={employees}
       onBack={() => setProgressCard(null)}
       onArchive={(card) => void archiveCurrent(card)}
+      onChanged={reload}
+      onOpenTask={(id) => {
+        setProgressCard(null);
+        setDetailId(id);
+      }}
     />
   ) : detailId !== null ? (
       <TaskDetail

@@ -35,6 +35,7 @@ import type {
   TaskCommentInput,
   TaskEvent,
   TaskInput,
+  TaskPromoteInput,
   TaskReactionKind,
   TaskReactions,
   TaskStatus,
@@ -335,6 +336,8 @@ const api = {
       ipcRenderer.invoke("tasks:get", id) as Promise<Task | null>,
     create: (input: TaskInput) =>
       ipcRenderer.invoke("tasks:create", input) as Promise<Task>,
+    promote: (input: TaskPromoteInput) =>
+      ipcRenderer.invoke("tasks:promote", input) as Promise<Task>,
     update: (id: number, input: TaskInput) =>
       ipcRenderer.invoke("tasks:update", id, input) as Promise<Task | null>,
     move: (id: number, status: TaskStatus) =>

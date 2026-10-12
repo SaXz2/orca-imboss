@@ -10,7 +10,7 @@ import { getDB } from "./db";
 import * as dbEmployees from "./db/employees";
 import { parseJsonObject } from "./db/json";
 import { authoredCounts, reactionsFor } from "./db/task-thread";
-import { listTasks } from "./db/tasks";
+import { listManualTasks, progressTaskIds } from "./db/tasks";
 import { listArchivedTasks } from "./task-archive";
 
 /**
@@ -70,10 +70,8 @@ interface ProgressRow {
 export function listBoardCards(): BoardCard[] {
   const cards: BoardCard[] = [];
 
-  const tasks = listTasks();
-  const taskIds = tasks.map((task) => task.id);
-  const counts = authoredCounts(taskIds);
-  const reactions = reactionsFor(taskIds);
+  const tasks = listManualTasks();
+  const promoted = progressTaskIds();
 
   for (const task of tasks) {
     cards.push({
@@ -91,8 +89,10 @@ export function listBoardCards(): BoardCard[] {
       steps: [],
       chatId: null,
       workChatId: null,
-      commentCount: counts.get(task.id) ?? 0,
-      reactions: reactions.get(task.id) ?? { ...EMPTY_REACTIONS },
+      commentCount: 0,
+      reactions: { ...EMPTY_REACTIONS },
+      threadId: task.id,
+      progressKey: null,
     });
   }
 
@@ -170,7 +170,22 @@ export function listBoardCards(): BoardCard[] {
       workChatId: taskGroupChatId(row.chat_id, row.id) ?? row.chat_id,
       commentCount: 0,
       reactions: { ...EMPTY_REACTIONS },
+      // Stable across re-posts: the board already groups by (chat, title).
+      progressKey: `${row.chat_id}:${title}`,
+      threadId: promoted.get(`${row.chat_id}:${title}`) ?? null,
     });
+  }
+
+  // Thread rollups for every card that has (or can have) a thread.
+  const threadIds = cards
+    .map((card) => card.threadId)
+    .filter((id): id is number => id !== null);
+  const counts = authoredCounts(threadIds);
+  const reactions = reactionsFor(threadIds);
+  for (const card of cards) {
+    if (card.threadId === null) continue;
+    card.commentCount = counts.get(card.threadId) ?? 0;
+    card.reactions = reactions.get(card.threadId) ?? { ...EMPTY_REACTIONS };
   }
 
   return cards.sort((a, b) => b.updatedAt - a.updatedAt);

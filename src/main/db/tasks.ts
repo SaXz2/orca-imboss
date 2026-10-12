@@ -51,6 +51,7 @@ function toTask(row: TaskRow): Task {
       status === "closed" ? (isCloseReason(row.close_reason) ? row.close_reason : "completed") : null,
     assignees: parseNumberArray(row.assignees),
     sortOrder: row.sort_order,
+    progressKey: row.progress_key,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -62,6 +63,82 @@ export function listTasks(): Task[] {
       .prepare("SELECT * FROM tasks ORDER BY sort_order ASC, id ASC")
       .all() as TaskRow[]
   ).map(toTask);
+}
+
+/** Hand-written tasks only; promoted progress tasks are shown via their card. */
+export function listManualTasks(): Task[] {
+  return (
+    getDB()
+      .prepare(
+        "SELECT * FROM tasks WHERE progress_key IS NULL " +
+          "ORDER BY sort_order ASC, id ASC",
+      )
+      .all() as TaskRow[]
+  ).map(toTask);
+}
+
+/** Promoted-task id per `progress_key`, for wiring board cards to their thread. */
+export function progressTaskIds(): Map<string, number> {
+  const rows = getDB()
+    .prepare("SELECT id, progress_key FROM tasks WHERE progress_key IS NOT NULL")
+    .all() as Array<{ id: number; progress_key: string }>;
+  return new Map(rows.map((row) => [row.progress_key, row.id]));
+}
+
+/**
+ * Promote a progress-derived board card into a real task, so it can carry a
+ * thread. Idempotent on `progressKey`; the task's fields track the latest card
+ * snapshot on every call.
+ */
+export function ensureProgressTask(input: {
+  progressKey: string;
+  title: string;
+  flow?: string;
+  status?: TaskStatus;
+  assignees?: number[];
+}): Task {
+  const key = input.progressKey.slice(0, 200);
+  if (key.length === 0) throw new Error("A progress key is required.");
+  const db = getDB();
+  const existing = db
+    .prepare("SELECT id FROM tasks WHERE progress_key = ?")
+    .get(key) as { id: number } | undefined;
+  const status = isStatus(input.status) ? input.status : "done";
+  if (existing) {
+    db.prepare(
+      "UPDATE tasks SET title = ?, flow = ?, status = ?, assignees = ?, " +
+        "updated_at = CAST(strftime('%s', 'now') AS INTEGER) WHERE id = ?",
+    ).run(
+      cleanText(input.title, MAX_TITLE) || "—",
+      cleanText(input.flow, MAX_FLOW),
+      status,
+      stringifyArray(cleanAssignees(input.assignees)),
+      existing.id,
+    );
+    const updated = getTask(existing.id);
+    if (updated) return updated;
+  }
+  const maxRow = db
+    .prepare("SELECT COALESCE(MAX(sort_order), 0) AS m FROM tasks WHERE status = ?")
+    .get(status) as { m: number };
+  const result = db
+    .prepare(
+      "INSERT INTO tasks (title, detail, category, flow, status, assignees, " +
+        "sort_order, progress_key) VALUES (?, '', '', ?, ?, ?, ?, ?)",
+    )
+    .run(
+      cleanText(input.title, MAX_TITLE) || "—",
+      cleanText(input.flow, MAX_FLOW),
+      status,
+      stringifyArray(cleanAssignees(input.assignees)),
+      maxRow.m + 1,
+      key,
+    );
+  const id = Number(result.lastInsertRowid);
+  logTaskEvent(id, "created", { meta: { title: input.title, status } });
+  const created = getTask(id);
+  if (!created) throw new Error("Failed to promote the task.");
+  return created;
 }
 
 export function getTask(id: number): Task | null {
