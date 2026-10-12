@@ -147,18 +147,21 @@
   cursor: pointer;
   color: var(--imb-muted);
   transition:
-    color var(--imb-motion-fast),
-    background var(--imb-motion-fast);
+    color var(--imb-motion-fast) var(--imb-ease-standard),
+    background var(--imb-motion-fast) var(--imb-ease-standard),
+    transform var(--imb-duration-fast) var(--imb-ease-spring);
   position: relative;
 }
 
 .imb-attach-btn:hover {
   color: var(--imb-fg);
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--imb-overlay-light);
+  transform: scale(1.08);
 }
 
 .imb-attach-btn:active {
-  background: rgba(0, 0, 0, 0.08);
+  background: var(--imb-overlay-medium);
+  transform: scale(0.94);
 }
 
 .imb-attach-btn:focus-visible {

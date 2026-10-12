@@ -272,6 +272,21 @@
   }
 }
 
+/* ── 弹出（带回弹） ── 徽标、计数、状态点出现 */
+@keyframes imb-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  60% {
+    transform: scale(1.08);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 /* ── 列表行入场 ──
    仅透明度（不含 transform），因此可安全用于被虚拟化定位（行内联
    transform: translateY）的行上；只在真正新增时播放，滚动重挂载不重放。 */

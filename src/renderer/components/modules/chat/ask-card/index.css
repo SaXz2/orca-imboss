@@ -17,6 +17,7 @@
 
 .imb-ask-question {
   margin-top: var(--imb-space-3);
+  animation: imb-soft-up-in var(--imb-duration-slow) var(--imb-ease-out);
 }
 
 .imb-ask-q-text {
@@ -163,6 +164,7 @@
   font-size: var(--imb-text-sm);
   color: var(--imb-accent-active);
   font-weight: 500;
+  animation: imb-pop var(--imb-duration-slow) var(--imb-ease-out);
 }
 
 .imb-ask-error {

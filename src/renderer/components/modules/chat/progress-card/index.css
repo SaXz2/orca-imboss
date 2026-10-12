@@ -57,6 +57,7 @@
   gap: 10px;
   margin-top: 8px;
   color: var(--imb-text-base);
+  animation: imb-soft-up-in var(--imb-duration-slow) var(--imb-ease-out);
 }
 
 .imb-progress-actor {

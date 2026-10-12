@@ -32,15 +32,26 @@
   overflow-y: auto;
   padding: var(--imb-space-5) var(--imb-space-6) var(--imb-space-6);
   background: var(--imb-bg);
+  min-height: 0;
+  /* Reserve the gutter so the scrollbar appearing/disappearing never shifts or
+     flashes the content. */
+  scrollbar-gutter: stable;
+}
+
+/* Content layer. The cross-fade on conversation switch lives here rather than
+   on the scroll container, so the scrollbar itself never fades. Re-keyed per
+   conversation by the caller. */
+.imb-thread-inner {
   display: flex;
   flex-direction: column;
   gap: var(--imb-space-4);
-  min-height: 0;
+  min-height: 100%;
+  animation: imb-fade-in var(--imb-duration-fast) var(--imb-ease-out);
 }
 
 /* Only the newest message plays an entrance, so appending one animates it while
    scrolling through history never replays anything. */
-.imb-thread > .imb-msg:last-child {
+.imb-thread-inner > .imb-msg:last-child {
   animation: imb-soft-up-in var(--imb-duration-slow) var(--imb-ease-out);
 }
 

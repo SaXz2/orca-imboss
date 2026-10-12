@@ -684,7 +684,7 @@ export function ChatModule(): React.JSX.Element {
   );
 
   const detail = selected ? (
-    <div className="imb-chat-detail" key={selected.id}>
+    <>
       <div className="imb-chat-header">
         <div className="imb-chat-header-avatar">
           <EmployeeAvatar employeeId={0} size={36} />
@@ -729,29 +729,31 @@ export function ChatModule(): React.JSX.Element {
         )}
       </div>
       <div className="imb-thread" ref={threadRef} onScroll={handleThreadScroll}>
-        {visibleMessages.map((message) => (
-          <MessageItem
-            key={`${message.chatId}-${message.id}`}
-            message={message}
-            isLatestProgress={message.id === latestProgressId}
-            onAnswered={() => void loadMessages(message.chatId)}
-            askAnswer={pairing.answerByAskId.get(message.id)}
-          />
-        ))}
-        {selectedRunStatus !== undefined &&
-          (selectedRunStatus.running || selectedRunStatus.compacting) && (
-            <div className="imb-run-status" role="status">
-              <span className="imb-run-dot" aria-hidden="true" />
-              <span>{formatRunStatusText(selectedRunStatus)}</span>
-            </div>
-          )}
+        <div className="imb-thread-inner" key={selected.id}>
+          {visibleMessages.map((message) => (
+            <MessageItem
+              key={`${message.chatId}-${message.id}`}
+              message={message}
+              isLatestProgress={message.id === latestProgressId}
+              onAnswered={() => void loadMessages(message.chatId)}
+              askAnswer={pairing.answerByAskId.get(message.id)}
+            />
+          ))}
+          {selectedRunStatus !== undefined &&
+            (selectedRunStatus.running || selectedRunStatus.compacting) && (
+              <div className="imb-run-status" role="status">
+                <span className="imb-run-dot" aria-hidden="true" />
+                <span>{formatRunStatusText(selectedRunStatus)}</span>
+              </div>
+            )}
+        </div>
       </div>
       <ChatInputBar
         chatId={selected.id}
         focusToken={focusToken}
         onSend={handleSend}
       />
-    </div>
+    </>
   ) : null;
 
   return (
