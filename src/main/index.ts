@@ -8,6 +8,7 @@ import { deleteAvatarFiles } from "./avatars";
 import * as cron from "./cron";
 import { getAgentRoot } from "./data-dir";
 import { initDatabase } from "./db";
+import { pruneArchivedTasks } from "./task-archive";
 import { purgeDisabledEmployees } from "./db/employees";
 import { unlinkSessionFile } from "./db/sessions";
 import { applyStoredHttpProxy } from "./http-proxy";
@@ -72,6 +73,9 @@ app.whenReady().then(() => {
   app.setAppUserModelId("com.orcastudio.imboss");
 
   initDatabase();
+  // Drop archive entries whose task or conversation was deleted while the app
+  // was closed, so the archive never lists something that no longer exists.
+  pruneArchivedTasks();
   // Apply the persisted outbound proxy before any network work (integrations,
   // model-catalog refresh, provider "Fetch models") so it takes effect from the
   // very first request.

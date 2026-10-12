@@ -8,6 +8,7 @@ import * as cron from "../cron";
 import * as dbChats from "../db/chats";
 import * as dbMessages from "../db/messages";
 import { listByChat, unlinkSessionFile } from "../db/sessions";
+import { pruneArchivedTasks } from "../task-archive";
 import { notifyUnread, sendToRenderer } from "../notifications";
 import { assertInteger, assertString, parsePageQuery } from "./helpers";
 
@@ -114,6 +115,8 @@ export function registerChatHandlers(): void {
       );
       // Keep every window in sync: chat caches + opened group-chat entries.
       sendToRenderer("chats:deleted", { chatIds });
+      // The archived tasks of these conversations no longer exist.
+      pruneArchivedTasks();
     }
     return removed;
   });

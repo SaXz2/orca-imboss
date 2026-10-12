@@ -1,4 +1,5 @@
 import type { ArchivedTask } from "@shared/types";
+import { getDB } from "./db";
 import { getSetting, setSetting } from "./db/settings";
 
 /**
@@ -36,9 +37,55 @@ function write(entries: ArchivedTask[]): ArchivedTask[] {
   return entries;
 }
 
-/** Archived tasks, newest first. */
+/** True when a chat id still exists (a null id has nothing to check). */
+function chatAlive(id: number | null): boolean {
+  if (id === null) return true;
+  return Boolean(getDB().prepare("SELECT 1 FROM chats WHERE id = ?").get(id));
+}
+
+/**
+ * An archive entry is only meaningful while the thing it points at still
+ * exists. Deleting a conversation cascades away its messages and spawned chats,
+ * so its archived tasks have to go with it instead of lingering in the list.
+ */
+function stillExists(entry: ArchivedTask): boolean {
+  if (!chatAlive(entry.chatId) || !chatAlive(entry.workChatId)) return false;
+
+  const progress = /^progress:(\d+)$/.exec(entry.key);
+  if (progress) {
+    const id = Number(progress[1]);
+    return Boolean(
+      getDB()
+        .prepare("SELECT 1 FROM messages WHERE id = ? AND kind = 'progress'")
+        .get(id),
+    );
+  }
+
+  const task = /^task:(\d+)$/.exec(entry.key);
+  if (task) {
+    const id = Number(task[1]);
+    return Boolean(getDB().prepare("SELECT 1 FROM tasks WHERE id = ?").get(id));
+  }
+
+  return true;
+}
+
+/** Archived tasks, newest first; entries whose task/conversation is gone drop out. */
 export function listArchivedTasks(): ArchivedTask[] {
-  return read().sort((a, b) => b.archivedAt - a.archivedAt);
+  const entries = read();
+  const alive = entries.filter(stillExists);
+  // Self-healing: persist the pruned list so stale entries never accumulate.
+  if (alive.length !== entries.length) write(alive);
+  return alive.sort((a, b) => b.archivedAt - a.archivedAt);
+}
+
+/**
+ * Drop archive entries whose task or conversation is gone. Called at startup
+ * and whenever conversations are deleted, so the archive never lists a task
+ * that no longer exists.
+ */
+export function pruneArchivedTasks(): void {
+  listArchivedTasks();
 }
 
 /** Archive a task (idempotent per key); returns the updated archive list. */
