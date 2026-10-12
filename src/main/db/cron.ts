@@ -19,21 +19,35 @@ export function listEnabledJobs(): CronJob[] {
 }
 
 /**
- * Every job owned by an employee, with the owning chat's title resolved for
- * display. The chat FK cascades, so the JOIN always finds a chat. Ordered so
- * the Employees detail list is stable (creation order).
+ * Every job with the owning chat's title resolved. The chat FK cascades, so the
+ * JOIN always finds a chat. Ordered so the lists are stable (creation order).
+ * `employeeId` narrows it to one employee (the detail pane); omitted returns
+ * every job (the dock's scheduled-tasks view).
  */
-export function listByEmployee(employeeId: number): CronJobInfo[] {
+function listJobs(employeeId?: number): CronJobInfo[] {
+  const where = employeeId === undefined ? "" : "WHERE cj.employee_id = ?";
   const rows = getDB()
     .prepare(
       `SELECT cj.*, c.title AS chat_title
          FROM cron_jobs cj
          JOIN chats c ON c.id = cj.chat_id
-        WHERE cj.employee_id = ?
+        ${where}
         ORDER BY cj.created_at ASC, cj.id ASC`,
     )
-    .all(employeeId) as Array<CronJobRow & { chat_title: string }>;
+    .all(...(employeeId === undefined ? [] : [employeeId])) as Array<
+    CronJobRow & { chat_title: string }
+  >;
   return rows.map((row) => ({ ...toCronJob(row), chatTitle: row.chat_title }));
+}
+
+/** Every job owned by one employee (the Employees detail list). */
+export function listByEmployee(employeeId: number): CronJobInfo[] {
+  return listJobs(employeeId);
+}
+
+/** Every job, across all employees (the dock's scheduled-tasks view). */
+export function listAll(): CronJobInfo[] {
+  return listJobs();
 }
 
 export function getJob(id: string): CronJob | null {

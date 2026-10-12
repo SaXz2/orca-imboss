@@ -22,8 +22,8 @@
   grid-template-columns: 1fr;
 }
 
-/* Workbench dock: a real third column, so opening it pushes the content aside
-   instead of covering it. */
+/* Scheduled-tasks dock: a real third column, so opening it pushes the content
+   aside instead of covering it. */
 .imb-app.imb-has-dock {
   grid-template-columns: 208px 1fr 380px;
 }

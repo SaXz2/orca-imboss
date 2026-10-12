@@ -2,7 +2,7 @@ import { t } from "@shared/l10n";
 import { useEffect, useState } from "react";
 import { cls } from "reactutils";
 import { appStore, IS_MAC, useApp } from "../../app-store";
-import { IconFile } from "../icons";
+import { IconClock } from "../icons";
 import "./index.css";
 
 const stroke = { stroke: "currentColor", strokeWidth: 1.4 } as const;
@@ -12,7 +12,8 @@ const stroke = { stroke: "currentColor", strokeWidth: 1.4 } as const;
  * macOS: empty draggable strip; the native traffic lights sit on its left.
  * Windows/Linux: custom small min/max/close buttons on the right (native
  * controls are hidden via the absence of `titleBarOverlay`).
- * Both platforms get the workbench toggle just left of the window controls.
+ * Both platforms get the scheduled-tasks toggle just left of the window
+ * controls.
  */
 export function TitleBar(): React.JSX.Element {
   const [maximized, setMaximized] = useState(false);
@@ -39,12 +40,12 @@ export function TitleBar(): React.JSX.Element {
           <button
             type="button"
             className="imb-titlebar-toggle"
-            aria-label={t("Workbench")}
+            aria-label={t("Scheduled tasks")}
             aria-pressed={dockOpen}
-            title={t("Workbench")}
+            title={t("Scheduled tasks")}
             onClick={() => appStore.toggleDock()}
           >
-            <IconFile />
+            <IconClock />
           </button>
         </div>
         {!IS_MAC && (

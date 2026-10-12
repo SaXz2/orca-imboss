@@ -12,6 +12,9 @@ export function registerCronHandlers(): void {
     return dbCron.listByEmployee(safeId);
   });
 
+  // Every job across all employees: the dock's scheduled-tasks view.
+  ipcMain.handle("cron:listAll", () => dbCron.listAll());
+
   // Remove a job: stops the live Cron handle and deletes the DB row. Returns
   // false when the job does not exist (idempotent from the renderer's view).
   ipcMain.handle("cron:remove", (_event, id: unknown): boolean => {

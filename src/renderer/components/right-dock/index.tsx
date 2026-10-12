@@ -1,46 +1,33 @@
-import { t } from "@shared/l10n";
-import type { WorkbenchEntry, WorkbenchFile, WorkbenchListing } from "@shared/types";
+import { employeeColor } from "@shared/constants/employee-colors";
+import { getLocale, t } from "@shared/l10n";
+import type { CronJobInfo } from "@shared/types";
 import { useCallback, useEffect, useState } from "react";
-import { cls } from "reactutils";
-import { IconBack, IconFile, IconRefresh, IconX } from "../icons";
+import { appStore, useApp } from "../../app-store";
+import { employeeLabel } from "../../employee-label";
+import { EmployeeAvatar } from "../employee-avatar";
+import { IconClock, IconRefresh, IconTrash, IconX } from "../icons";
+import { formatMessageTime } from "../modules/chat/relative-time";
 import "./index.css";
 
 /**
- * The right dock: a panel beside the content that browses the folder the agents
- * work in and previews files (text and images). It is the app's workbench
- * surface — the place to look at what the team produced. It is a real grid
- * column of the app shell, so opening it pushes the content aside.
+ * The right dock: the company's scheduled tasks, in one place. Every cron job
+ * from every employee is listed with when it runs next, so the automation side
+ * of the team is visible at a glance instead of buried in one employee's page.
  */
 export function RightDock({
   onClose,
 }: {
   onClose: () => void;
 }): React.JSX.Element {
-  const [path, setPath] = useState("");
-  const [listing, setListing] = useState<WorkbenchListing | null>(null);
-  const [file, setFile] = useState<WorkbenchFile | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { data } = useApp();
+  const employees = data.employees.items;
+  const [jobs, setJobs] = useState<CronJobInfo[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadDir = useCallback(async (next: string): Promise<void> => {
-    setLoading(true);
+  const load = useCallback(async (): Promise<void> => {
     try {
-      const result = await imb.workbench.list(next);
-      setListing(result);
-      setFile(null);
-      setPath(result.path);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const openFile = useCallback(async (target: string): Promise<void> => {
-    setLoading(true);
-    try {
-      setFile(await imb.workbench.read(target));
+      setJobs(await imb.cron.listAll());
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -50,25 +37,29 @@ export function RightDock({
   }, []);
 
   useEffect(() => {
-    if (listing === null) void loadDir("");
-  }, [listing, loadDir]);
+    void load();
+  }, [load]);
 
-  const onEntry = (entry: WorkbenchEntry): void => {
-    if (entry.dir) void loadDir(entry.path);
-    else void openFile(entry.path);
+  const remove = async (id: string): Promise<void> => {
+    try {
+      await imb.cron.remove(id);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
   };
 
   return (
-    <aside className="imb-dock" aria-label={t("Workbench")}>
+    <aside className="imb-dock" aria-label={t("Scheduled tasks")}>
       <div className="imb-dock-head">
-        <span className="imb-dock-title">{t("Workbench")}</span>
+        <span className="imb-dock-title">{t("Scheduled tasks")}</span>
         <div className="imb-dock-head-actions">
           <button
             type="button"
             className="imb-dock-icon-btn"
             title={t("Refresh")}
             aria-label={t("Refresh")}
-            onClick={() => void loadDir(path)}
+            onClick={() => void load()}
           >
             <IconRefresh />
           </button>
@@ -84,98 +75,75 @@ export function RightDock({
         </div>
       </div>
 
-      <div className="imb-dock-path" title={file ? file.path : path}>
-        {file !== null ? (
-          <button
-            type="button"
-            className="imb-dock-back"
-            onClick={() => setFile(null)}
-          >
-            <IconBack />
-            {file.name}
-          </button>
-        ) : (
-          <span className="imb-dock-path-text">{path}</span>
-        )}
-      </div>
-
       <div className="imb-dock-body">
         {error !== null && <p className="imb-error-text">{error}</p>}
 
-        {file !== null ? (
-          <FilePreview file={file} />
+        {!loading && jobs.length === 0 && error === null ? (
+          <div className="imb-board-empty">{t("No scheduled tasks yet")}</div>
         ) : (
           <div className="imb-dock-list">
-            {listing !== null && listing.parent !== null && (
-              <button
-                type="button"
-                className="imb-dock-row imb-dock-up"
-                onClick={() => void loadDir(listing.parent ?? "")}
-              >
-                <IconBack />
-                <span className="imb-dock-row-name">{t("Parent folder")}</span>
-              </button>
-            )}
-            {listing?.entries.map((entry) => (
-              <button
-                key={entry.path}
-                type="button"
-                className={cls("imb-dock-row", entry.dir && "imb-is-dir")}
-                onClick={() => onEntry(entry)}
-              >
-                <span className="imb-dock-row-icon">
-                  <IconFile />
-                </span>
-                <span className="imb-dock-row-name">{entry.name}</span>
-                {!entry.dir && (
-                  <span className="imb-dock-row-size">
-                    {formatSize(entry.size)}
-                  </span>
-                )}
-              </button>
-            ))}
-            {!loading && listing !== null && listing.entries.length === 0 && (
-              <div className="imb-board-empty">{t("This folder is empty")}</div>
-            )}
+            {jobs.map((job) => {
+              const employee = employees.find(
+                (person) => person.id === job.employeeId,
+              );
+              const label = employee
+                ? employeeLabel(employee)
+                : `#${job.employeeId}`;
+              return (
+                <div key={job.id} className="imb-cron-row">
+                  <EmployeeAvatar employeeId={job.employeeId} size={26} />
+
+                  <button
+                    type="button"
+                    className="imb-cron-main"
+                    title={t("Open the session that runs this")}
+                    onClick={() =>
+                      void appStore.openAgentSession(
+                        job.employeeId,
+                        job.chatId,
+                      )
+                    }
+                  >
+                    <span className="imb-cron-name-row">
+                      <span
+                        className="imb-cron-name"
+                        style={{ color: employeeColor(job.employeeId) }}
+                      >
+                        {label}
+                      </span>
+                      <span className="imb-cron-schedule" title={job.schedule}>
+                        <IconClock />
+                        {job.schedule}
+                      </span>
+                    </span>
+                    <span className="imb-cron-content">{job.content}</span>
+                    <span className="imb-cron-meta">
+                      {job.nextRunAt !== null
+                        ? t("Next run ${time}", {
+                            time: formatMessageTime(job.nextRunAt, getLocale()),
+                          })
+                        : t("No further runs")}
+                      {job.chatTitle.trim().length > 0
+                        ? ` · ${job.chatTitle}`
+                        : ""}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="imb-cron-remove"
+                    title={t("Remove")}
+                    aria-label={t("Remove")}
+                    onClick={() => void remove(job.id)}
+                  >
+                    <IconTrash />
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
     </aside>
   );
-}
-
-/** Preview of one file: inline text, an image, or a "cannot preview" note. */
-function FilePreview({ file }: { file: WorkbenchFile }): React.JSX.Element {
-  if (file.kind === "image" && file.dataUrl) {
-    return (
-      <div className="imb-dock-preview imb-dock-preview-image">
-        <img src={file.dataUrl} alt={file.name} />
-      </div>
-    );
-  }
-  if (file.kind === "text") {
-    return (
-      <div className="imb-dock-preview">
-        <pre className="imb-dock-text">{file.text}</pre>
-        {file.truncated && (
-          <p className="imb-module-note">{t("Showing the first part only.")}</p>
-        )}
-      </div>
-    );
-  }
-  return (
-    <div className="imb-dock-preview imb-dock-preview-empty">
-      <p className="imb-module-note">
-        {t("This file cannot be previewed.")}
-      </p>
-      <span className="imb-dock-row-size">{formatSize(file.size)}</span>
-    </div>
-  );
-}
-
-/** Compact file size: 12 B / 3.4 KB / 1.2 MB. */
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }

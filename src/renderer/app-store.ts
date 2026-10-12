@@ -137,7 +137,8 @@ export const appStore = proxy({
   // notification click). Cleared once consumed.
   focusChatId: null as number | null,
 
-  // Right workbench dock visibility. Session-only: a restart starts closed.
+  // Right dock visibility (today it holds the scheduled tasks). Session-only: a
+  // restart starts closed.
   dockOpen: false,
 
   // Pending employee to select when the employees module is mounted (set when a
@@ -761,12 +762,12 @@ export const appStore = proxy({
     await imb.settings.set(SettingKeys.Module, "employees");
   },
 
-  /** Show or hide the right workbench dock. */
+  /** Show or hide the right dock. */
   setDockOpen(open: boolean): void {
     appStore.dockOpen = open;
   },
 
-  /** Toggle the right workbench dock. */
+  /** Toggle the right dock. */
   toggleDock(): void {
     appStore.dockOpen = !appStore.dockOpen;
   },

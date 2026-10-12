@@ -1,4 +1,4 @@
-/* The right dock — a workbench panel beside the content. */
+/* The right dock — the company's scheduled tasks, beside the content. */
 
 .imb-dock {
   display: flex;
@@ -61,50 +61,6 @@
   height: 16px;
 }
 
-.imb-dock-path {
-  flex: none;
-  padding: 9px 18px;
-  border-bottom: 1px solid var(--imb-border-soft);
-  font-size: var(--imb-text-sm);
-  color: var(--imb-text-2);
-  overflow: hidden;
-  background: var(--imb-surface);
-}
-
-.imb-dock-path-text {
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  direction: rtl;
-  text-align: left;
-}
-
-.imb-dock-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 100%;
-  padding: 3px 8px;
-  border: none;
-  background: transparent;
-  color: var(--imb-fg);
-  font-size: var(--imb-text-sm);
-  font-weight: 600;
-  border-radius: var(--imb-radius-sm);
-  cursor: pointer;
-}
-
-.imb-dock-back:hover {
-  background: var(--imb-fg-soft);
-}
-
-.imb-dock-back svg {
-  width: 14px;
-  height: 14px;
-  flex: none;
-}
-
 .imb-dock-body {
   flex: 1;
   min-height: 0;
@@ -115,101 +71,112 @@
   display: flex;
   flex-direction: column;
   padding: 8px 10px 16px;
-  gap: 1px;
+  gap: 2px;
 }
 
-.imb-dock-row {
+/* One scheduled task: who runs it, when, and what it does. */
+.imb-cron-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
-  width: 100%;
-  min-width: 0;
-  padding: 9px 12px;
-  border: none;
-  background: transparent;
+  padding: 10px 8px 10px 10px;
   border-radius: var(--imb-radius-md);
-  color: var(--imb-fg);
-  font-size: var(--imb-text-base);
-  cursor: pointer;
-  text-align: left;
 }
 
-.imb-dock-row:hover {
+.imb-cron-row:hover {
   background: var(--imb-fg-soft);
 }
 
-.imb-dock-row-icon {
-  display: inline-flex;
-  flex: none;
-  color: var(--imb-text-2);
-}
-
-.imb-dock-row-icon svg {
-  width: 17px;
-  height: 17px;
-}
-
-.imb-dock-row.imb-is-dir .imb-dock-row-icon {
-  color: var(--imb-accent);
-}
-
-.imb-dock-row.imb-is-dir .imb-dock-row-name {
-  font-weight: 550;
-}
-
-.imb-dock-row-name {
+.imb-cron-main {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.imb-cron-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.imb-cron-name {
+  font-size: var(--imb-text-base);
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.imb-dock-row-size {
-  flex: none;
-  font-size: var(--imb-text-sm);
-  color: var(--imb-text-2);
-  font-variant-numeric: tabular-nums;
-}
-
-.imb-dock-up svg {
-  width: 16px;
-  height: 16px;
-  flex: none;
-}
-
-.imb-dock-preview {
-  padding: 14px 18px 24px;
-}
-
-.imb-dock-preview-image {
-  display: flex;
-  justify-content: center;
-  background: var(--imb-bg);
-  min-height: 100%;
-}
-
-.imb-dock-preview-image img {
-  max-width: 100%;
-  height: auto;
-  object-fit: contain;
-  border-radius: var(--imb-radius-md);
-}
-
-.imb-dock-preview-empty {
-  display: flex;
-  flex-direction: column;
+.imb-cron-schedule {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding-top: 40px;
+  gap: 4px;
+  flex: none;
+  font-family: var(--imb-font-mono);
+  font-size: var(--imb-text-xs);
+  color: var(--imb-text-2);
+  white-space: nowrap;
 }
 
-.imb-dock-text {
-  margin: 0;
-  font-family: var(--imb-font-mono);
+.imb-cron-schedule svg {
+  width: 12px;
+  height: 12px;
+}
+
+.imb-cron-content {
   font-size: var(--imb-text-sm);
-  line-height: 1.7;
-  white-space: pre-wrap;
-  word-break: break-word;
   color: var(--imb-fg);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.imb-cron-meta {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.imb-cron-remove {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  color: var(--imb-muted);
+  border-radius: var(--imb-radius-sm);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity var(--imb-motion-fast) var(--imb-ease-standard),
+    color var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-cron-row:hover .imb-cron-remove {
+  opacity: 1;
+}
+
+.imb-cron-remove:hover {
+  color: var(--imb-danger);
+}
+
+.imb-cron-remove svg {
+  width: 15px;
+  height: 15px;
 }

@@ -44,8 +44,6 @@ import type {
   TaskThread,
   ThemeState,
   UpdaterState,
-  WorkbenchFile,
-  WorkbenchListing,
   WorkDirState,
 } from "@shared/types";
 import { contextBridge, ipcRenderer, webUtils } from "electron";
@@ -180,6 +178,9 @@ const api = {
     /** Remove a job (stops the live scheduler handle + deletes the row). */
     remove: (id: string) =>
       ipcRenderer.invoke("cron:remove", id) as Promise<boolean>,
+    /** Every job across all employees (the dock's scheduled-tasks view). */
+    listAll: () =>
+      ipcRenderer.invoke("cron:listAll") as Promise<CronJobInfo[]>,
   },
 
   chats: {
@@ -476,14 +477,6 @@ const api = {
     /** Ensure the app's server is running and reachable, then return it. */
     open: (id: string) =>
       ipcRenderer.invoke("miniapps:open", id) as Promise<MiniApp>,
-  },
-
-  workbench: {
-    root: () => ipcRenderer.invoke("workbench:root") as Promise<string>,
-    list: (path: string) =>
-      ipcRenderer.invoke("workbench:list", path) as Promise<WorkbenchListing>,
-    read: (path: string) =>
-      ipcRenderer.invoke("workbench:read", path) as Promise<WorkbenchFile>,
   },
 };
 
