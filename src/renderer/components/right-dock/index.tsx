@@ -6,17 +6,16 @@ import { IconBack, IconFile, IconRefresh, IconX } from "../icons";
 import "./index.css";
 
 /**
- * The right dock: a resizable panel beside the content that browses the folder
- * the agents work in and previews files (text and images). It is the app's
- * workbench surface — the place to look at what the team produced.
+ * The right dock: a panel beside the content that browses the folder the agents
+ * work in and previews files (text and images). It is the app's workbench
+ * surface — the place to look at what the team produced. It is a real grid
+ * column of the app shell, so opening it pushes the content aside.
  */
 export function RightDock({
-  open,
   onClose,
 }: {
-  open: boolean;
   onClose: () => void;
-}): React.JSX.Element | null {
+}): React.JSX.Element {
   const [path, setPath] = useState("");
   const [listing, setListing] = useState<WorkbenchListing | null>(null);
   const [file, setFile] = useState<WorkbenchFile | null>(null);
@@ -51,10 +50,8 @@ export function RightDock({
   }, []);
 
   useEffect(() => {
-    if (open && listing === null) void loadDir("");
-  }, [open, listing, loadDir]);
-
-  if (!open) return null;
+    if (listing === null) void loadDir("");
+  }, [listing, loadDir]);
 
   const onEntry = (entry: WorkbenchEntry): void => {
     if (entry.dir) void loadDir(entry.path);

@@ -11,6 +11,7 @@ import {
   type AppModule,
 } from "../../app-store";
 import { Nav } from "../nav";
+import { RightDock } from "../right-dock";
 import { TitleBar } from "../title-bar";
 import "./index.css";
 
@@ -41,7 +42,7 @@ const LIST_DETAIL_MODULES: ReadonlySet<AppModule> = new Set([
  * matching pane(s) (see ModuleView below).
  */
 export function AppShell(): React.JSX.Element {
-  const { module, navCollapsed } = useApp();
+  const { module, navCollapsed, dockOpen } = useApp();
   const layout = shellLayoutFor(module);
 
   async function setNavCollapsed(collapsed: boolean): Promise<void> {
@@ -50,7 +51,13 @@ export function AppShell(): React.JSX.Element {
   }
 
   return (
-    <div className={cls("imb-app", navCollapsed && "imb-is-collapsed")}>
+    <div
+      className={cls(
+        "imb-app",
+        navCollapsed && "imb-is-collapsed",
+        dockOpen && "imb-has-dock",
+      )}
+    >
       <TitleBar />
       <Nav
         collapsed={navCollapsed}
@@ -87,6 +94,7 @@ export function AppShell(): React.JSX.Element {
           </>
         )}
       </div>
+      {dockOpen && <RightDock onClose={() => appStore.setDockOpen(false)} />}
     </div>
   );
 }
