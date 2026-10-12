@@ -37,9 +37,16 @@ export function EmployeesModule(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState | null>(null);
 
-  const { data } = useApp();
+  const { data, focusEmployeeId } = useApp();
   const loading = data.employees.loading;
   const listError = data.employees.error;
+
+  // A browse entry in the Nav can request one specific employee.
+  useEffect(() => {
+    if (focusEmployeeId === null) return;
+    setSelectedId(focusEmployeeId);
+    appStore.focusEmployeeId = null;
+  }, [focusEmployeeId]);
   const locale = getLocale();
 
   // Live per-employee metrics (working status, run time, activity, output).

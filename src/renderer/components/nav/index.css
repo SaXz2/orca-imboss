@@ -190,6 +190,113 @@
   flex: 1;
 }
 
+/* --- Browsable module entries: what is inside a module --- */
+.imb-nav-browse {
+  display: flex;
+  flex-direction: column;
+}
+
+.imb-nav-browse-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.imb-nav-browse-head .imb-nav-item {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+}
+
+.imb-nav-browse-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border: none;
+  background: transparent;
+  color: var(--imb-muted);
+  border-radius: var(--imb-radius-sm);
+  cursor: pointer;
+  transition:
+    transform var(--imb-motion-fast) var(--imb-ease-standard),
+    background var(--imb-motion-fast) var(--imb-ease-standard),
+    color var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-nav-browse-toggle svg {
+  width: 13px;
+  height: 13px;
+}
+
+.imb-nav-browse-toggle:hover {
+  background: var(--imb-fg-soft);
+  color: var(--imb-fg);
+}
+
+.imb-nav-browse.imb-is-open .imb-nav-browse-toggle {
+  transform: rotate(180deg);
+  color: var(--imb-fg);
+}
+
+.imb-nav-browse-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 2px 0 6px 14px;
+  padding-left: 9px;
+  border-left: 1px solid var(--imb-border-soft);
+}
+
+.imb-nav-browse-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 5px 8px;
+  border: none;
+  background: transparent;
+  border-radius: var(--imb-radius-sm);
+  color: var(--imb-text-2);
+  cursor: pointer;
+  text-align: left;
+}
+
+.imb-nav-browse-item:hover {
+  background: var(--imb-fg-soft);
+  color: var(--imb-fg);
+}
+
+.imb-nav-browse-icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--imb-muted);
+}
+
+.imb-nav-browse-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.imb-nav-browse-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+  flex: 1;
+}
+
+.imb-nav-browse-text .imb-nav-label {
+  font-size: var(--imb-text-sm);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .imb-nav-divider {
   height: 1px;
   background: var(--imb-border);

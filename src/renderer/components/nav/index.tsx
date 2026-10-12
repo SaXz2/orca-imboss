@@ -1,8 +1,9 @@
 import { SettingKeys } from "@shared/constants/settings";
 import { t } from "@shared/l10n";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cls } from "reactutils";
 import { appStore, sessionKey, useApp, type AppModule } from "../../app-store";
+import { employeeLabel } from "../../employee-label";
 import { BrandLogo } from "../brand-logo";
 import { ContextMenu, type ContextMenuState } from "../context-menu";
 import { EmployeeAvatar } from "../employee-avatar";
@@ -10,6 +11,7 @@ import { GroupAvatar } from "../group-avatar";
 import {
   IconApp,
   IconChat,
+  IconChevronDown,
   IconCollapse,
   IconEmployees,
   IconGear,
@@ -18,6 +20,7 @@ import {
   IconTasks,
   IconUsage,
 } from "../icons";
+import { formatChatTime } from "../modules/chat/relative-time";
 import { Tooltip } from "../tooltip";
 import "./index.css";
 
@@ -26,6 +29,8 @@ interface NavItem {
   labelKey: string;
   icon: (props: { className?: string }) => React.JSX.Element;
   section?: "main" | "miniapp" | "bottom";
+  /** Renders an expandable browse list under the entry (what is inside). */
+  browse?: "chats" | "employees";
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -34,12 +39,14 @@ const NAV_ITEMS: NavItem[] = [
     labelKey: "Chats",
     icon: IconChat,
     section: "main",
+    browse: "chats",
   },
   {
     module: "employees",
     labelKey: "Employees",
     icon: IconEmployees,
     section: "main",
+    browse: "employees",
   },
   {
     module: "tasks",
@@ -96,6 +103,7 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
   const [dragId, setDragId] = useState<string | null>(null);
   const [chatDragId, setChatDragId] = useState<number | null>(null);
   const [sessionDragKey, setSessionDragKey] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<AppModule | null>(null);
 
   const main = NAV_ITEMS.filter((i) => i.section === "main");
   const bottom = NAV_ITEMS.filter((i) => i.section === "bottom");
@@ -132,9 +140,23 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
           <span className="imb-nav-brandname">{brandName || "imboss"}</span>
         </div>
         <div className="imb-nav-items">
-          {main.map((item) => (
-            <NavButton key={item.module} item={item} collapsed={collapsed} />
-          ))}
+          {main.map((item) =>
+            item.browse ? (
+              <NavBrowseGroup
+                key={item.module}
+                item={item}
+                collapsed={collapsed}
+                expanded={expanded === item.module}
+                onToggle={() =>
+                  setExpanded((current) =>
+                    current === item.module ? null : item.module,
+                  )
+                }
+              />
+            ) : (
+              <NavButton key={item.module} item={item} collapsed={collapsed} />
+            ),
+          )}
         </div>
         <div className="imb-nav-divider" />
         <div className="imb-scroll">
@@ -275,6 +297,126 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
       </nav>
       <ContextMenu state={ctxMenu} onClose={() => setCtxMenu(null)} />
     </>
+  );
+}
+
+type NavBrowseGroupProps = {
+  item: NavItem;
+  collapsed: boolean;
+  expanded: boolean;
+  onToggle: () => void;
+};
+
+/** How many rows a browse group shows before you open the module itself. */
+const BROWSE_LIMIT = 6;
+
+/**
+ * A module entry that can be opened up to browse what is inside it — recent
+ * conversations or the employee roster — so the sidebar browses content instead
+ * of only switching modules.
+ */
+function NavBrowseGroup({
+  item,
+  collapsed,
+  expanded,
+  onToggle,
+}: NavBrowseGroupProps): React.JSX.Element {
+  const { module, locale, data } = useApp();
+  const Icon = item.icon;
+  const active = module === item.module;
+
+  // Chat summaries load lazily (the chat module normally owns that fetch).
+  useEffect(() => {
+    if (expanded && item.browse === "chats" && !data.chats.loaded) {
+      void appStore.loadChats();
+    }
+  }, [expanded, item.browse, data.chats.loaded]);
+
+  async function setModule(value: AppModule): Promise<void> {
+    appStore.module = value;
+    await imb.settings.set(SettingKeys.Module, value);
+  }
+
+  const chats = data.chats.items.slice(0, BROWSE_LIMIT);
+  const employees = data.employees.items.slice(0, BROWSE_LIMIT);
+  const open = expanded && !collapsed;
+
+  return (
+    <div className={cls("imb-nav-browse", open && "imb-is-open")}>
+      <div className="imb-nav-browse-head">
+        <Tooltip
+          content={t(item.labelKey)}
+          placement="right"
+          disabled={!collapsed}
+        >
+          <button
+            type="button"
+            className={cls("imb-nav-item", active && "imb-is-active")}
+            aria-current={active ? "page" : undefined}
+            aria-label={collapsed ? t(item.labelKey) : undefined}
+            onClick={() => void setModule(item.module)}
+          >
+            <Icon className="imb-icon" />
+            <span className="imb-nav-label">{t(item.labelKey)}</span>
+          </button>
+        </Tooltip>
+        {!collapsed && (
+          <button
+            type="button"
+            className="imb-nav-browse-toggle"
+            aria-expanded={expanded}
+            aria-label={t("Browse")}
+            onClick={onToggle}
+          >
+            <IconChevronDown className="imb-icon imb-xs" />
+          </button>
+        )}
+      </div>
+
+      {open && (
+        <div className="imb-nav-browse-list">
+          {item.browse === "chats"
+            ? chats.map((chat) => (
+                <button
+                  key={`chat:${chat.id}`}
+                  type="button"
+                  className="imb-nav-browse-item"
+                  onClick={() => void appStore.focusChat(chat.id)}
+                >
+                  <span className="imb-nav-browse-icon">
+                    <IconChat />
+                  </span>
+                  <span className="imb-nav-browse-text">
+                    <span className="imb-nav-label">
+                      {chat.title || t("Untitled")}
+                    </span>
+                    <span className="imb-nav-sub">
+                      {formatChatTime(chat.lastAt, locale)}
+                    </span>
+                  </span>
+                </button>
+              ))
+            : employees.map((employee) => (
+                <button
+                  key={`employee:${employee.id}`}
+                  type="button"
+                  className="imb-nav-browse-item"
+                  onClick={() => void appStore.focusEmployee(employee.id)}
+                >
+                  <EmployeeAvatar employeeId={employee.id} size={18} />
+                  <span className="imb-nav-browse-text">
+                    <span className="imb-nav-label">
+                      {employeeLabel(employee)}
+                    </span>
+                    <span className="imb-nav-sub">
+                      {employee.role || `#${employee.id}`}
+                    </span>
+                  </span>
+                </button>
+              ))}
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -136,6 +136,10 @@ export const appStore = proxy({
   // notification click). Cleared once consumed.
   focusChatId: null as number | null,
 
+  // Pending employee to select when the employees module is mounted (set when a
+  // browse entry in the Nav opens an employee). Cleared once consumed.
+  focusEmployeeId: null as number | null,
+
   // Per-chat composer drafts (text + pending attachments). Kept here so the
   // chat module can be unmounted on a module switch without losing input.
   // Session-only: deliberately not persisted.
@@ -719,6 +723,13 @@ export const appStore = proxy({
     appStore.focusChatId = chatId;
     appStore.module = "chat";
     await imb.settings.set(SettingKeys.Module, "chat");
+  },
+
+  /** Open the Employees module focused on one employee (persists the module). */
+  async focusEmployee(employeeId: number): Promise<void> {
+    appStore.focusEmployeeId = employeeId;
+    appStore.module = "employees";
+    await imb.settings.set(SettingKeys.Module, "employees");
   },
 
   /** Open the Settings module on a section (persists the active module). */
