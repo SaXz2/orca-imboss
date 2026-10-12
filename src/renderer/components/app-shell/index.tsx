@@ -44,6 +44,18 @@ export function AppShell(): React.JSX.Element {
   const { module, navCollapsed } = useApp();
   const layout = shellLayoutFor(module);
 
+  // On narrow windows the nav rail force-collapses so the content keeps room;
+  // the user's stored preference is left untouched (it returns when widened).
+  const [narrow, setNarrow] = useState(
+    () => typeof window !== "undefined" && window.innerWidth < 860,
+  );
+  useEffect(() => {
+    const onResize = (): void => setNarrow(window.innerWidth < 860);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  const collapsed = navCollapsed || narrow;
+
   // Fade the content region on a module change. A whole-region fade (rather
   // than per-module wrappers) is the least invasive transition and needs no
   // structural changes inside the modules.
@@ -61,11 +73,11 @@ export function AppShell(): React.JSX.Element {
 
   return (
     <div
-      className={cls("imb-app", navCollapsed && "imb-is-collapsed")}
+      className={cls("imb-app", collapsed && "imb-is-collapsed")}
     >
       <TitleBar />
       <Nav
-        collapsed={navCollapsed}
+        collapsed={collapsed}
         onToggle={() => setNavCollapsed(!navCollapsed)}
       />
       <div

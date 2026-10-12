@@ -38,3 +38,19 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* --- Responsive list/detail --- *
+   Narrow the list column as the window shrinks so the detail keeps usable
+   width. (The `imb-layout-single` override wins by specificity, so single-pane
+   modules are unaffected.) */
+@media (max-width: 1180px) {
+  .imb-shell-content {
+    grid-template-columns: 256px 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .imb-shell-content {
+    grid-template-columns: 220px 1fr;
+  }
+}
