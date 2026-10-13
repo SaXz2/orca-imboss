@@ -29,6 +29,24 @@ export function listEmployees(): Employee[] {
   ).map(toEmployee);
 }
 
+/** Minimal identity of one employee, for attributing stored usage history. */
+export interface EmployeeIdentity {
+  id: number;
+  name: string;
+  role: string;
+}
+
+/**
+ * `id`/`name`/`role` for every employee, including disabled (soft-deleted)
+ * ones: their recorded session files still hold spend, and dropping them would
+ * make that usage unattributable.
+ */
+export function listEmployeeIdentities(): EmployeeIdentity[] {
+  return getDB()
+    .prepare("SELECT id, name, role FROM employees ORDER BY id ASC")
+    .all() as EmployeeIdentity[];
+}
+
 /**
  * One page of employees, ordered `id ASC`. Regular employees (id ≠ 0) are
  * fetched via keyset search on `name OR role` (LIKE, ESCAPE-safe); the
@@ -382,7 +400,9 @@ function validateModelId(modelId: string | null | undefined): string | null {
   }
   const valid = /^[A-Za-z0-9._/@:-]+$/.test(trimmed);
   if (!valid) {
-    throw new Error('Model id must look like "provider/model" or a valid model identifier.');
+    throw new Error(
+      'Model id must look like "provider/model" or a valid model identifier.',
+    );
   }
   return trimmed;
 }

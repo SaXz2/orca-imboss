@@ -13,6 +13,7 @@ import type {
   ProviderInfo,
   ThemeState,
   UpdaterState,
+  SpendRange,
 } from "@shared/types";
 import { createRef } from "react";
 import { proxy, subscribe, useSnapshot } from "valtio";
@@ -32,6 +33,7 @@ export type AppModule =
   | "employees"
   | "tasks"
   | "usage"
+  | "spend"
   | "scheduled"
   | "mcp"
   | "skills"
@@ -113,6 +115,7 @@ const VALID_MODULES: AppModule[] = [
   "employees",
   "tasks",
   "usage",
+  "spend",
   "scheduled",
   "mcp",
   "skills",
@@ -180,6 +183,12 @@ export const appStore = proxy({
   // Active Settings section. Lifted out of `SettingsModule` so main can
   // deep-link to a section (the update notification opens "about").
   settingsSection: "general" as SettingsSection,
+
+  // Spend module selection: the time window and the employee whose detail is
+  // shown. `null` employee = the grand total row. Session-only, so a module
+  // switch keeps the view the user left.
+  spendRange: "all" as SpendRange,
+  activeSpendEmployeeId: null as number | null,
 
   // Auto-update state mirrored from main (see `initUpdater`).
   updater: {

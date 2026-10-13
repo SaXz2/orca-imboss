@@ -1,3 +1,4 @@
+import { SPEND_STATS_ENABLED } from "@shared/constants/spend";
 import { registerAgentSessionHandlers } from "./agent_session";
 import { registerChatHandlers } from "./chat";
 import { registerCronHandlers } from "./cron";
@@ -12,6 +13,7 @@ import { registerProviderHandlers } from "./provider";
 import { registerSessionHandlers } from "./session";
 import { registerSettingsHandlers } from "./settings";
 import { registerSkillHandlers } from "./skill";
+import { registerSpendHandlers } from "./spend";
 import { registerStatHandlers } from "./stats";
 import { registerTaskHandlers } from "./tasks";
 import { registerThemeHandlers } from "./theme";
@@ -41,4 +43,6 @@ export function registerIpcHandlers(): void {
   registerSessionHandlers();
   registerIntegrationHandlers();
   registerStatHandlers();
+  // Pluggable feature: its own master switch (see `SPEND_STATS_ENABLED`).
+  if (SPEND_STATS_ENABLED) registerSpendHandlers();
 }

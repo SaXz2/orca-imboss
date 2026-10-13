@@ -1,4 +1,5 @@
 import { SettingKeys } from "@shared/constants/settings";
+import { SPEND_STATS_ENABLED } from "@shared/constants/spend";
 import { t } from "@shared/l10n";
 import { useEffect, useRef, useState } from "react";
 import { cls } from "reactutils";
@@ -20,6 +21,7 @@ import {
   IconGear,
   IconMcp,
   IconSkills,
+  IconSpend,
   IconTasks,
   IconUsage,
 } from "../icons";
@@ -35,6 +37,12 @@ interface NavItem {
   section?: "main" | "tools" | "miniapp" | "bottom";
   /** Renders an expandable browse list under the entry (what is inside). */
   browse?: "chats" | "employees";
+  /**
+   * `false` hides the entry. Set from a feature's own master switch (e.g.
+   * `SPEND_STATS_ENABLED`) so a pluggable module can be dropped without
+   * touching the nav list shape.
+   */
+  enabled?: boolean;
 }
 
 /** Stable key for a nav entry (browse-only entries have no module). */
@@ -42,7 +50,7 @@ function navItemKey(item: NavItem): string {
   return item.module ?? item.labelKey;
 }
 
-const NAV_ITEMS: NavItem[] = [
+const ALL_NAV_ITEMS: NavItem[] = [
   {
     module: "chat",
     labelKey: "Chats",
@@ -89,12 +97,24 @@ const NAV_ITEMS: NavItem[] = [
     section: "tools",
   },
   {
+    module: "spend",
+    labelKey: "Spend",
+    icon: IconSpend,
+    section: "tools",
+    enabled: SPEND_STATS_ENABLED,
+  },
+  {
     module: "settings",
     labelKey: "Settings",
     icon: IconGear,
     section: "bottom",
   },
 ];
+
+/** Visible entries: a pluggable module's master switch can hide its row. */
+const NAV_ITEMS: NavItem[] = ALL_NAV_ITEMS.filter(
+  (item) => item.enabled !== false,
+);
 
 export interface NavProps {
   collapsed: boolean;
@@ -598,7 +618,10 @@ function NavChatButton({
   onContextMenu,
 }: NavChatButtonProps): React.JSX.Element {
   return (
-    <Tooltip content={displayChatTitle(chat.title, "Untitled")} placement="right">
+    <Tooltip
+      content={displayChatTitle(chat.title, "Untitled")}
+      placement="right"
+    >
       <button
         type="button"
         className={cls(

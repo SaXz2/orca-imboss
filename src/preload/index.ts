@@ -44,6 +44,8 @@ import type {
   ProviderModelsQuery,
   ProviderUpsert,
   BoardCard,
+  SpendRange,
+  SpendReport,
   StatDaily,
   Task,
   TaskCommentInput,
@@ -185,6 +187,12 @@ const api = {
   stats: {
     /** Persistent daily per-employee counters (survives chat deletion). */
     list: () => ipcRenderer.invoke("stats:list") as Promise<StatDaily[]>,
+  },
+
+  spend: {
+    /** Aggregated token/cost report, per employee and as a grand total. */
+    report: (range: SpendRange) =>
+      ipcRenderer.invoke("spend:report", range) as Promise<SpendReport>,
   },
 
   departments: {

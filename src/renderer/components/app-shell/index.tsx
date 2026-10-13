@@ -32,6 +32,7 @@ const LIST_DETAIL_MODULES: ReadonlySet<AppModule> = new Set([
   "mcp",
   "skills",
   "settings",
+  "spend",
 ]);
 
 /**
@@ -72,9 +73,7 @@ export function AppShell(): React.JSX.Element {
   }
 
   return (
-    <div
-      className={cls("imb-app", collapsed && "imb-is-collapsed")}
-    >
+    <div className={cls("imb-app", collapsed && "imb-is-collapsed")}>
       <TitleBar />
       <Nav
         collapsed={collapsed}
