@@ -395,6 +395,89 @@ const MIGRATIONS: Array<(db: Database) => void> = [
       update.run(sideFor(a, b), sideFor(b, a), row.id);
     }
   },
+
+  // 14 — department charter (rules/context) + the department a task belongs to
+  (db) => {
+    db.exec(`
+      -- A department's charter: its rules, standards and shared context. It is
+      -- injected into the brief when work is assigned inside this department.
+      ALTER TABLE departments ADD COLUMN charter TEXT NOT NULL DEFAULT '';
+
+      -- Which department a task belongs to (NULL = unassigned / no domain).
+      -- Ownership for roll-up; execution still targets people.
+      ALTER TABLE tasks ADD COLUMN department_id INTEGER;
+    `);
+  },
+
+  // 15 — daily stats rollup: counts that survive chat deletion and restarts
+  (db) => {
+    // Deliberately no FK: history outlives a deleted employee or chat.
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS stats_daily (
+        day         TEXT NOT NULL,
+        employee_id INTEGER NOT NULL,
+        run_ms      INTEGER NOT NULL DEFAULT 0,
+        messages    INTEGER NOT NULL DEFAULT 0,
+        reports     INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (day, employee_id)
+      );
+    `);
+    // Seed from current live data so existing history is captured once.
+    const day = new Date().toISOString().slice(0, 10);
+    const upsert = db.prepare(
+      `INSERT INTO stats_daily (day, employee_id, run_ms, messages, reports)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(day, employee_id) DO UPDATE SET
+         run_ms = stats_daily.run_ms + excluded.run_ms,
+         messages = stats_daily.messages + excluded.messages,
+         reports = stats_daily.reports + excluded.reports`,
+    );
+    const counts = db
+      .prepare(
+        `SELECT sender_employee_id AS id, COUNT(*) AS n,
+                SUM(CASE WHEN kind = 'report' THEN 1 ELSE 0 END) AS reports
+           FROM messages WHERE sender_employee_id IS NOT NULL
+          GROUP BY sender_employee_id`,
+      )
+      .all() as Array<{ id: number; n: number; reports: number }>;
+    for (const row of counts) {
+      upsert.run(day, row.id, 0, row.n, row.reports ?? 0);
+    }
+    const runtime = db
+      .prepare(
+        "SELECT key, value FROM settings WHERE key LIKE 'employee.runtime.%'",
+      )
+      .all() as Array<{ key: string; value: string }>;
+    for (const row of runtime) {
+      const id = Number.parseInt(row.key.split(".").pop() ?? "", 10);
+      const ms = Number.parseInt(row.value, 10);
+      if (Number.isSafeInteger(id) && Number.isSafeInteger(ms) && ms > 0) {
+        upsert.run(day, id, ms, 0, 0);
+      }
+    }
+  },
+
+  // 16 — the department a progress message belongs to; the board task the
+  // assistant derives from that message inherits it (so work assigned into a
+  // department lands there without a second, separate task).
+  (db) => {
+    db.exec(`ALTER TABLE messages ADD COLUMN department_id INTEGER;`);
+  },
+
+  // 17 — conversation groups ("projects"): a named container for chats that
+  // can also pin a folder as its workspace (the cwd its sessions run in).
+  (db) => {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS chat_groups (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        name       TEXT NOT NULL DEFAULT '',
+        folder     TEXT,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL
+      );
+      ALTER TABLE chats ADD COLUMN group_id INTEGER;
+    `);
+  },
 ];
 
 export function migrate(db: Database): void {
