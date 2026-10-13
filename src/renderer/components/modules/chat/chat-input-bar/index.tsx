@@ -186,6 +186,17 @@ export function ChatInputBar({
     setPopupOpen(false);
   };
 
+  // Pasting files (e.g. a screenshot) attaches them; plain text paste falls
+  // through to the browser default.
+  const onPasteAttachments = (
+    event: React.ClipboardEvent<HTMLDivElement>,
+  ): void => {
+    const files = Array.from(event.clipboardData?.files ?? []);
+    if (files.length === 0) return;
+    event.preventDefault();
+    addFiles(files);
+  };
+
   // Folders cannot be attached, and a `File` alone cannot be told apart from an
   // empty file; Chromium's entry API distinguishes them synchronously (no IPC).
   const addDropped = (dataTransfer: DataTransfer): void => {
@@ -260,7 +271,7 @@ export function ChatInputBar({
       {dropActive && (
         <div className="imb-drop-hint">{t("Drop files to attach")}</div>
       )}
-      <div className="imb-chat-input-card">
+      <div className="imb-chat-input-card" onPaste={onPasteAttachments}>
         {attachments.length > 0 && (
           <div className="imb-attached-files">
             {attachments.map((item, index) => (
