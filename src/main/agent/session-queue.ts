@@ -46,6 +46,40 @@ interface QueueState {
 const states = new Map<string, QueueState>();
 
 /**
+ * Active run tracking, keyed per `(employee, chat)`: the run start timestamp.
+ * `keyFor` joins the two, so "is this employee busy?" is a different question
+ * from "is this employee busy *on this chat*?" — one employee can run in
+ * several chats at once, and an employee busy elsewhere must not make a given
+ * chat look active.
+ */
+const activeSince = new Map<string, number>();
+
+/** Employee ids currently running an agent turn. */
+export function getActiveEmployeeIds(): number[] {
+  return [
+    ...new Set([...activeSince.keys()].map((k) => Number(k.split("/")[0]))),
+  ];
+}
+
+/** Run start timestamp (ms) for an employee's current run, or null when idle. */
+export function getActiveSince(employeeId: number): number | null {
+  for (const [key, at] of activeSince) {
+    if (Number(key.split("/")[0]) === employeeId) return at;
+  }
+  return null;
+}
+
+/** Chats in which this employee currently has a run in flight. */
+export function getActiveChatIds(employeeId: number): Set<number> {
+  const chats = new Set<number>();
+  for (const key of activeSince.keys()) {
+    const [employee, chat] = key.split("/");
+    if (Number(employee) === employeeId) chats.add(Number(chat));
+  }
+  return chats;
+}
+
+/**
  * Schedule a message for an agent session, serialized per (employee, chat).
  *
  * Returns immediately (fire-and-forget): if a run for the key is already in
@@ -62,6 +96,8 @@ export async function deliver(
   state.queue.push(text);
   if (state.busy) return;
   state.busy = true;
+  const key = keyFor(employeeId, chatId);
+  if (!activeSince.has(key)) activeSince.set(key, Date.now());
   void drain(state);
 }
 
@@ -173,6 +209,7 @@ async function drain(state: QueueState): Promise<void> {
       void drain(state);
     } else {
       scheduleIdleDispose(state);
+      activeSince.delete(keyFor(state.employeeId, state.chatId));
     }
   }
 }
