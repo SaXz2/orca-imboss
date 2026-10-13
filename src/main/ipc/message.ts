@@ -1,6 +1,6 @@
 import { READ_CHAT_PROMPT } from "@shared/constants/prompts";
 import { ipcMain, shell } from "electron";
-import { existsSync } from "fs";
+import { existsSync, readFileSync, statSync } from "fs";
 import { isAbsolute } from "path";
 import { wakeAgent } from "../agent/session-queue";
 import * as dbMessages from "../db/messages";
@@ -92,4 +92,57 @@ export function registerMessageHandlers(): void {
       shell.showItemInFolder(path);
     },
   );
+
+  // Read an image attachment's bytes as a data URL so the renderer can show it
+  // inline. The path comes from the trusted stored record (never the renderer),
+  // only image types are served, and the size is capped.
+  ipcMain.handle(
+    "messages:attachmentData",
+    (_event, messageId: unknown, index: unknown) => {
+      const safeId = assertInteger(messageId, "message id");
+      const safeIndex = assertInteger(index, "attachment index");
+      const message = dbMessages.getMessageById(safeId);
+      if (!message) throw new Error("Message does not exist.");
+      const attachments = message.attachments;
+      if (!attachments || safeIndex < 0 || safeIndex >= attachments.length) {
+        throw new Error("Attachment does not exist.");
+      }
+      const attachment = attachments[safeIndex];
+      const path = attachment.path;
+      if (!path || !isAbsolute(path) || !existsSync(path)) {
+        throw new Error("Attachment file is unavailable.");
+      }
+      const mime = isImageMime(attachment.type)
+        ? attachment.type
+        : imageMimeByExtension(path);
+      if (!mime) throw new Error("Attachment is not an image.");
+      if (statSync(path).size > MAX_IMAGE_BYTES) {
+        throw new Error("Image is too large to preview.");
+      }
+      return `data:${mime};base64,${readFileSync(path).toString("base64")}`;
+    },
+  );
+}
+
+/** Largest image (bytes) served inline to the renderer as a preview. */
+const MAX_IMAGE_BYTES = 25 * 1024 * 1024;
+
+const IMAGE_MIME_BY_EXT: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+  bmp: "image/bmp",
+  svg: "image/svg+xml",
+  avif: "image/avif",
+};
+
+function isImageMime(type: string): boolean {
+  return typeof type === "string" && type.startsWith("image/");
+}
+
+function imageMimeByExtension(path: string): string | null {
+  const ext = path.split(".").pop()?.toLowerCase() ?? "";
+  return IMAGE_MIME_BY_EXT[ext] ?? null;
 }

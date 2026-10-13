@@ -7,6 +7,7 @@ import { employeeColor } from "@shared/constants/employee-colors";
 import { appStore, useApp } from "../../../../app-store";
 import { IconFile } from "../../../icons";
 import { Markdown } from "../../../markdown";
+import { ImageAttachment, isImageAttachment } from "../image-attachment";
 import { formatMentionsToMarkdown } from "../mentions";
 import "./index.css";
 
@@ -104,76 +105,97 @@ export function MessageBubble({
             {senderRole !== undefined && senderRole.length > 0 && (
               <span className="imb-bubble-sender-role">{senderRole}</span>
             )}
-            {isAdmin && (
-              <span className="imb-bubble-admin">{t("Admin")}</span>
-            )}
+            {isAdmin && <span className="imb-bubble-admin">{t("Admin")}</span>}
           </div>
         )}
         <div className="imb-bubble">
-        {quotedText !== undefined && quotedText !== null && quotedText.length > 0 && (
-          <div className="imb-bubble-quote">
-            <span className="imb-bubble-quote-mark" aria-hidden="true">
-              “
-            </span>
-            <span className="imb-bubble-quote-text">{quotedText}</span>
-          </div>
-        )}
-        {hasAttachments && (
-          <div className="imb-bubble-attachments">
-            {visible.map((attachment, index) => {
-              const hasPath =
-                typeof attachment.path === "string" &&
-                attachment.path.length > 0;
-              return (
-                <button
-                  key={`${attachment.name}-${attachment.size}-${index}`}
-                  type="button"
-                  className={cls(
-                    "imb-bubble-chip",
-                    !hasPath && "imb-bubble-chip-static",
-                  )}
-                  aria-disabled={!hasPath}
-                  title={
-                    hasPath
-                      ? t("Show in folder")
-                      : t("File location is unavailable.")
-                  }
-                  onClick={hasPath ? () => void reveal(index) : undefined}
-                >
-                  <IconFile className="imb-icon imb-sm" />
-                  <span className="imb-bubble-chip-name">
-                    {attachment.name}
-                  </span>
-                  <span className="imb-bubble-chip-size">
-                    {formatSize(attachment.size)}
-                  </span>
-                </button>
-              );
-            })}
-            {hidden > 0 && (
-              <span
-                className="imb-bubble-chip imb-bubble-chip-more"
-                title={t("${count} attachments in total", {
-                  count: String(total),
-                })}
-              >
-                {`+${hidden}`}
-              </span>
+          {quotedText !== undefined &&
+            quotedText !== null &&
+            quotedText.length > 0 && (
+              <div className="imb-bubble-quote">
+                <span className="imb-bubble-quote-mark" aria-hidden="true">
+                  “
+                </span>
+                <span className="imb-bubble-quote-text">{quotedText}</span>
+              </div>
             )}
-          </div>
-        )}
-        {revealError !== null && (
-          <div className="imb-bubble-attachment-error">{revealError}</div>
-        )}
-        {content.length > 0 && (
-          <Markdown
-            content={formattedContent}
-            inline={!markdown}
-            resolveMention={resolveMention}
-            onMentionClick={onMentionClick ?? handleMentionClick}
-            mentionColor={employeeColor}
-          />
-        )}
+          {hasAttachments && (
+            <div className="imb-bubble-attachments">
+              {visible.map((attachment, index) => {
+                const hasPath =
+                  typeof attachment.path === "string" &&
+                  attachment.path.length > 0;
+                const chip = (
+                  <button
+                    key={`${attachment.name}-${attachment.size}-${index}`}
+                    type="button"
+                    className={cls(
+                      "imb-bubble-chip",
+                      !hasPath && "imb-bubble-chip-static",
+                    )}
+                    aria-disabled={!hasPath}
+                    title={
+                      hasPath
+                        ? t("Show in folder")
+                        : t("File location is unavailable.")
+                    }
+                    onClick={hasPath ? () => void reveal(index) : undefined}
+                  >
+                    <IconFile className="imb-icon imb-sm" />
+                    <span className="imb-bubble-chip-name">
+                      {attachment.name}
+                    </span>
+                    <span className="imb-bubble-chip-size">
+                      {formatSize(attachment.size)}
+                    </span>
+                  </button>
+                );
+                // Image attachments show inline *above* the file chip, so the
+                // name/size row (and its reveal action) stays available. A
+                // non-image, or one that fails to load, shows just the chip.
+                if (hasPath && isImageAttachment(attachment)) {
+                  return (
+                    <div
+                      key={`${attachment.name}-${attachment.size}-${index}`}
+                      className="imb-bubble-attachment-image"
+                    >
+                      <ImageAttachment
+                        messageId={messageId}
+                        index={index}
+                        name={attachment.name}
+                        onReveal={() => void reveal(index)}
+                        fallback={null}
+                      />
+                      {chip}
+                    </div>
+                  );
+                }
+                return chip;
+              })}
+              {hidden > 0 && (
+                <span
+                  className="imb-bubble-chip imb-bubble-chip-more"
+                  title={t("${count} attachments in total", {
+                    count: String(total),
+                  })}
+                >
+                  {`+${hidden}`}
+                </span>
+              )}
+            </div>
+          )}
+          {revealError !== null && (
+            <div className="imb-bubble-attachment-error">{revealError}</div>
+          )}
+          {content.length > 0 && (
+            <Markdown
+              content={formattedContent}
+              inline={!markdown}
+              resolveMention={resolveMention}
+              onMentionClick={onMentionClick ?? handleMentionClick}
+              mentionColor={employeeColor}
+            />
+          )}
         </div>
       </div>
     </div>

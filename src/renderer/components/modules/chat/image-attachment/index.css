@@ -1,0 +1,44 @@
+.imb-bubble-image-btn {
+  display: block;
+  padding: 0;
+  max-width: 100%;
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-lg);
+  background: var(--imb-surface-sunken);
+  overflow: hidden;
+  cursor: pointer;
+  line-height: 0;
+}
+.imb-bubble-image-btn:hover {
+  border-color: color-mix(in oklab, var(--imb-fg) 25%, var(--imb-border));
+}
+.imb-bubble-image {
+  display: block;
+  max-width: 320px;
+  max-height: 360px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+.imb-bubble-image-loading {
+  display: block;
+  width: 220px;
+  max-width: 100%;
+  height: 140px;
+  background: linear-gradient(
+    100deg,
+    var(--imb-surface-sunken) 30%,
+    color-mix(in oklab, var(--imb-fg) 6%, var(--imb-surface-sunken)) 50%,
+    var(--imb-surface-sunken) 70%
+  );
+  background-size: 200% 100%;
+  animation: imb-img-shimmer 1.2s ease-in-out infinite;
+}
+@keyframes imb-img-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
