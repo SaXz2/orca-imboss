@@ -188,6 +188,7 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
                 strategy={verticalListSortingStrategy}
               >
                 <div className="imb-nav-items imb-nav-sortable-list">
+                  <div className="imb-nav-section">{t("Mini apps")}</div>
                   {miniApps.map((app) => (
                     <NavMiniAppButton
                       key={app.id}
