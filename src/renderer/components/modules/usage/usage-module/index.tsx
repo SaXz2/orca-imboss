@@ -1,6 +1,6 @@
 import { employeeColor } from "@shared/constants/employee-colors";
 import { t } from "@shared/l10n";
-import type { EmployeeMetric } from "@shared/types";
+import type { Department, EmployeeMetric, StatDaily } from "@shared/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { appStore, useApp } from "../../../../app-store";
 import { employeeLabel } from "../../../../employee-label";
@@ -35,6 +35,8 @@ export function UsageModule(): React.JSX.Element {
   const [metrics, setMetrics] = useState<Map<number, EmployeeMetric>>(
     new Map(),
   );
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [stats, setStats] = useState<StatDaily[]>([]);
 
   const reload = useCallback(async (): Promise<void> => {
     try {
@@ -48,6 +50,14 @@ export function UsageModule(): React.JSX.Element {
   useEffect(() => {
     void appStore.reloadEmployees();
     void reload();
+    void imb.departments
+      .graph()
+      .then((graph) => setDepartments(graph.departments))
+      .catch(() => undefined);
+    void imb.stats
+      .list()
+      .then(setStats)
+      .catch(() => undefined);
     const off = imb.employees.onActivity(() => void reload());
     const timer = window.setInterval(() => void reload(), 5000);
     return () => {
@@ -56,24 +66,46 @@ export function UsageModule(): React.JSX.Element {
     };
   }, [reload]);
 
+  // Persistent per-employee totals from the daily rollup (survive chat
+  // deletion); messages/reports/hours come from here, tasks stay live.
+  const statTotals = useMemo(() => {
+    const map = new Map<
+      number,
+      { runMs: number; messages: number; reports: number }
+    >();
+    for (const s of stats) {
+      const cur = map.get(s.employeeId) ?? {
+        runMs: 0,
+        messages: 0,
+        reports: 0,
+      };
+      cur.runMs += s.runMs;
+      cur.messages += s.messages;
+      cur.reports += s.reports;
+      map.set(s.employeeId, cur);
+    }
+    return map;
+  }, [stats]);
+
   const rows = useMemo<UsageRow[]>(() => {
     return employees
       .map((employee) => {
         const metric = metrics.get(employee.id);
+        const st = statTotals.get(employee.id);
         return {
           id: employee.id,
           label: employeeLabel(employee),
           color: employeeColor(employee.id),
-          hoursMs: metric?.totalRunMs ?? 0,
-          messages: metric?.messages ?? 0,
-          reports: metric?.reports ?? 0,
+          hoursMs: st?.runMs ?? metric?.totalRunMs ?? 0,
+          messages: st?.messages ?? metric?.messages ?? 0,
+          reports: st?.reports ?? metric?.reports ?? 0,
           pending: metric?.tasks.pending ?? 0,
           running: metric?.tasks.running ?? 0,
           done: metric?.tasks.done ?? 0,
         };
       })
       .sort((a, b) => b.hoursMs - a.hoursMs || b.messages - a.messages);
-  }, [employees, metrics]);
+  }, [employees, metrics, statTotals]);
 
   const totals = useMemo(() => {
     return rows.reduce(
@@ -88,6 +120,31 @@ export function UsageModule(): React.JSX.Element {
   }, [rows]);
 
   const maxHours = Math.max(1, ...rows.map((r) => r.hoursMs));
+
+  // Per-department performance: output (done + reports) vs worked hours. A
+  // person in several departments counts toward each; the ratio is output per
+  // hour, shown only once there is enough time to be meaningful.
+  const deptRows = useMemo(() => {
+    return departments
+      .map((d) => {
+        let output = 0;
+        let hoursMs = 0;
+        for (const m of d.members) {
+          const st = statTotals.get(m.employeeId);
+          const metric = metrics.get(m.employeeId);
+          output += (st?.reports ?? 0) + (metric?.tasks.done ?? 0);
+          hoursMs += st?.runMs ?? 0;
+        }
+        return {
+          id: d.id,
+          name: d.name || t("Unnamed department"),
+          color: deptColor(d),
+          output,
+          hoursMs,
+        };
+      })
+      .sort((a, b) => b.output - a.output || a.id - b.id);
+  }, [departments, metrics, statTotals]);
 
   const content = (
     <>
@@ -133,11 +190,67 @@ export function UsageModule(): React.JSX.Element {
             <div className="imb-usage-empty">{t("No employees yet")}</div>
           )}
         </div>
+
+        {deptRows.length > 0 && (
+          <>
+            <div className="imb-usage-section-title">
+              {t("Department performance")}
+            </div>
+            <div className="imb-usage-list">
+              {deptRows.map((row, index) => (
+                <div className="imb-usage-row" key={row.id}>
+                  <span className="imb-usage-rank">{index + 1}</span>
+                  <span className="imb-usage-person">
+                    <span
+                      className="imb-usage-name"
+                      style={{ color: row.color }}
+                    >
+                      {row.name}
+                    </span>
+                  </span>
+                  <span className="imb-usage-states">
+                    <span
+                      className="imb-emp-state imb-state-done"
+                      title={t("Output")}
+                    >
+                      <IconCheck className="imb-icon imb-xs" />
+                      {row.output}
+                    </span>
+                    <span className="imb-emp-state imb-emp-hours">
+                      {t("Hours")} {formatDuration(row.hoursMs)}
+                    </span>
+                    <span className="imb-emp-state">
+                      {t("Value")}{" "}
+                      {row.hoursMs >= 360_000
+                        ? (row.output / (row.hoursMs / 3_600_000)).toFixed(1)
+                        : "—"}
+                    </span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </>
   );
 
   return <ModuleView content={content} />;
+}
+
+/** Department badge color (stored color, else the palette). */
+function deptColor(d: Department): string {
+  if (d.color) return d.color;
+  if (d.kind === "pool") return "#9b8b73";
+  const palette = [
+    "#e64980",
+    "#4c6ef5",
+    "#0ca678",
+    "#f59f00",
+    "#7950f2",
+    "#1098ad",
+  ];
+  return palette[d.id % palette.length];
 }
 
 function StatCard({
@@ -193,7 +306,10 @@ function UsageRowView({
           <IconCheck className="imb-icon imb-xs" />
           {row.done}
         </span>
-        <span className="imb-emp-state imb-state-running" title={t("In progress")}>
+        <span
+          className="imb-emp-state imb-state-running"
+          title={t("In progress")}
+        >
           {row.running}
         </span>
         <span className="imb-emp-state imb-state-pending" title={t("Pending")}>

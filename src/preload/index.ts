@@ -43,6 +43,7 @@ import type {
   ProviderModelsQuery,
   ProviderUpsert,
   BoardCard,
+  StatDaily,
   Task,
   TaskCommentInput,
   TaskEvent,
@@ -178,6 +179,11 @@ const api = {
       ipcRenderer.invoke("employees:metrics") as Promise<EmployeeMetric[]>,
     /** Fired when any agent turn starts or stops (busy/idle changed). */
     onActivity: (cb: () => void) => on<unknown>("agents:activity", () => cb()),
+  },
+
+  stats: {
+    /** Persistent daily per-employee counters (survives chat deletion). */
+    list: () => ipcRenderer.invoke("stats:list") as Promise<StatDaily[]>,
   },
 
   departments: {

@@ -12,6 +12,7 @@ import { registerProviderHandlers } from "./provider";
 import { registerSessionHandlers } from "./session";
 import { registerSettingsHandlers } from "./settings";
 import { registerSkillHandlers } from "./skill";
+import { registerStatHandlers } from "./stats";
 import { registerTaskHandlers } from "./tasks";
 import { registerThemeHandlers } from "./theme";
 import { registerUpdaterHandlers } from "./updater";
@@ -39,4 +40,5 @@ export function registerIpcHandlers(): void {
   registerEmployeeHandlers();
   registerSessionHandlers();
   registerIntegrationHandlers();
+  registerStatHandlers();
 }

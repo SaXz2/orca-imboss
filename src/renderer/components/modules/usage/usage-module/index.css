@@ -54,6 +54,15 @@
   color: var(--imb-muted);
 }
 
+.imb-usage-section {
+  margin-top: var(--imb-space-6);
+}
+.imb-usage-section-title {
+  font-size: var(--imb-text-sm);
+  font-weight: 700;
+  color: var(--imb-fg);
+  padding: var(--imb-space-4) var(--imb-space-4) var(--imb-space-2);
+}
 .imb-usage-list {
   display: flex;
   flex-direction: column;

@@ -4,6 +4,7 @@ import { readChatPrompt } from "@shared/constants/prompts";
 import type { ActiveLiveBlock, AgentStreamEvent } from "@shared/types";
 import type { WebContents } from "electron";
 import * as dbChats from "../db/chats";
+import { bumpStat } from "../db/stats";
 import { addEmployeeRuntime } from "../employee-runtime";
 import { sendToRenderer } from "../notifications";
 import { errorEvent, sendEventTo, toStreamEvent } from "./agent-events";
@@ -55,7 +56,9 @@ const activeSince = new Map<string, number>();
 
 /** Employee ids currently running an agent turn. */
 export function getActiveEmployeeIds(): number[] {
-  return [...new Set([...activeSince.keys()].map((k) => Number(k.split("/")[0])))];
+  return [
+    ...new Set([...activeSince.keys()].map((k) => Number(k.split("/")[0]))),
+  ];
 }
 
 /** Run start timestamp (ms) for an employee's current run, or null when idle. */
@@ -258,6 +261,7 @@ async function drain(state: QueueState): Promise<void> {
       const started = activeSince.get(key);
       if (started !== undefined) {
         addEmployeeRuntime(state.employeeId, Date.now() - started);
+        bumpStat(state.employeeId, { runMs: Date.now() - started });
         activeSince.delete(key);
         notifyActivity();
       }
@@ -449,7 +453,8 @@ function updateActiveSnapshot(
             };
             state.activeBlocks[index] = block;
           }
-          if (event.toolCallId !== undefined) block.toolCallId = event.toolCallId;
+          if (event.toolCallId !== undefined)
+            block.toolCallId = event.toolCallId;
           if (event.toolName !== undefined) block.name = event.toolName;
           if (event.toolArgsSummary !== undefined) {
             block.argsSummary = event.toolArgsSummary;

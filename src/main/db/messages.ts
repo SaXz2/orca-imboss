@@ -15,6 +15,7 @@ import { sendToRenderer } from "../notifications";
 import { bumpUnread } from "./chats";
 import { getDB } from "./index";
 import { parseJsonObject } from "./json";
+import { bumpStat } from "./stats";
 import { escapeLike, toFtsPhrase } from "./text-search";
 
 interface MessageRow {
@@ -86,12 +87,7 @@ function emitMessageAppended(message: Message): void {
   }
 }
 
-const STEP_STATUSES: StepStatus[] = [
-  "done",
-  "busy",
-  "pending",
-  "interrupted",
-];
+const STEP_STATUSES: StepStatus[] = ["done", "busy", "pending", "interrupted"];
 
 const MAX_SEARCH_QUERY_LENGTH = 200;
 const MAX_SEARCH_RESULTS = 50;
@@ -219,6 +215,15 @@ export function appendMessage(
   // (the app-generated receipt ack) never bump the counter.
   if (senderEmployeeId != null && options.silent !== true) {
     bumpUnread(chatId);
+  }
+
+  // Persistent daily stats: authored employee messages count toward the rollup
+  // so deleting a chat does not erase the history.
+  if (senderEmployeeId != null && kind !== "ack") {
+    bumpStat(senderEmployeeId, {
+      messages: 1,
+      reports: kind === "report" ? 1 : 0,
+    });
   }
 
   // Bump the chat's last-message timestamp so the list order reflects the
