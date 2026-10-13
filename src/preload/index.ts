@@ -2,6 +2,8 @@ import { DEFAULT_LOCALE } from "@shared/constants/locales";
 import type {
   AgentSessionViewEntry,
   AgentStreamPayload,
+  ArchivedTask,
+  BoardCard,
   Chat,
   ChatParticipantUpdate,
   ChatSummary,
@@ -28,6 +30,16 @@ import type {
   ProviderLoginEvent,
   ProviderModelsQuery,
   ProviderUpsert,
+  Task,
+  TaskCommentInput,
+  TaskEvent,
+  TaskInput,
+  TaskPromoteInput,
+  TaskReactionKind,
+  TaskReactions,
+  TaskRef,
+  TaskStatus,
+  TaskThread,
   ThemeState,
   UpdaterState,
   WorkDirState,
@@ -297,6 +309,57 @@ const api = {
         employeeId,
         chatId,
       ) as Promise<boolean>,
+  },
+
+  tasks: {
+    list: () => ipcRenderer.invoke("tasks:list") as Promise<Task[]>,
+    board: () => ipcRenderer.invoke("tasks:board") as Promise<BoardCard[]>,
+    get: (id: number) =>
+      ipcRenderer.invoke("tasks:get", id) as Promise<Task | null>,
+    create: (input: TaskInput) =>
+      ipcRenderer.invoke("tasks:create", input) as Promise<Task>,
+    promote: (input: TaskPromoteInput) =>
+      ipcRenderer.invoke("tasks:promote", input) as Promise<Task>,
+    update: (id: number, input: TaskInput) =>
+      ipcRenderer.invoke("tasks:update", id, input) as Promise<Task | null>,
+    move: (id: number, status: TaskStatus) =>
+      ipcRenderer.invoke("tasks:move", id, status) as Promise<Task | null>,
+    remove: (id: number) =>
+      ipcRenderer.invoke("tasks:delete", id) as Promise<boolean>,
+    timeline: (id: number) =>
+      ipcRenderer.invoke("tasks:timeline", id) as Promise<TaskEvent[]>,
+    thread: (id: number) =>
+      ipcRenderer.invoke("tasks:thread", id) as Promise<TaskThread>,
+    comment: (id: number, input: TaskCommentInput) =>
+      ipcRenderer.invoke("tasks:comment", id, input) as Promise<TaskEvent>,
+    deleteComment: (id: number, eventId: number) =>
+      ipcRenderer.invoke(
+        "tasks:comment:delete",
+        id,
+        eventId,
+      ) as Promise<boolean>,
+    link: (fromId: number, toId: number) =>
+      ipcRenderer.invoke("tasks:link", fromId, toId) as Promise<{
+        out: TaskRef[];
+        in: TaskRef[];
+      }>,
+    react: (id: number, kind: TaskReactionKind) =>
+      ipcRenderer.invoke("tasks:react", id, kind) as Promise<TaskReactions>,
+    close: (id: number, reason: string) =>
+      ipcRenderer.invoke("tasks:close", id, reason) as Promise<Task | null>,
+    reopen: (id: number) =>
+      ipcRenderer.invoke("tasks:reopen", id) as Promise<Task | null>,
+    reopenProgress: (progressKey: string) =>
+      ipcRenderer.invoke(
+        "tasks:reopenProgress",
+        progressKey,
+      ) as Promise<Task | null>,
+    archives: () =>
+      ipcRenderer.invoke("tasks:archives") as Promise<ArchivedTask[]>,
+    archive: (entry: Omit<ArchivedTask, "archivedAt">) =>
+      ipcRenderer.invoke("tasks:archive", entry) as Promise<ArchivedTask[]>,
+    unarchive: (key: string) =>
+      ipcRenderer.invoke("tasks:unarchive", key) as Promise<ArchivedTask[]>,
   },
 
   providers: {

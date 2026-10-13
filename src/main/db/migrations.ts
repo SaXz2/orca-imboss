@@ -146,6 +146,96 @@ const MIGRATIONS: Array<(db: Database) => void> = [
       UPDATE chats SET unread = 0 WHERE from_chat_id IS NOT NULL;
     `);
   },
+
+  // 2 — task center (kanban board)
+  (db) => {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS tasks (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        title       TEXT NOT NULL,
+        detail      TEXT NOT NULL DEFAULT '',
+        category    TEXT NOT NULL DEFAULT '',
+        flow        TEXT NOT NULL DEFAULT '',
+        status      TEXT NOT NULL DEFAULT 'pending',
+        assignees   TEXT NOT NULL DEFAULT '[]',
+        sort_order  INTEGER NOT NULL DEFAULT 0,
+        created_at  INTEGER NOT NULL DEFAULT (CAST(strftime('%s', 'now') AS INTEGER)),
+        updated_at  INTEGER NOT NULL DEFAULT (CAST(strftime('%s', 'now') AS INTEGER))
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_tasks_status
+        ON tasks(status, sort_order);
+    `);
+  },
+
+  // 3 — task thread: timeline events, reactions, close reason
+  (db) => {
+    db.exec(`
+      ALTER TABLE tasks ADD COLUMN close_reason TEXT;
+
+      CREATE TABLE IF NOT EXISTS task_events (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        task_id    INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+        actor      TEXT NOT NULL DEFAULT 'system',
+        kind       TEXT NOT NULL,
+        body       TEXT NOT NULL DEFAULT '',
+        meta       TEXT NOT NULL DEFAULT '{}',
+        created_at INTEGER NOT NULL DEFAULT (CAST(strftime('%s', 'now') AS INTEGER))
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_task_events_task
+        ON task_events(task_id, id);
+
+      CREATE TABLE IF NOT EXISTS task_reactions (
+        task_id    INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+        actor      TEXT NOT NULL,
+        kind       TEXT NOT NULL,
+        created_at INTEGER NOT NULL DEFAULT (CAST(strftime('%s', 'now') AS INTEGER)),
+        PRIMARY KEY (task_id, actor, kind)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_task_reactions_task
+        ON task_reactions(task_id);
+    `);
+  },
+
+  // 4 — task references: `#id` mentions produce a directed edge between tasks
+  (db) => {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS task_links (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        from_task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+        to_task_id   INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+        kind         TEXT NOT NULL DEFAULT 'references',
+        created_at   INTEGER NOT NULL DEFAULT (CAST(strftime('%s', 'now') AS INTEGER)),
+        UNIQUE (from_task_id, to_task_id, kind)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_task_links_from
+        ON task_links(from_task_id, kind);
+
+      CREATE INDEX IF NOT EXISTS idx_task_links_to
+        ON task_links(to_task_id, kind);
+    `);
+  },
+
+  // 5 — promote progress-derived board cards into real tasks
+  (db) => {
+    db.exec(`
+      ALTER TABLE tasks ADD COLUMN progress_key TEXT;
+
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_tasks_progress_key
+        ON tasks(progress_key)
+        WHERE progress_key IS NOT NULL;
+    `);
+  },
+
+  // 6 — the working group chat a promoted task's people actually work in
+  (db) => {
+    db.exec(`
+      ALTER TABLE tasks ADD COLUMN work_chat_id INTEGER;
+    `);
+  },
 ];
 
 export function migrate(db: Database): void {

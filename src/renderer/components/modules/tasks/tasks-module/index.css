@@ -1,0 +1,1121 @@
+/* Task Center — GitHub-Projects-flavoured board. */
+
+.imb-task-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--imb-space-3);
+}
+
+.imb-task-head-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.imb-task-sub {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+}
+
+/* Category ("project") filter strip above the board. */
+.imb-board-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: var(--imb-space-2) var(--imb-space-4) 0;
+}
+.imb-board-filter-label {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  padding: 0 4px 0 0;
+}
+
+.imb-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  font-size: var(--imb-text-xs);
+  color: var(--imb-text-2);
+  background: transparent;
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-pill);
+  cursor: pointer;
+  transition: all var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-filter-chip:hover {
+  border-color: var(--imb-accent);
+  color: var(--imb-accent);
+}
+
+.imb-filter-chip.imb-is-on {
+  color: var(--imb-fg);
+  border-color: color-mix(in oklch, var(--imb-fg) 35%, transparent);
+  background: var(--imb-fg-soft);
+  font-weight: 600;
+}
+
+.imb-filter-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.imb-filter-n {
+  color: var(--imb-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.imb-board {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(232px, 1fr);
+  gap: var(--imb-space-3);
+  padding: var(--imb-space-3) var(--imb-space-4) var(--imb-space-4);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.imb-board-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: color-mix(in oklch, var(--imb-fg) 3%, var(--imb-bg));
+  border: 1px solid var(--imb-border-soft);
+  border-radius: var(--imb-radius-lg);
+  overflow: hidden;
+  transition:
+    border-color var(--imb-motion-fast) var(--imb-ease-standard),
+    background var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-board-col.imb-is-drop {
+  border-color: var(--imb-accent);
+  background: color-mix(in oklch, var(--imb-accent) 7%, var(--imb-bg));
+}
+
+.imb-board-col-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 10px 9px 12px;
+  font-size: var(--imb-text-sm);
+  font-weight: 600;
+}
+
+.imb-col-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.imb-col-dot.imb-pending {
+  background: var(--imb-muted);
+}
+.imb-col-dot.imb-running {
+  background: var(--imb-warn);
+  --pulse-lo: 0.4;
+  --pulse-scale-lo: 0.85;
+  --pulse-scale-hi: 1.15;
+  animation: imb-pulse 1.4s ease-in-out infinite;
+}
+.imb-col-dot.imb-done {
+  background: var(--imb-accent);
+}
+
+.imb-col-dot.imb-closed {
+  background: #8250df;
+}
+
+.imb-col-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.imb-col-count {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  background: var(--imb-bg);
+  border-radius: var(--imb-radius-pill);
+  padding: 1px 8px;
+}
+
+.imb-col-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: var(--imb-radius-sm);
+  background: transparent;
+  color: var(--imb-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity var(--imb-motion-fast) var(--imb-ease-standard),
+    background var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-board-col:hover .imb-col-add {
+  opacity: 1;
+}
+
+.imb-col-add:hover {
+  background: var(--imb-fg-soft);
+  color: var(--imb-fg);
+}
+
+.imb-board-col-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.imb-board-empty {
+  text-align: center;
+  color: var(--imb-muted);
+  font-size: var(--imb-text-xs);
+  padding: var(--imb-space-4) 0;
+}
+
+/* --- Card (GitHub issue/project card) --- */
+.imb-gh-card {
+  position: relative;
+  background: var(--imb-surface);
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-md);
+  padding: 9px 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  transition:
+    border-color var(--imb-motion-fast) var(--imb-ease-standard),
+    box-shadow var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-gh-card:hover {
+  border-color: color-mix(in oklch, var(--imb-accent) 55%, var(--imb-border));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.imb-gh-card:focus-visible {
+  outline: none;
+  box-shadow: var(--imb-focus-ring);
+}
+
+.imb-gh-card.imb-is-dragging {
+  opacity: 0.45;
+}
+
+/* Every card is a task: the left rail encodes its status, identical for all. */
+.imb-gh-card.imb-st-pending {
+  border-left: 3px solid var(--imb-muted);
+}
+.imb-gh-card.imb-st-running {
+  border-left: 3px solid var(--imb-warn);
+}
+.imb-gh-card.imb-st-done {
+  border-left: 3px solid var(--imb-accent);
+}
+.imb-gh-card.imb-st-closed {
+  border-left: 3px solid #8250df;
+}
+
+/* Closed task: the work is done with, so the card recedes. */
+.imb-gh-card.imb-is-closed {
+  opacity: 0.72;
+}
+
+.imb-gh-card.imb-is-closed .imb-gh-card-title {
+  color: var(--imb-muted);
+}
+
+.imb-gh-card-title {
+  font-size: var(--imb-text-sm);
+  font-weight: 600;
+  color: var(--imb-fg);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.imb-gh-card-labels {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.imb-gh-label {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  padding: 0 7px;
+  border: 1px solid transparent;
+  border-radius: var(--imb-radius-pill);
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.imb-gh-steps {
+  font-size: 11px;
+  color: var(--imb-muted);
+}
+
+.imb-gh-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 20px;
+}
+
+.imb-gh-ref {
+  font-family: var(--imb-font-mono);
+  font-size: 11px;
+  color: var(--imb-muted);
+  white-space: nowrap;
+}
+
+.imb-gh-assignees {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+}
+
+.imb-gh-assignee {
+  display: inline-flex;
+  margin-left: -6px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--imb-surface);
+}
+
+.imb-gh-assignee:first-child {
+  margin-left: 0;
+}
+
+.imb-gh-assignee .imb-avatar {
+  width: 20px;
+  height: 20px;
+  font-size: 10px;
+}
+
+.imb-gh-more {
+  margin-left: 4px;
+  font-size: 11px;
+  color: var(--imb-muted);
+}
+
+.imb-gh-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--imb-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity var(--imb-motion-fast) var(--imb-ease-standard),
+    color var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-gh-edit:hover {
+  color: var(--imb-fg);
+}
+
+.imb-gh-edit svg {
+  width: 13px;
+  height: 13px;
+}
+
+.imb-gh-card:hover .imb-gh-edit {
+  opacity: 1;
+}
+
+/* Compact reaction / comment counts in the card footer. */
+.imb-gh-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--imb-muted);
+}
+
+.imb-gh-stat svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* --- Task detail (thread view) --- */
+.imb-task-detail {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.imb-task-detail-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--imb-space-2);
+  padding: var(--imb-space-2) var(--imb-space-4) 0;
+}
+
+.imb-task-detail-bar-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--imb-space-2);
+}
+
+.imb-task-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--imb-radius-md);
+  background: transparent;
+  color: var(--imb-text-2);
+  font-size: var(--imb-text-sm);
+  cursor: pointer;
+  transition: background var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-task-back:hover {
+  background: var(--imb-fg-soft);
+  color: var(--imb-fg);
+}
+
+.imb-task-back svg {
+  width: 15px;
+  height: 15px;
+}
+
+.imb-task-detail-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.imb-task-detail-pane {
+  max-width: 780px;
+  padding: var(--imb-space-4) var(--imb-space-4) var(--imb-space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--imb-space-4);
+}
+
+.imb-task-detail-title {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--imb-space-2);
+}
+
+.imb-task-detail-title h2 {
+  margin: 0;
+  font-size: var(--imb-text-xl);
+  font-weight: 700;
+  line-height: var(--imb-leading-tight);
+  overflow-wrap: anywhere;
+}
+
+.imb-task-status-chip {
+  font-size: var(--imb-text-xs);
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: var(--imb-radius-pill);
+  border: 1px solid var(--imb-border);
+  color: var(--imb-text-2);
+  background: color-mix(in oklch, var(--imb-fg) 5%, transparent);
+}
+
+.imb-task-status-chip.imb-is-running {
+  color: var(--imb-warn);
+  border-color: color-mix(in oklch, var(--imb-warn) 45%, transparent);
+  background: color-mix(in oklch, var(--imb-warn) 12%, transparent);
+}
+
+.imb-task-status-chip.imb-is-done {
+  color: var(--imb-accent);
+  border-color: color-mix(in oklch, var(--imb-accent) 45%, transparent);
+  background: color-mix(in oklch, var(--imb-accent) 12%, transparent);
+}
+
+.imb-task-status-chip.imb-is-closed {
+  color: var(--imb-muted);
+  background: color-mix(in oklch, var(--imb-fg) 8%, transparent);
+}
+
+.imb-task-feedback {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--imb-space-2);
+}
+
+.imb-task-feedback-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: var(--imb-text-xs);
+  color: var(--imb-text-2);
+  background: transparent;
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-pill);
+  cursor: pointer;
+  transition: all var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-task-feedback-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.imb-task-feedback-btn:hover {
+  border-color: var(--imb-accent);
+  color: var(--imb-accent);
+}
+
+.imb-task-feedback-btn.imb-is-on {
+  color: var(--imb-accent);
+  border-color: color-mix(in oklch, var(--imb-accent) 55%, transparent);
+  background: var(--imb-accent-soft);
+  font-weight: 600;
+}
+
+.imb-task-feedback-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.imb-task-detail-body {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--imb-fg);
+  line-height: var(--imb-leading-body);
+}
+
+.imb-task-meta-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--imb-space-3);
+  border: 1px solid var(--imb-border-soft);
+  border-radius: var(--imb-radius-lg);
+  background: color-mix(in oklch, var(--imb-fg) 3%, var(--imb-bg));
+}
+
+.imb-task-meta-row {
+  display: flex;
+  align-items: center;
+  gap: var(--imb-space-2);
+  font-size: var(--imb-text-sm);
+}
+
+.imb-task-meta-label {
+  flex: none;
+  width: 84px;
+  color: var(--imb-muted);
+  font-size: var(--imb-text-xs);
+}
+
+.imb-task-meta-value {
+  min-width: 0;
+}
+
+.imb-task-meta-text {
+  color: var(--imb-text-2);
+}
+
+.imb-task-meta-people {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--imb-space-2);
+}
+
+.imb-task-meta-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--imb-text-2);
+}
+
+.imb-task-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--imb-space-2);
+}
+
+.imb-task-timeline-head {
+  font-size: var(--imb-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--imb-muted);
+  padding-bottom: 2px;
+}
+
+.imb-tl-row {
+  display: flex;
+  gap: var(--imb-space-2);
+  align-items: flex-start;
+}
+
+.imb-tl-dot {
+  flex: none;
+  width: 22px;
+  display: flex;
+  justify-content: center;
+}
+
+.imb-tl-dot::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--imb-border);
+}
+
+.imb-tl-system {
+  align-items: center;
+  color: var(--imb-muted);
+  font-size: var(--imb-text-xs);
+}
+
+.imb-tl-sys-text {
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
+  gap: 6px;
+  min-height: 22px;
+  align-items: center;
+}
+
+.imb-tl-sys-extra {
+  color: var(--imb-text-2);
+}
+
+.imb-tl-avatar {
+  flex: none;
+  width: 22px;
+  display: flex;
+  justify-content: center;
+}
+
+.imb-tl-you {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: color-mix(in oklch, var(--imb-accent) 18%, transparent);
+  color: var(--imb-accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.imb-tl-body {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1px solid var(--imb-border-soft);
+  border-radius: var(--imb-radius-md);
+  background: var(--imb-surface);
+}
+
+.imb-tl-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--imb-text-xs);
+  margin-bottom: 3px;
+}
+
+.imb-tl-author {
+  font-weight: 600;
+  color: var(--imb-fg);
+}
+
+.imb-tl-kind {
+  padding: 0 7px;
+  border-radius: var(--imb-radius-pill);
+  background: var(--imb-fg-soft);
+  color: var(--imb-muted);
+}
+
+.imb-tl-time {
+  color: var(--imb-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.imb-tl-authored .imb-tl-time {
+  margin-left: auto;
+}
+
+.imb-tl-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: var(--imb-text-sm);
+  line-height: var(--imb-leading-body);
+  color: var(--imb-fg);
+}
+
+/* Delete affordance on an authored comment (hover-revealed). */
+.imb-tl-del {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--imb-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity var(--imb-motion-fast) var(--imb-ease-standard),
+    color var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-tl-del svg {
+  width: 13px;
+  height: 13px;
+}
+
+.imb-tl-body:hover .imb-tl-del {
+  opacity: 1;
+}
+
+.imb-tl-del:hover {
+  color: var(--imb-danger);
+}
+
+/* Manual task-linking picker. */
+.imb-link-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--imb-space-3);
+}
+
+.imb-link-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+/* Inline `#123` task references inside text. */
+.imb-ref-link {
+  display: inline;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--imb-accent);
+  font-family: var(--imb-font-mono);
+  font-size: 0.95em;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.imb-ref-link:hover {
+  text-decoration: underline;
+}
+
+/* Reference lists (this task mentions / referenced by). */
+.imb-task-refs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.imb-task-refs-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--imb-space-2);
+}
+
+.imb-task-ref-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--imb-space-2);
+}
+
+.imb-task-ref-label {
+  flex: none;
+  width: 84px;
+  padding-top: 3px;
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+}
+
+.imb-task-ref-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.imb-task-ref-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 2px 10px;
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-pill);
+  background: transparent;
+  color: var(--imb-text-2);
+  font-size: var(--imb-text-xs);
+  cursor: pointer;
+  transition: all var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-task-ref-chip:hover {
+  border-color: var(--imb-accent);
+  color: var(--imb-accent);
+}
+
+.imb-task-ref-chip.imb-is-closed {
+  opacity: 0.6;
+}
+
+.imb-task-ref-title {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.imb-task-composer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--imb-space-2);
+  padding-top: var(--imb-space-2);
+  border-top: 1px solid var(--imb-border-soft);
+}
+
+/* Anchors the `@` mention popup right above the comment box. */
+.imb-task-composer-field {
+  position: relative;
+}
+
+.imb-task-composer-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--imb-space-2);
+}
+
+.imb-task-composer-foot .imb-select {
+  min-width: 130px;
+}
+
+.imb-task-close-reasons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.imb-task-close-reason {
+  padding: 9px 12px;
+  text-align: left;
+  font-size: var(--imb-text-sm);
+  color: var(--imb-fg);
+  background: transparent;
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-md);
+  cursor: pointer;
+  transition: all var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-task-close-reason:hover {
+  border-color: var(--imb-accent);
+  color: var(--imb-accent);
+  background: var(--imb-accent-soft);
+}
+
+/* --- Editor --- */
+.imb-task-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--imb-space-4);
+}
+
+.imb-task-editor-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--imb-space-3);
+}
+
+.imb-task-assignees {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.imb-task-assignee {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 4px;
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-pill);
+  background: transparent;
+  color: var(--imb-text-2);
+  font-size: var(--imb-text-xs);
+  cursor: pointer;
+  transition: all var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-task-assignee:hover {
+  border-color: var(--imb-accent);
+}
+
+.imb-task-assignee.imb-is-on {
+  border-color: var(--imb-accent);
+  background: color-mix(in oklch, var(--imb-accent) 14%, var(--imb-surface));
+  color: var(--imb-accent);
+  font-weight: 600;
+}
+
+/* --- A task's per-person sub-tasks --- */
+.imb-task-steps-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: var(--imb-text-xs);
+  font-weight: 600;
+  color: var(--imb-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.imb-task-steps-count {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.imb-task-steps {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--imb-border-soft);
+  border-radius: var(--imb-radius-lg);
+  overflow: hidden;
+}
+
+.imb-task-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--imb-border-soft);
+}
+
+.imb-task-step:last-child {
+  border-bottom: none;
+}
+
+.imb-task-step-id {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.imb-task-step-name {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: var(--imb-text-sm);
+  font-weight: 600;
+  color: var(--imb-fg);
+  cursor: pointer;
+  text-align: left;
+}
+
+.imb-task-step-name:hover {
+  text-decoration: underline;
+}
+
+span.imb-task-step-name {
+  cursor: default;
+}
+
+.imb-task-step-role {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- Quiet inline actions (task detail bar, archive rows) --- */
+.imb-detail-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.imb-detail-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-pill);
+  background: transparent;
+  color: var(--imb-text-2);
+  font-size: var(--imb-text-xs);
+  cursor: pointer;
+  transition:
+    border-color var(--imb-motion-fast) var(--imb-ease-standard),
+    color var(--imb-motion-fast) var(--imb-ease-standard),
+    background var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-detail-action svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+
+.imb-detail-action:hover:not(:disabled) {
+  border-color: var(--imb-accent);
+  color: var(--imb-accent);
+}
+
+.imb-detail-action:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.imb-detail-action.imb-is-accent {
+  color: var(--imb-accent);
+  border-color: color-mix(in oklch, var(--imb-accent) 45%, transparent);
+}
+
+/* --- Board header: archive toggle --- */
+.imb-task-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.imb-task-archive-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-pill);
+  background: transparent;
+  color: var(--imb-text-2);
+  font-size: var(--imb-text-sm);
+  cursor: pointer;
+  transition:
+    border-color var(--imb-motion-fast) var(--imb-ease-standard),
+    color var(--imb-motion-fast) var(--imb-ease-standard);
+}
+
+.imb-task-archive-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.imb-task-archive-btn:hover,
+.imb-task-archive-btn.imb-is-on {
+  border-color: var(--imb-accent);
+  color: var(--imb-accent);
+}
+
+.imb-task-archive-n {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Archive list --- */
+.imb-archive-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--imb-border-soft);
+  border-radius: var(--imb-radius-lg);
+  overflow: hidden;
+}
+
+.imb-archive-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--imb-border-soft);
+}
+
+.imb-archive-row:last-child {
+  border-bottom: none;
+}
+
+.imb-archive-icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--imb-muted);
+}
+
+.imb-archive-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.imb-archive-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.imb-archive-title {
+  font-size: var(--imb-text-sm);
+  font-weight: 550;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.imb-archive-time {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+}

@@ -12,6 +12,7 @@ const STEP_LABEL_KEYS: Record<StepStatus, string> = {
   pending: "Pending",
   busy: "In progress",
   done: "Done",
+  interrupted: "Interrupted",
 };
 
 export interface ProgressCardProps {

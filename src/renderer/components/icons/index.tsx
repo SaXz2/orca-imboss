@@ -20,6 +20,70 @@ function base(props: IconProps): IconProps {
   };
 }
 
+export function IconTasks(props: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(props)} strokeWidth={1.7}>
+      <rect x="3.5" y="4" width="4.6" height="16" rx="1.2" />
+      <rect x="9.7" y="4" width="4.6" height="16" rx="1.2" />
+      <rect x="15.9" y="4" width="4.6" height="16" rx="1.2" />
+    </svg>
+  );
+}
+
+export function IconArchive(props: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(props)}>
+      <path d="M4.5 4h15a1 1 0 0 1 1 1v2.5h-17V5a1 1 0 0 1 1-1Z" />
+      <path d="M5 7.5V19a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19V7.5" />
+      <path d="M10 12h4" />
+    </svg>
+  );
+}
+
+export function IconBack(props: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(props)} strokeWidth={1.9}>
+      <line x1="19" y1="12" x2="5" y2="12" />
+      <polyline points="12 19 5 12 12 5" />
+    </svg>
+  );
+}
+
+export function IconComment(props: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(props)} strokeWidth={1.7}>
+      <path d="M20 12a7.5 7.5 0 0 1-10.9 6.7L4 20l1.3-4.3A7.5 7.5 0 1 1 20 12Z" />
+    </svg>
+  );
+}
+
+export function IconPencil(props: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(props)} strokeWidth={1.8}>
+      <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+      <path d="m15 5 4 4" />
+    </svg>
+  );
+}
+
+export function IconClosed(props: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(props)} strokeWidth={1.7}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M8.5 15.5 15.5 8.5" />
+    </svg>
+  );
+}
+
+export function IconReopen(props: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(props)} strokeWidth={1.7}>
+      <path d="M3 5v5h5" />
+      <path d="M3.5 14a8.5 8.5 0 1 0 1.6-6.6L3 10" />
+    </svg>
+  );
+}
+
 export function IconChat(props: IconProps): React.JSX.Element {
   return (
     <svg {...base(props)}>

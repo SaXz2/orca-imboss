@@ -8,7 +8,7 @@
  */
 export type MessageKind = string;
 
-export type StepStatus = "done" | "busy" | "pending";
+export type StepStatus = "done" | "busy" | "pending" | "interrupted";
 
 /** One row of a progress card payload (kind = `progress`). */
 export interface MessageStep {
