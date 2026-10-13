@@ -3,6 +3,7 @@ import { parseSessionKey, useApp, type AppModule } from "./app-store";
 import { AppShell } from "./components/app-shell";
 import { AgentSessionModule } from "./components/modules/agent-session/agent-session-module";
 import { ChatModule } from "./components/modules/chat/chat-module";
+import { DepartmentsModule } from "./components/modules/departments/departments-module";
 import { EmployeesModule } from "./components/modules/employees/employees-module";
 import { GroupChatModule } from "./components/modules/group-chat/group-chat-module";
 import { McpModule } from "./components/modules/mcp/mcp-module";
@@ -15,6 +16,7 @@ import { TasksModule } from "./components/modules/tasks/tasks-module";
 const MODULE_VIEWS: Partial<Record<AppModule, () => React.JSX.Element>> = {
   chat: ChatModule,
   tasks: TasksModule,
+  departments: DepartmentsModule,
   providers: ProvidersModule,
   mcp: McpModule,
   skills: SkillsModule,

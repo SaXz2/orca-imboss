@@ -1,0 +1,899 @@
+/* ============================================================
+   部门 · Departments canvas
+   ------------------------------------------------------------
+   White department frames, each holding a top-down member forest
+   (several peers at the top), wired by kind-colored department and
+   person links on an infinite, pannable/zoomable surface.
+   ============================================================ */
+
+.imb-dept-module {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* ─────────────── toolbar ─────────────── */
+.imb-dept-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--imb-space-3);
+  padding: var(--imb-space-3) var(--imb-space-4);
+  border-bottom: 1px solid var(--imb-border);
+  background: var(--imb-surface);
+}
+.imb-dept-toolbar-left {
+  display: flex;
+  align-items: baseline;
+  gap: var(--imb-space-3);
+  min-width: 0;
+}
+.imb-dept-title {
+  font-size: var(--imb-text-lg);
+  font-weight: 700;
+}
+.imb-dept-subtitle {
+  font-size: var(--imb-text-sm);
+  color: var(--imb-muted);
+}
+.imb-dept-toolbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--imb-space-2);
+}
+.imb-dept-seg {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--imb-surface-sunken);
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-md);
+  padding: 3px;
+}
+.imb-dept-seglabel {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  padding: 0 6px;
+}
+.imb-dept-segbtn {
+  border: none;
+  background: transparent;
+  color: var(--imb-muted);
+  font-size: var(--imb-text-xs);
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: var(--imb-radius-sm);
+  cursor: pointer;
+}
+.imb-dept-segbtn.imb-is-on {
+  background: var(--imb-surface-raised, #fff);
+  color: #5b45c9;
+  box-shadow: 0 1px 3px rgb(60 50 30 / 12%);
+}
+
+/* ─────────────── surface ─────────────── */
+.imb-dept-surface {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  cursor: default;
+  background-color: var(--imb-bg);
+  background-image: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--imb-fg) 12%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 26px 26px;
+  background-position: -2px -2px;
+  touch-action: none;
+}
+.imb-dept-surface.imb-is-linking {
+  cursor: crosshair;
+}
+.imb-dept-surface:active {
+  cursor: grabbing;
+}
+.imb-dept-world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  z-index: 2;
+}
+
+/* ─────────────── department links ─────────────── */
+.imb-dept-wires {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 1;
+}
+.imb-dept-wire {
+  fill: none;
+  stroke-width: 2;
+  stroke-dasharray: 7 5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.imb-dept-wire-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 22;
+  pointer-events: stroke;
+  cursor: grab;
+}
+/* interaction layer (above the frames): hit areas + draggable endpoints */
+.imb-dept-hitlayer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 5;
+}
+.imb-dept-eph {
+  fill: #fff;
+  stroke-width: 2;
+  pointer-events: auto;
+  cursor: grab;
+}
+.imb-dept-eph:hover {
+  transform: scale(1.3);
+}
+.imb-dept-wire.imb-is-live {
+  animation: imb-dept-flow 1.3s linear infinite;
+}
+@keyframes imb-dept-flow {
+  to {
+    stroke-dashoffset: -16;
+  }
+}
+.imb-dept-wire.imb-is-pending {
+  stroke: var(--imb-accent);
+  stroke-dasharray: 6 5;
+  animation: none;
+}
+.imb-dept-anchor {
+  fill: var(--imb-surface-raised, #fff);
+  stroke-width: 2;
+}
+.imb-dept-wire-label {
+  position: absolute;
+  z-index: 6;
+  transform: translate(-50%, -50%);
+  font: inherit;
+  font-size: var(--imb-text-xs);
+  font-weight: 600;
+  color: #fff;
+  background: #b5872e;
+  border: none;
+  padding: 3px 10px;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgb(60 50 30 / 16%);
+}
+
+/* ─────────────── person links ─────────────── */
+/* cross-department person links sit BEHIND the frames (so they don't cut
+   across member cards); same-department ones use .imb-dept-plinks above. */
+.imb-dept-plinks-below {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 1;
+}
+.imb-dept-plinks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 5;
+}
+.imb-dept-pwire {
+  fill: none;
+  stroke: #55505c;
+  stroke-width: 1.8;
+  stroke-dasharray: 7 5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  opacity: 0.9;
+}
+.imb-dept-pwire.imb-is-live {
+  animation: imb-dept-flow 1.3s linear infinite;
+}
+
+/* ─────────────── department frame ─────────────── */
+.imb-dept-card {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  background: var(--imb-surface-raised, var(--imb-surface));
+  border: 1.5px solid
+    color-mix(
+      in srgb,
+      var(--dept-color, var(--imb-accent)) 26%,
+      var(--imb-border)
+    );
+  box-shadow: 0 10px 26px rgb(60 50 30 / 8%);
+  user-select: none;
+  overflow: visible;
+  cursor: default;
+}
+.imb-dept-card.imb-is-pool {
+  border-style: dashed;
+}
+.imb-dept-card.imb-is-selected {
+  border-color: #3b6ef5;
+  box-shadow:
+    0 0 0 1.5px #3b6ef5,
+    0 10px 26px rgb(60 50 30 / 10%);
+}
+
+/* selection handles — draggable resize grips */
+.imb-dept-hnd {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  background: #fff;
+  border: 1.5px solid #3b6ef5;
+  border-radius: 2px;
+  z-index: 6;
+}
+.imb-dept-hnd::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+.imb-dept-hnd.imb-is-tl {
+  left: -5px;
+  top: -5px;
+  cursor: nwse-resize;
+}
+.imb-dept-hnd.imb-is-tr {
+  right: -5px;
+  top: -5px;
+  cursor: nesw-resize;
+}
+.imb-dept-hnd.imb-is-bl {
+  left: -5px;
+  bottom: -5px;
+  cursor: nesw-resize;
+}
+.imb-dept-hnd.imb-is-br {
+  right: -5px;
+  bottom: -5px;
+  cursor: nwse-resize;
+}
+
+.imb-dept-head {
+  display: flex;
+  align-items: center;
+  gap: var(--imb-space-2);
+  height: 46px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  cursor: grab;
+}
+.imb-dept-grip {
+  display: grid;
+  grid-template-columns: repeat(2, 3px);
+  gap: 3px;
+  color: color-mix(in srgb, var(--imb-muted) 60%, transparent);
+}
+.imb-dept-grip i {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  display: block;
+}
+.imb-dept-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: var(--dept-color, var(--imb-accent));
+}
+.imb-dept-dot:hover {
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--dept-color, var(--imb-accent)) 30%, transparent);
+}
+.imb-dept-charterbtn {
+  font-size: var(--imb-text-xs);
+  font-weight: 600;
+  color: var(--imb-muted);
+  background: var(--imb-surface-sunken);
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-pill);
+  padding: 1px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex: none;
+}
+.imb-dept-charterbtn:hover {
+  color: var(--imb-fg);
+}
+.imb-dept-charterbtn.imb-is-set {
+  color: var(--dept-color, var(--imb-accent));
+  border-color: color-mix(
+    in srgb,
+    var(--dept-color, var(--imb-accent)) 40%,
+    transparent
+  );
+  background: color-mix(
+    in srgb,
+    var(--dept-color, var(--imb-accent)) 10%,
+    transparent
+  );
+}
+.imb-dept-palette {
+  position: absolute;
+  top: 40px;
+  left: 8px;
+  z-index: 10;
+  display: flex;
+  gap: 6px;
+  padding: 7px 9px;
+  background: var(--imb-surface-raised, #fff);
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-md);
+  box-shadow: 0 8px 20px rgb(60 50 30 / 16%);
+}
+.imb-dept-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgb(0 0 0 / 8%);
+  padding: 0;
+  cursor: pointer;
+}
+.imb-dept-swatch:hover {
+  transform: scale(1.15);
+}
+.imb-dept-card.imb-is-pool .imb-dept-dot {
+  background: transparent;
+  border: 1.5px dashed var(--dept-color, var(--imb-muted));
+}
+.imb-dept-name {
+  font-size: var(--imb-text-sm);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.imb-dept-name-input {
+  font: inherit;
+  font-size: var(--imb-text-sm);
+  font-weight: 700;
+  min-width: 0;
+  flex: 1;
+  border: 1px solid var(--imb-accent);
+  border-radius: var(--imb-radius-sm);
+  background: var(--imb-surface-raised, var(--imb-surface));
+  color: var(--imb-fg);
+  padding: 2px 6px;
+}
+.imb-dept-count {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  flex: none;
+}
+.imb-dept-addbtn {
+  margin-left: auto;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: none;
+  background: transparent;
+  color: var(--imb-muted);
+  font-size: var(--imb-text-lg);
+  line-height: 1;
+  border-radius: var(--imb-radius-md);
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.imb-dept-card:hover .imb-dept-addbtn,
+.imb-dept-card.imb-is-selected .imb-dept-addbtn {
+  opacity: 1;
+}
+.imb-dept-addbtn:hover {
+  background: var(--imb-surface-sunken);
+  color: var(--imb-fg);
+}
+.imb-dept-more {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: none;
+  background: transparent;
+  color: var(--imb-muted);
+  font-size: var(--imb-text-lg);
+  line-height: 1;
+  border-radius: var(--imb-radius-md);
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.imb-dept-card:hover .imb-dept-more,
+.imb-dept-card.imb-is-selected .imb-dept-more {
+  opacity: 1;
+}
+.imb-dept-more:hover {
+  background: var(--imb-surface-sunken);
+  color: var(--imb-fg);
+}
+
+/* internal forest connectors — light dashed, a separate language */
+.imb-dept-tree {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.imb-dept-bk {
+  fill: none;
+  stroke: var(--dept-color, #b5872e);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* ─────────────── member card ─────────────── */
+.imb-dept-mc {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 168px;
+  background: var(--imb-surface-raised, var(--imb-surface));
+  border: 1px solid var(--imb-border);
+  border-radius: 11px;
+  padding: 6px 12px 6px 6px;
+  box-shadow: 0 2px 8px rgb(60 50 30 / 7%);
+  z-index: 4;
+  cursor: move;
+}
+.imb-dept-mc.imb-is-peer {
+  width: 178px;
+  border-color: color-mix(in srgb, var(--pc) 40%, var(--imb-border));
+  padding: 7px 13px 7px 7px;
+}
+.imb-dept-avwrap {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+.imb-avatar.imb-dept-av2 {
+  background: var(--pc);
+  color: #fff;
+  box-shadow: 0 0 0 2px var(--imb-surface-raised, var(--imb-surface));
+}
+.imb-dept-mstate {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--imb-muted) 55%, transparent);
+  box-shadow: 0 0 0 2px var(--imb-surface-raised, var(--imb-surface));
+}
+.imb-dept-mstate.imb-is-on {
+  background: var(--imb-accent);
+}
+.imb-dept-mport {
+  position: absolute;
+  top: 50%;
+  width: 11px;
+  height: 11px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--imb-surface-raised, #fff);
+  border: 1.5px solid #7c5cff;
+  opacity: 0.5;
+  transform: translateY(-50%);
+  cursor: crosshair;
+}
+.imb-dept-mport::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+}
+.imb-dept-mport.imb-is-l {
+  left: -6px;
+}
+.imb-dept-mport.imb-is-r {
+  right: -6px;
+}
+.imb-dept-mc:hover .imb-dept-mport {
+  opacity: 0.9;
+}
+.imb-dept-mport:hover {
+  background: #7c5cff;
+}
+.imb-dept-tx {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.imb-dept-l1 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.imb-dept-nm {
+  font-size: var(--imb-text-sm);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.imb-dept-mc.imb-is-peer .imb-dept-nm {
+  font-size: var(--imb-text-base);
+}
+.imb-dept-role {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.imb-dept-pill {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #1a9e57;
+  background: #e4f6ec;
+  border-radius: var(--imb-radius-pill);
+  padding: 1px 7px;
+  white-space: nowrap;
+}
+.imb-dept-pill.imb-is-also {
+  color: #8a63d2;
+  background: #f1ecff;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.imb-dept-mremove {
+  position: absolute;
+  right: -6px;
+  top: -6px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--imb-border);
+  background: var(--imb-surface-raised, #fff);
+  color: var(--imb-muted);
+  font-size: var(--imb-text-base);
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+}
+.imb-dept-mc:hover .imb-dept-mremove {
+  opacity: 1;
+}
+.imb-dept-mremove:hover {
+  color: var(--imb-danger, #e03131);
+  border-color: var(--imb-danger, #e03131);
+}
+.imb-dept-addnode {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1.5px dashed var(--imb-border);
+  background: var(--imb-surface-raised, #fff);
+  color: var(--imb-muted);
+  font-size: var(--imb-text-lg);
+  cursor: pointer;
+  padding: 0;
+  z-index: 4;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.imb-dept-card:hover .imb-dept-addnode,
+.imb-dept-card.imb-is-selected .imb-dept-addnode {
+  opacity: 1;
+}
+.imb-dept-addnode:hover {
+  border-color: var(--dept-color, var(--imb-accent));
+  color: var(--dept-color, var(--imb-accent));
+}
+
+/* ─────────────── frame ports ─────────────── */
+.imb-dept-port {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--imb-surface-raised, #fff);
+  border: 1.6px solid
+    color-mix(in srgb, var(--dept-color, var(--imb-accent)) 55%, #b9ac93);
+  opacity: 0.5;
+  cursor: crosshair;
+  z-index: 4;
+  transition: opacity 120ms ease;
+}
+.imb-dept-port::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border-radius: 50%;
+}
+.imb-dept-card:hover .imb-dept-port,
+.imb-dept-card.imb-is-selected .imb-dept-port {
+  opacity: 1;
+}
+.imb-dept-port:hover {
+  background: var(--dept-color, var(--imb-accent));
+  transform: scale(1.25);
+}
+.imb-port-t {
+  top: -6px;
+  left: 50%;
+  margin-left: -6px;
+}
+.imb-port-b {
+  bottom: -6px;
+  left: 50%;
+  margin-left: -6px;
+}
+.imb-port-l {
+  left: -6px;
+  top: 50%;
+  margin-top: -6px;
+}
+.imb-port-r {
+  right: -6px;
+  top: 50%;
+  margin-top: -6px;
+}
+
+/* ─────────────── overlays ─────────────── */
+.imb-dept-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: var(--imb-text-sm);
+  color: var(--imb-muted);
+  pointer-events: none;
+  z-index: 5;
+}
+.imb-dept-zoom {
+  position: absolute;
+  right: var(--imb-space-4);
+  bottom: var(--imb-space-4);
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--imb-surface-raised, #fff);
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-md);
+  padding: 3px;
+  box-shadow: 0 2px 8px rgb(60 50 30 / 10%);
+}
+.imb-dept-zoom button {
+  min-width: 30px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  color: var(--imb-fg);
+  font-size: var(--imb-text-sm);
+  border-radius: var(--imb-radius-sm);
+  cursor: pointer;
+}
+.imb-dept-zoom button:hover {
+  background: var(--imb-surface-sunken);
+}
+.imb-dept-hint {
+  position: absolute;
+  left: 50%;
+  bottom: var(--imb-space-4);
+  transform: translateX(-50%);
+  z-index: 7;
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  background: color-mix(in srgb, var(--imb-surface) 92%, transparent);
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-pill);
+  padding: 6px 14px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.imb-dept-legend {
+  position: absolute;
+  left: var(--imb-space-4);
+  bottom: var(--imb-space-4);
+  z-index: 7;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  background: color-mix(in srgb, var(--imb-surface) 92%, transparent);
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-md);
+  padding: 7px 13px;
+  box-shadow: 0 2px 8px rgb(60 50 30 / 6%);
+}
+.imb-dept-legend span {
+  display: inline-flex;
+  align-items: center;
+}
+.imb-legend-kind {
+  display: inline-block;
+  width: 18px;
+  border-top: 2px dashed #b5872e;
+  margin-right: 5px;
+}
+.imb-legend-arrow {
+  color: #b5872e;
+  font-weight: 700;
+  margin-right: 5px;
+}
+
+/* ─────────────── member picker & link editor ─────────────── */
+.imb-dept-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--imb-space-3);
+}
+.imb-dept-charter-input {
+  width: 100%;
+  font: inherit;
+  font-size: var(--imb-text-sm);
+  line-height: 1.5;
+  padding: 8px 12px;
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-md);
+  background: var(--imb-surface-raised, var(--imb-surface));
+  color: var(--imb-fg);
+  resize: vertical;
+}
+.imb-dept-foot {
+  margin-top: auto;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px 0 16px;
+  border-top: 1px solid var(--imb-border-soft, var(--imb-border));
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  flex: none;
+}
+.imb-dept-foot b {
+  color: var(--imb-fg);
+  font-weight: 600;
+}
+.imb-dept-foot-sep {
+  width: 1px;
+  height: 11px;
+  background: var(--imb-border);
+}
+.imb-dept-picker-search {
+  font: inherit;
+  font-size: var(--imb-text-sm);
+  padding: 8px 12px;
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-md);
+  background: var(--imb-surface-raised, var(--imb-surface));
+  color: var(--imb-fg);
+}
+.imb-dept-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 320px;
+  overflow: auto;
+}
+.imb-dept-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border: 1px solid var(--imb-border-soft, var(--imb-border));
+  border-radius: var(--imb-radius-md);
+  background: var(--imb-surface);
+  cursor: pointer;
+  text-align: left;
+  color: var(--imb-fg);
+}
+.imb-dept-picker-row:hover {
+  border-color: var(--imb-accent);
+  background: var(--imb-surface-raised, var(--imb-surface));
+}
+.imb-dept-picker-empty {
+  font-size: var(--imb-text-sm);
+  color: var(--imb-muted);
+  padding: var(--imb-space-3);
+  text-align: center;
+}
+.imb-dept-linkform {
+  display: flex;
+  flex-direction: column;
+  gap: var(--imb-space-3);
+}
+.imb-dept-linkentry {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: var(--imb-space-3);
+  border-bottom: 1px solid var(--imb-border-soft, var(--imb-border));
+}
+.imb-dept-linkentry:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+.imb-dept-kinds {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.imb-dept-kindbtn {
+  font-size: var(--imb-text-sm);
+  font-weight: 600;
+  color: var(--imb-muted);
+  background: var(--imb-surface-sunken);
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-pill);
+  padding: 5px 12px;
+  cursor: pointer;
+}
+.imb-dept-kindbtn.imb-is-on {
+  color: #fff;
+  background: var(--kind-color, var(--imb-accent));
+  border-color: var(--kind-color, var(--imb-accent));
+}
+.imb-dept-edge-input {
+  font: inherit;
+  font-size: var(--imb-text-sm);
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-md);
+  background: var(--imb-surface-raised, var(--imb-surface));
+  color: var(--imb-fg);
+}

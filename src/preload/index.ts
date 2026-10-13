@@ -8,15 +8,25 @@ import type {
   ChatParticipantUpdate,
   ChatSummary,
   CronJobInfo,
+  Department,
+  DepartmentEdge,
+  DepartmentEdgeInput,
+  DepartmentEdgeMove,
+  DepartmentGraph,
+  DepartmentInput,
+  DepartmentLayout,
   Employee,
   EmployeeDeleteResult,
   EmployeeInput,
+  EmployeeLink,
+  EmployeeLinkInput,
   EmployeeSession,
   InstalledSkill,
   IntegrationConfigPatch,
   IntegrationPlatform,
   IntegrationQrState,
   IntegrationState,
+  LinkPatch,
   McpServer,
   McpServerInput,
   Message,
@@ -360,6 +370,104 @@ const api = {
       ipcRenderer.invoke("tasks:archive", entry) as Promise<ArchivedTask[]>,
     unarchive: (key: string) =>
       ipcRenderer.invoke("tasks:unarchive", key) as Promise<ArchivedTask[]>,
+  },
+
+  departments: {
+    /** The whole canvas: department tiles (with members) plus their links. */
+    graph: () =>
+      ipcRenderer.invoke("departments:graph") as Promise<DepartmentGraph>,
+    create: (input: DepartmentInput) =>
+      ipcRenderer.invoke("departments:create", input) as Promise<Department>,
+    update: (id: number, input: DepartmentInput) =>
+      ipcRenderer.invoke(
+        "departments:update",
+        id,
+        input,
+      ) as Promise<Department | null>,
+    remove: (id: number) =>
+      ipcRenderer.invoke("departments:delete", id) as Promise<boolean>,
+    /** Commit a batch of dragged/resized tiles. */
+    setLayout: (layouts: DepartmentLayout[]) =>
+      ipcRenderer.invoke("departments:setLayout", layouts) as Promise<void>,
+    addMember: (
+      departmentId: number,
+      employeeId: number,
+      roleInDept?: string,
+      isLead?: boolean,
+      reportsTo?: number | null,
+    ) =>
+      ipcRenderer.invoke(
+        "departments:addMember",
+        departmentId,
+        employeeId,
+        roleInDept ?? "",
+        isLead ?? false,
+        reportsTo ?? null,
+      ) as Promise<Department | null>,
+    removeMember: (departmentId: number, employeeId: number) =>
+      ipcRenderer.invoke(
+        "departments:removeMember",
+        departmentId,
+        employeeId,
+      ) as Promise<Department | null>,
+    setMemberParent: (
+      departmentId: number,
+      employeeId: number,
+      parentEmployeeId: number | null,
+    ) =>
+      ipcRenderer.invoke(
+        "departments:setMemberParent",
+        departmentId,
+        employeeId,
+        parentEmployeeId,
+      ) as Promise<Department | null>,
+    addPersonLink: (input: EmployeeLinkInput) =>
+      ipcRenderer.invoke(
+        "departments:addPersonLink",
+        input,
+      ) as Promise<EmployeeLink>,
+    updatePersonLink: (id: number, patch: LinkPatch) =>
+      ipcRenderer.invoke(
+        "departments:updatePersonLink",
+        id,
+        patch,
+      ) as Promise<EmployeeLink | null>,
+    removePersonLink: (id: number) =>
+      ipcRenderer.invoke(
+        "departments:removePersonLink",
+        id,
+      ) as Promise<boolean>,
+    addEdge: (input: DepartmentEdgeInput) =>
+      ipcRenderer.invoke(
+        "departments:addEdge",
+        input,
+      ) as Promise<DepartmentEdge>,
+    updateEdge: (id: number, patch: LinkPatch) =>
+      ipcRenderer.invoke(
+        "departments:updateEdge",
+        id,
+        patch,
+      ) as Promise<DepartmentEdge | null>,
+    removeEdge: (id: number) =>
+      ipcRenderer.invoke("departments:removeEdge", id) as Promise<boolean>,
+    moveEdge: (id: number, input: DepartmentEdgeMove) =>
+      ipcRenderer.invoke(
+        "departments:moveEdge",
+        id,
+        input,
+      ) as Promise<DepartmentEdge | null>,
+    movePersonLink: (
+      id: number,
+      input: { fromEmployeeId: number; toEmployeeId: number },
+    ) =>
+      ipcRenderer.invoke(
+        "departments:movePersonLink",
+        id,
+        input,
+      ) as Promise<EmployeeLink | null>,
+    /** Fired when the canvas changes in main (e.g. the agent's tools). */
+    onChanged: (cb: () => void) =>
+      on<unknown>("departments:changed", () => cb()),
   },
 
   providers: {

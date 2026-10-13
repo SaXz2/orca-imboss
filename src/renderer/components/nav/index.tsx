@@ -11,6 +11,7 @@ import {
   IconApp,
   IconChat,
   IconCollapse,
+  IconDepartments,
   IconEmployees,
   IconGear,
   IconMcp,
@@ -45,6 +46,12 @@ const NAV_ITEMS: NavItem[] = [
     module: "tasks",
     labelKey: "Tasks",
     icon: IconTasks,
+    section: "main",
+  },
+  {
+    module: "departments",
+    labelKey: "Departments",
+    icon: IconDepartments,
     section: "main",
   },
   {
