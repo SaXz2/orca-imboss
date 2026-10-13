@@ -44,7 +44,7 @@ interface NavItem {
   module: AppModule;
   labelKey: string;
   icon: (props: { className?: string }) => React.JSX.Element;
-  section?: "main" | "miniapp" | "bottom";
+  section?: "main" | "tools" | "miniapp" | "bottom";
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -60,12 +60,12 @@ const NAV_ITEMS: NavItem[] = [
     icon: IconEmployees,
     section: "main",
   },
-  { module: "mcp", labelKey: "MCP", icon: IconMcp, section: "main" },
+  { module: "mcp", labelKey: "MCP", icon: IconMcp, section: "tools" },
   {
     module: "skills",
     labelKey: "Skills",
     icon: IconSkills,
-    section: "main",
+    section: "tools",
   },
   {
     module: "settings",
@@ -132,6 +132,7 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
   );
 
   const main = NAV_ITEMS.filter((i) => i.section === "main");
+  const tools = NAV_ITEMS.filter((i) => i.section === "tools");
   const bottom = NAV_ITEMS.filter((i) => i.section === "bottom");
   const miniApps = data.miniapps.items;
   const miniAppKeys = miniApps.map((app) => `miniapp:${app.id}`);
@@ -177,6 +178,14 @@ export function Nav({ collapsed, onToggle }: NavProps): React.JSX.Element {
         </div>
         <div className="imb-nav-divider" />
         <div className="imb-scroll">
+          {tools.length > 0 && (
+            <div className="imb-nav-items">
+              <div className="imb-nav-section">{t("Tools")}</div>
+              {tools.map((item) => (
+                <NavButton key={item.module} item={item} collapsed={collapsed} />
+              ))}
+            </div>
+          )}
           {miniApps.length > 0 && (
             <DndContext
               sensors={sensors}
