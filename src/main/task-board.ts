@@ -10,7 +10,7 @@ import { getDB } from "./db";
 import * as dbEmployees from "./db/employees";
 import { parseJsonObject } from "./db/json";
 import { authoredCounts, reactionsFor } from "./db/task-thread";
-import { ensureProgressTask, listManualTasks } from "./db/tasks";
+import { ensureProgressTask, listTasks } from "./db/tasks";
 import { listArchivedTasks } from "./task-archive";
 
 /**
@@ -34,7 +34,9 @@ function parseSteps(raw: string | null | undefined): MessageStep[] {
     const status = record["status"];
     if (
       typeof record["name"] !== "string" ||
-      (status !== "done" && status !== "busy" && status !== "pending" &&
+      (status !== "done" &&
+        status !== "busy" &&
+        status !== "pending" &&
         status !== "interrupted")
     ) {
       continue;
@@ -65,57 +67,14 @@ interface ProgressRow {
   content: string | null;
   steps: string | null;
   created_at: number;
+  department_id: number | null;
 }
 
 export function listBoardCards(): BoardCard[] {
-  const cards: BoardCard[] = [];
-
-  const tasks = listManualTasks();
-
-  for (const task of tasks) {
-    cards.push({
-      key: `task:${task.id}`,
-      source: "task",
-      refId: task.id,
-      title: task.title,
-      detail: task.detail,
-      category: task.category,
-      flow: task.flow,
-      status: task.status,
-      closeReason: task.closeReason,
-      assignees: task.assignees,
-      updatedAt: task.updatedAt,
-      steps: [],
-      chatId: null,
-      workChatId: null,
-      commentCount: 0,
-      reactions: { ...EMPTY_REACTIONS },
-      threadId: task.id,
-      progressKey: null,
-    });
-  }
-
-  // Each progress card the assistant posts is one task; its steps are the
-  // per-employee sub-tasks. The assistant re-posts a card as work advances, so
-  // only the newest card per (chat, title) is kept — otherwise one task would
-  // show up several times. Live session activity overlays the stored status so
-  // the board reflects what is actually running right now.
-  const rows = getDB()
-    .prepare(
-      `SELECT id, chat_id, content, steps, created_at
-         FROM messages
-        WHERE kind = 'progress'
-        ORDER BY id DESC
-        LIMIT 400`,
-    )
-    .all() as ProgressRow[];
-
   const people = dbEmployees.listEmployees();
   const archived = new Set(listArchivedTasks().map((entry) => entry.key));
-  const seen = new Set<string>();
 
-  // Employee id → the chats they are running in right now (built lazily; a
-  // board listing touches only the assignees that actually appear).
+  // Employee id → the chats they are running in right now (built lazily).
   const activeChats = new Map<number, Set<number>>();
   const chatsOf = (employeeId: number): Set<number> => {
     let chats = activeChats.get(employeeId);
@@ -126,29 +85,41 @@ export function listBoardCards(): BoardCard[] {
     return chats;
   };
 
+  // Pass 1 — the assistant's progress messages. Each one materialises (or
+  // refreshes) a real task and records its live details. The task row is the
+  // board's single source of truth; this pass only feeds it.
+  interface Live {
+    steps: MessageStep[];
+    status: TaskStatus;
+    closeReason: BoardCard["closeReason"];
+    chatId: number | null;
+    updatedAt: number;
+  }
+  const live = new Map<number, Live>();
+  const rows = getDB()
+    .prepare(
+      `SELECT id, chat_id, content, steps, created_at, department_id
+         FROM messages
+        WHERE kind = 'progress'
+        ORDER BY id DESC
+        LIMIT 400`,
+    )
+    .all() as ProgressRow[];
+  const seen = new Set<string>();
   for (const row of rows) {
     const steps = parseSteps(row.steps);
     const title = (row.content ?? "").trim();
     if (title.length === 0 && steps.length === 0) continue;
 
-    // The chat the task's people actually work in — created once per task, so
-    // it is a stable identity even though the assistant re-posts the card with
-    // a slightly different title ("… · 进度" → "… · 已完成").
     const workChatId = taskGroupChatId(row.chat_id, row.id) ?? row.chat_id;
     const progressKey =
       workChatId !== row.chat_id
         ? `group:${workChatId}`
         : `${row.chat_id}:${title}`;
-
-    // Newest card wins for a given task in a given conversation.
     if (seen.has(progressKey)) continue;
     seen.add(progressKey);
-
-    // Archived tasks are hidden from the board (they live in the archive view).
     if (archived.has(`progress:${row.id}`)) continue;
 
-    // Owner names may arrive without an id (older cards); resolve them once so
-    // the board, the steps view and the per-employee tallies all agree.
     const owned = steps.map((step) => {
       if (step.employeeId !== undefined) return step;
       const person = people.find(
@@ -158,7 +129,6 @@ export function listBoardCards(): BoardCard[] {
       );
       return person ? { ...step, employeeId: person.id } : step;
     });
-
     const assignees = [
       ...new Set(
         owned
@@ -166,15 +136,8 @@ export function listBoardCards(): BoardCard[] {
           .filter((id): id is number => typeof id === "number"),
       ),
     ];
-
-    // Every card owns a real task, materialised here, so it can carry a thread
-    // (discussion, feedback, references, close) without the view having to
-    // create one first.
     const flow = owned.map((step) => step.name).join(" → ");
     const derived = statusFromSteps(owned);
-    // Live only upgrades work that is not already finished, and only when the
-    // activity is in *this* task's chats — someone busy elsewhere must not drag
-    // a finished card back to "in progress".
     const activeHere =
       derived !== "done" &&
       owned.some((step) => {
@@ -187,30 +150,49 @@ export function listBoardCards(): BoardCard[] {
       title: title || t("Untitled"),
       flow,
       status: activeHere ? "running" : derived,
+      departmentId: row.department_id,
       assignees,
       workChatId,
     });
     const closed = task.status === "closed";
-
-    cards.push({
-      key: `progress:${row.id}`,
-      source: "progress",
-      refId: row.id,
-      title: title || t("Untitled"),
-      detail: task.detail,
-      category: task.category,
-      flow: task.flow || flow,
+    live.set(task.id, {
+      steps: owned,
       status: closed ? "closed" : activeHere ? "running" : derived,
       closeReason: closed ? task.closeReason : null,
-      assignees,
-      updatedAt: row.created_at,
-      steps: owned,
       chatId: row.chat_id,
-      workChatId,
+      updatedAt: row.created_at,
+    });
+  }
+
+  // Pass 2 — one card per task (the single source). A manual task uses its own
+  // fields; a promoted task whose progress message is gone keeps its own row
+  // and is shown as closed history.
+  const cards: BoardCard[] = [];
+  for (const task of listTasks()) {
+    if (archived.has(`task:${task.id}`)) continue;
+    const info = live.get(task.id);
+    const gone = info === undefined && task.progressKey !== null;
+    const status: TaskStatus = gone ? "closed" : (info?.status ?? task.status);
+    cards.push({
+      key: `task:${task.id}`,
+      source: "task",
+      refId: task.id,
+      title: task.title,
+      detail: task.detail,
+      category: task.category,
+      flow: task.flow,
+      status,
+      closeReason: gone ? "completed" : (info?.closeReason ?? task.closeReason),
+      assignees: task.assignees,
+      departmentId: task.departmentId,
+      updatedAt: info?.updatedAt ?? task.updatedAt,
+      steps: info?.steps ?? [],
+      chatId: info?.chatId ?? null,
+      workChatId: task.workChatId,
       commentCount: 0,
       reactions: { ...EMPTY_REACTIONS },
-      progressKey,
       threadId: task.id,
+      progressKey: task.progressKey,
     });
   }
 
@@ -235,7 +217,10 @@ export function listBoardCards(): BoardCard[] {
  * content is the id of the group chat it just created; that group is where the
  * assignees actually work, so it is the chat an assignee's session lives in.
  */
-function taskGroupChatId(rootChatId: number, beforeMessageId: number): number | null {
+function taskGroupChatId(
+  rootChatId: number,
+  beforeMessageId: number,
+): number | null {
   const row = getDB()
     .prepare(
       `SELECT content FROM messages

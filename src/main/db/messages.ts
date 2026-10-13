@@ -194,10 +194,16 @@ export function appendMessage(
 
   const createdAt = Math.floor(Date.now() / 1000);
   const attachmentsJson = serializeAttachments(attachments, attachmentTotal);
+  const departmentId =
+    typeof options.departmentId === "number" &&
+    Number.isSafeInteger(options.departmentId) &&
+    options.departmentId >= 1
+      ? options.departmentId
+      : null;
   const result = db
     .prepare(
-      "INSERT INTO messages (chat_id, sender_employee_id, kind, content, quoted_text, steps, attachments, created_at) " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO messages (chat_id, sender_employee_id, kind, content, quoted_text, steps, attachments, created_at, department_id) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .run(
       chatId,
@@ -208,6 +214,7 @@ export function appendMessage(
       steps !== undefined ? JSON.stringify({ steps }) : null,
       attachmentsJson,
       createdAt,
+      departmentId,
     );
 
   // Unread bump lives here (single append write path): assistant/employee

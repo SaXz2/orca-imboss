@@ -48,8 +48,13 @@ function toTask(row: TaskRow): Task {
     flow: row.flow,
     status,
     closeReason:
-      status === "closed" ? (isCloseReason(row.close_reason) ? row.close_reason : "completed") : null,
+      status === "closed"
+        ? isCloseReason(row.close_reason)
+          ? row.close_reason
+          : "completed"
+        : null,
     assignees: parseNumberArray(row.assignees),
+    departmentId: row.department_id ?? null,
     sortOrder: row.sort_order,
     progressKey: row.progress_key,
     workChatId: row.work_chat_id,
@@ -66,18 +71,6 @@ export function listTasks(): Task[] {
   ).map(toTask);
 }
 
-/** Hand-written tasks only; promoted progress tasks are shown via their card. */
-export function listManualTasks(): Task[] {
-  return (
-    getDB()
-      .prepare(
-        "SELECT * FROM tasks WHERE progress_key IS NULL " +
-          "ORDER BY sort_order ASC, id ASC",
-      )
-      .all() as TaskRow[]
-  ).map(toTask);
-}
-
 /**
  * Promote a progress-derived board card into a real task, so it can carry a
  * thread. Idempotent on `progressKey`; the task's fields track the latest card
@@ -90,9 +83,11 @@ export function ensureProgressTask(input: {
   status?: TaskStatus;
   assignees?: number[];
   workChatId?: number | null;
+  departmentId?: number | null;
 }): Task {
   const key = input.progressKey.slice(0, 200);
   if (key.length === 0) throw new Error("A progress key is required.");
+  const departmentId = cleanDepartmentId(input.departmentId);
   const db = getDB();
   const existing = db
     .prepare("SELECT id, status FROM tasks WHERE progress_key = ?")
@@ -104,7 +99,7 @@ export function ensureProgressTask(input: {
     const nextStatus = existing.status === "closed" ? "closed" : status;
     db.prepare(
       "UPDATE tasks SET title = ?, flow = ?, status = ?, assignees = ?, " +
-        "work_chat_id = ?, " +
+        "work_chat_id = ?, department_id = COALESCE(?, department_id), " +
         "updated_at = CAST(strftime('%s', 'now') AS INTEGER) WHERE id = ?",
     ).run(
       cleanText(input.title, MAX_TITLE) || "—",
@@ -112,18 +107,22 @@ export function ensureProgressTask(input: {
       nextStatus,
       stringifyArray(cleanAssignees(input.assignees)),
       typeof input.workChatId === "number" ? input.workChatId : null,
+      departmentId,
       existing.id,
     );
     const updated = getTask(existing.id);
     if (updated) return updated;
   }
   const maxRow = db
-    .prepare("SELECT COALESCE(MAX(sort_order), 0) AS m FROM tasks WHERE status = ?")
+    .prepare(
+      "SELECT COALESCE(MAX(sort_order), 0) AS m FROM tasks WHERE status = ?",
+    )
     .get(status) as { m: number };
   const result = db
     .prepare(
       "INSERT INTO tasks (title, detail, category, flow, status, assignees, " +
-        "sort_order, progress_key, work_chat_id) VALUES (?, '', '', ?, ?, ?, ?, ?, ?)",
+        "sort_order, progress_key, work_chat_id, department_id) " +
+        "VALUES (?, '', '', ?, ?, ?, ?, ?, ?, ?)",
     )
     .run(
       cleanText(input.title, MAX_TITLE) || "—",
@@ -133,6 +132,7 @@ export function ensureProgressTask(input: {
       maxRow.m + 1,
       key,
       typeof input.workChatId === "number" ? input.workChatId : null,
+      departmentId,
     );
   const id = Number(result.lastInsertRowid);
   logTaskEvent(id, "created", { meta: { title: input.title, status } });
@@ -143,8 +143,7 @@ export function ensureProgressTask(input: {
 
 export function getTask(id: number): Task | null {
   const row = getDB().prepare("SELECT * FROM tasks WHERE id = ?").get(id) as
-    | TaskRow
-    | undefined;
+    TaskRow | undefined;
   return row ? toTask(row) : null;
 }
 
@@ -153,6 +152,12 @@ function validateTitle(value: unknown): string {
   if (title.length === 0) throw new Error("A task title is required.");
   if (title.length > MAX_TITLE) throw new Error("Task title is too long.");
   return title;
+}
+
+function cleanDepartmentId(value: unknown): number | null {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 1
+    ? value
+    : null;
 }
 
 function cleanText(value: unknown, max: number): string {
@@ -164,10 +169,20 @@ function cleanAssignees(value: unknown): number[] {
   return [
     ...new Set(
       value
-        .filter((v): v is number => typeof v === "number" && Number.isSafeInteger(v) && v >= 0)
+        .filter(
+          (v): v is number =>
+            typeof v === "number" && Number.isSafeInteger(v) && v >= 0,
+        )
         .slice(0, MAX_ASSIGNEES),
     ),
   ];
+}
+
+/** A department id (>= 1) or null. */
+function cleanDeptId(value: unknown): number | null {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 1
+    ? value
+    : null;
 }
 
 function now(): number {
@@ -186,12 +201,14 @@ export function createTask(input: TaskInput): Task {
   const title = validateTitle(input.title);
   const status = isStatus(input.status) ? input.status : "pending";
   const maxRow = db
-    .prepare("SELECT COALESCE(MAX(sort_order), 0) AS m FROM tasks WHERE status = ?")
+    .prepare(
+      "SELECT COALESCE(MAX(sort_order), 0) AS m FROM tasks WHERE status = ?",
+    )
     .get(status) as { m: number };
   const result = db
     .prepare(
-      "INSERT INTO tasks (title, detail, category, flow, status, assignees, sort_order) " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO tasks (title, detail, category, flow, status, assignees, department_id, sort_order) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .run(
       title,
@@ -200,6 +217,7 @@ export function createTask(input: TaskInput): Task {
       cleanText(input.flow, MAX_FLOW),
       status,
       stringifyArray(cleanAssignees(input.assignees)),
+      cleanDeptId(input.departmentId),
       maxRow.m + 1,
     );
   const id = Number(result.lastInsertRowid);
@@ -221,7 +239,9 @@ export function updateTask(id: number, input: TaskInput): Task | null {
     values.push(title);
     if (title !== current.title) {
       events.push(() =>
-        logTaskEvent(id, "renamed", { meta: { from: current.title, to: title } }),
+        logTaskEvent(id, "renamed", {
+          meta: { from: current.title, to: title },
+        }),
       );
     }
   }
@@ -269,10 +289,12 @@ export function updateTask(id: number, input: TaskInput): Task | null {
     const before = [...current.assignees].sort().join(",");
     const after = [...assignees].sort().join(",");
     if (before !== after) {
-      events.push(() =>
-        logTaskEvent(id, "assigned", { meta: { assignees } }),
-      );
+      events.push(() => logTaskEvent(id, "assigned", { meta: { assignees } }));
     }
+  }
+  if (input.departmentId !== undefined) {
+    sets.push("department_id = ?");
+    values.push(cleanDeptId(input.departmentId));
   }
   if (sets.length === 0) return current;
   sets.push("updated_at = CAST(strftime('%s', 'now') AS INTEGER)");
@@ -291,7 +313,9 @@ export function moveTask(id: number, status: TaskStatus): Task | null {
   if (current.status === status) return current;
   const db = getDB();
   const maxRow = db
-    .prepare("SELECT COALESCE(MAX(sort_order), 0) AS m FROM tasks WHERE status = ?")
+    .prepare(
+      "SELECT COALESCE(MAX(sort_order), 0) AS m FROM tasks WHERE status = ?",
+    )
     .get(status) as { m: number };
   const closed = status === "closed";
   if (closed) {
@@ -308,7 +332,9 @@ export function moveTask(id: number, status: TaskStatus): Task | null {
     if (current.status === "closed") {
       logTaskEvent(id, "reopened", { meta: { status } });
     } else {
-      logTaskEvent(id, "status", { meta: { from: current.status, to: status } });
+      logTaskEvent(id, "status", {
+        meta: { from: current.status, to: status },
+      });
     }
   }
   return getTask(id);
@@ -347,7 +373,9 @@ export function reopenTask(id: number): Task | null {
   if (current.status !== "closed") return current;
   const db = getDB();
   const maxRow = db
-    .prepare("SELECT COALESCE(MAX(sort_order), 0) AS m FROM tasks WHERE status = 'pending'")
+    .prepare(
+      "SELECT COALESCE(MAX(sort_order), 0) AS m FROM tasks WHERE status = 'pending'",
+    )
     .get() as { m: number };
   db.prepare(
     "UPDATE tasks SET status = 'pending', close_reason = NULL, sort_order = ?, " +

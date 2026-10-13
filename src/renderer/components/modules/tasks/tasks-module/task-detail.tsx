@@ -17,12 +17,7 @@ import {
 } from "../../../icons";
 import { Modal } from "../../../modal";
 import { formatMessageTime } from "../../chat/relative-time";
-import {
-  actorName,
-  CLOSE_REASON_KEYS,
-  COLUMNS,
-  labelColor,
-} from "./task-meta";
+import { actorName, CLOSE_REASON_KEYS, COLUMNS, labelColor } from "./task-meta";
 import { TaskThreadPanel } from "./task-thread-panel";
 
 type EmployeeList = readonly {
@@ -114,7 +109,9 @@ export function TaskDetail({
             {t("Back to board")}
           </button>
         </div>
-        <div className="imb-board-empty">{t("This task no longer exists.")}</div>
+        <div className="imb-board-empty">
+          {t("This task no longer exists.")}
+        </div>
       </div>
     );
   }
@@ -160,7 +157,9 @@ export function TaskDetail({
           <div className="imb-task-detail-title">
             <span className="imb-gh-ref">#{task.id}</span>
             <h2>{task.title}</h2>
-            <span className={cls("imb-task-status-chip", `imb-is-${task.status}`)}>
+            <span
+              className={cls("imb-task-status-chip", `imb-is-${task.status}`)}
+            >
               {statusLabel}
               {closed && task.closeReason
                 ? ` · ${t(CLOSE_REASON_KEYS[task.closeReason])}`

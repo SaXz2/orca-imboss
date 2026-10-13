@@ -26,6 +26,11 @@
   gap: 6px;
   padding: var(--imb-space-2) var(--imb-space-4) 0;
 }
+.imb-board-filter-label {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  padding: 0 4px 0 0;
+}
 
 .imb-filter-chip {
   display: inline-flex;
@@ -85,7 +90,8 @@
   border: 1px solid var(--imb-border-soft);
   border-radius: var(--imb-radius-lg);
   overflow: hidden;
-  transition: border-color var(--imb-motion-fast) var(--imb-ease-standard),
+  transition:
+    border-color var(--imb-motion-fast) var(--imb-ease-standard),
     background var(--imb-motion-fast) var(--imb-ease-standard);
 }
 
@@ -153,7 +159,8 @@
   color: var(--imb-muted);
   cursor: pointer;
   opacity: 0;
-  transition: opacity var(--imb-motion-fast) var(--imb-ease-standard),
+  transition:
+    opacity var(--imb-motion-fast) var(--imb-ease-standard),
     background var(--imb-motion-fast) var(--imb-ease-standard);
 }
 
@@ -194,7 +201,8 @@
   display: flex;
   flex-direction: column;
   gap: 7px;
-  transition: border-color var(--imb-motion-fast) var(--imb-ease-standard),
+  transition:
+    border-color var(--imb-motion-fast) var(--imb-ease-standard),
     box-shadow var(--imb-motion-fast) var(--imb-ease-standard);
 }
 
@@ -212,10 +220,18 @@
   opacity: 0.45;
 }
 
-/* Conversation-derived card: read-only, marked by a left accent rail. */
-/* Progress-derived task: read-only, marked by an accent rail. */
-.imb-gh-card.imb-is-progress {
+/* Every card is a task: the left rail encodes its status, identical for all. */
+.imb-gh-card.imb-st-pending {
+  border-left: 3px solid var(--imb-muted);
+}
+.imb-gh-card.imb-st-running {
+  border-left: 3px solid var(--imb-warn);
+}
+.imb-gh-card.imb-st-done {
   border-left: 3px solid var(--imb-accent);
+}
+.imb-gh-card.imb-st-closed {
+  border-left: 3px solid #8250df;
 }
 
 /* Closed task: the work is done with, so the card recedes. */
@@ -317,7 +333,8 @@
   color: var(--imb-muted);
   cursor: pointer;
   opacity: 0;
-  transition: opacity var(--imb-motion-fast) var(--imb-ease-standard),
+  transition:
+    opacity var(--imb-motion-fast) var(--imb-ease-standard),
     color var(--imb-motion-fast) var(--imb-ease-standard);
 }
 
@@ -679,7 +696,8 @@
   color: var(--imb-muted);
   cursor: pointer;
   opacity: 0;
-  transition: opacity var(--imb-motion-fast) var(--imb-ease-standard),
+  transition:
+    opacity var(--imb-motion-fast) var(--imb-ease-standard),
     color var(--imb-motion-fast) var(--imb-ease-standard);
 }
 

@@ -1,4 +1,9 @@
-import type { TaskCloseReason, TaskEvent, TaskEventKind, TaskStatus } from "@shared/types";
+import type {
+  TaskCloseReason,
+  TaskEvent,
+  TaskEventKind,
+  TaskStatus,
+} from "@shared/types";
 
 /**
  * Task presentation vocabulary: board columns, the label palette, and the
@@ -12,6 +17,7 @@ export const COLUMNS: Array<{ status: TaskStatus; labelKey: string }> = [
   { status: "pending", labelKey: "Pending" },
   { status: "running", labelKey: "In progress" },
   { status: "done", labelKey: "Done" },
+  { status: "closed", labelKey: "Closed" },
 ];
 
 /** Board tag palette (GitHub-like; tint derived from the tag text). */

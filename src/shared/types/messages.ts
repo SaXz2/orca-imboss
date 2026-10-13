@@ -78,6 +78,8 @@ export interface AppendMessageOptions {
   /** Selected text quoted into this message (shown above the body, fed to the model). */
   quotedText?: string;
   steps?: MessageStep[];
+  /** Department this progress belongs to (the derived board task inherits it). */
+  departmentId?: number | null;
   attachments?: MessageAttachment[];
   /**
    * True attachment count when it exceeds `attachments.length` (agent tools

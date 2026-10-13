@@ -21,6 +21,7 @@ export interface EditableTask {
   flow: string;
   status: TaskStatus;
   assignees: number[];
+  departmentId: number | null;
 }
 
 /** Statuses offered by the editor; "closed" is reserved for the close action. */
@@ -53,8 +54,23 @@ export function TaskEditor({
   const [flow, setFlow] = useState("");
   const [status, setStatus] = useState<TaskStatus>("pending");
   const [assignees, setAssignees] = useState<number[]>([]);
+  const [departmentId, setDepartmentId] = useState<number | null>(null);
+  const [departments, setDepartments] = useState<
+    { id: number; name: string }[]
+  >([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void imb.departments
+      .graph()
+      .then((graph) =>
+        setDepartments(
+          graph.departments.map((d) => ({ id: d.id, name: d.name })),
+        ),
+      )
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     if (!open || task === null) return;
@@ -64,6 +80,7 @@ export function TaskEditor({
     setFlow(task.flow);
     setStatus(task.status === "closed" ? "pending" : task.status);
     setAssignees([...task.assignees]);
+    setDepartmentId(task.departmentId);
     setError(null);
   }, [open, task]);
 
@@ -90,6 +107,7 @@ export function TaskEditor({
         flow: flow.trim(),
         status,
         assignees,
+        departmentId,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -169,6 +187,23 @@ export function TaskEditor({
             maxLength={200}
             placeholder={t("e.g. research → draft → review")}
             onChange={(e) => setFlow(e.target.value)}
+          />
+        </Field>
+
+        <Field label={t("Department")} htmlFor="task-department">
+          <Select
+            id="task-department"
+            value={departmentId === null ? "" : String(departmentId)}
+            options={[
+              { value: "", label: t("None") },
+              ...departments.map((d) => ({
+                value: String(d.id),
+                label: d.name || t("Unnamed department"),
+              })),
+            ]}
+            onChange={(value) =>
+              setDepartmentId(value === "" ? null : Number(value))
+            }
           />
         </Field>
 

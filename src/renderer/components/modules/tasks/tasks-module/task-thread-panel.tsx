@@ -362,10 +362,10 @@ export function TaskThreadPanel({
                 >
                   <div className="imb-mention-info">
                     <div className="imb-mention-row-head">
-                      <span className="imb-mention-name">{candidate.title}</span>
-                      <span className="imb-mention-badge">
-                        #{candidate.id}
+                      <span className="imb-mention-name">
+                        {candidate.title}
                       </span>
+                      <span className="imb-mention-badge">#{candidate.id}</span>
                     </div>
                   </div>
                 </button>

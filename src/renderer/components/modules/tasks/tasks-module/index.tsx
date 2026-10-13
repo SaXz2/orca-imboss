@@ -1,5 +1,12 @@
 import { t } from "@shared/l10n";
-import type { ArchivedTask, BoardCard, Task, TaskInput, TaskStatus } from "@shared/types";
+import type {
+  ArchivedTask,
+  BoardCard,
+  Department,
+  Task,
+  TaskInput,
+  TaskStatus,
+} from "@shared/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { cls } from "reactutils";
 import { appStore, useApp } from "../../../../app-store";
@@ -34,15 +41,19 @@ export function TasksModule(): React.JSX.Element {
   const [archived, setArchived] = useState<ArchivedTask[]>([]);
   const [showArchive, setShowArchive] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [departmentFilter, setDepartmentFilter] = useState<number | null>(null);
 
   const reload = useCallback(async (): Promise<void> => {
     try {
-      const [cards, archives] = await Promise.all([
+      const [cards, archives, graph] = await Promise.all([
         imb.tasks.board(),
         imb.tasks.archives(),
+        imb.departments.graph(),
       ]);
       setCards(cards);
       setArchived(archives);
+      setDepartments(graph.departments);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -83,11 +94,17 @@ export function TasksModule(): React.JSX.Element {
     () =>
       cards.filter(
         (card) =>
-          card.status !== "closed" &&
-          (categoryFilter === null || card.category === categoryFilter),
+          (categoryFilter === null || card.category === categoryFilter) &&
+          (departmentFilter === null || card.departmentId === departmentFilter),
       ),
-    [cards, categoryFilter],
+    [cards, categoryFilter, departmentFilter],
   );
+
+  const departmentById = useMemo(() => {
+    const map = new Map<number, Department>();
+    for (const d of departments) map.set(d.id, d);
+    return map;
+  }, [departments]);
 
   const byStatus = useMemo(() => {
     const map: Record<TaskStatus, BoardCard[]> = {
@@ -189,118 +206,158 @@ export function TasksModule(): React.JSX.Element {
       }}
     />
   ) : detailId !== null ? (
-      <TaskDetail
-        key={detailId}
-        taskId={detailId}
-        employees={employees}
-        onBack={() => setDetailId(null)}
-        onEdit={(task: Task) => {
-          setEditing(task);
-          setEditorOpen(true);
-        }}
-        onChanged={reload}
-        onOpenTask={setDetailId}
-      />
-    ) : (
-      <>
-        <div className="imb-chat-header imb-task-head">
-          <div className="imb-task-head-text">
-            <div className="imb-chat-title">{t("Tasks")}</div>
-            <div className="imb-task-sub">
-              {t("${count} tasks", { count: String(visible.length) })}
-            </div>
-          </div>
-          <div className="imb-task-head-actions">
-            <button
-              type="button"
-              className={cls(
-                "imb-task-archive-btn",
-                showArchive && "imb-is-on",
-              )}
-              onClick={() => setShowArchive((on) => !on)}
-            >
-              <IconArchive />
-              {t("Archive")}
-              {archived.length > 0 && (
-                <span className="imb-task-archive-n">{archived.length}</span>
-              )}
-            </button>
+    <TaskDetail
+      key={detailId}
+      taskId={detailId}
+      employees={employees}
+      onBack={() => setDetailId(null)}
+      onEdit={(task: Task) => {
+        setEditing(task);
+        setEditorOpen(true);
+      }}
+      onChanged={reload}
+      onOpenTask={setDetailId}
+    />
+  ) : (
+    <>
+      <div className="imb-chat-header imb-task-head">
+        <div className="imb-task-head-text">
+          <div className="imb-chat-title">{t("Tasks")}</div>
+          <div className="imb-task-sub">
+            {t("${count} tasks", { count: String(visible.length) })}
           </div>
         </div>
+        <div className="imb-task-head-actions">
+          <button
+            type="button"
+            className={cls("imb-task-archive-btn", showArchive && "imb-is-on")}
+            onClick={() => setShowArchive((on) => !on)}
+          >
+            <IconArchive />
+            {t("Archive")}
+            {archived.length > 0 && (
+              <span className="imb-task-archive-n">{archived.length}</span>
+            )}
+          </button>
+        </div>
+      </div>
 
-        {categories.length > 0 && (
-          <div className="imb-board-filters">
+      {categories.length > 0 && (
+        <div className="imb-board-filters">
+          <button
+            type="button"
+            className={cls(
+              "imb-filter-chip",
+              categoryFilter === null && "imb-is-on",
+            )}
+            onClick={() => setCategoryFilter(null)}
+          >
+            {t("All")}
+          </button>
+          {categories.map(([name, count]) => (
             <button
+              key={name}
               type="button"
               className={cls(
                 "imb-filter-chip",
-                categoryFilter === null && "imb-is-on",
+                categoryFilter === name && "imb-is-on",
               )}
-              onClick={() => setCategoryFilter(null)}
+              onClick={() =>
+                setCategoryFilter((current) => (current === name ? null : name))
+              }
             >
-              {t("All")}
+              <span
+                className="imb-filter-dot"
+                style={{ background: labelColor(name) }}
+              />
+              {name}
+              <span className="imb-filter-n">{count}</span>
             </button>
-            {categories.map(([name, count]) => (
-              <button
-                key={name}
-                type="button"
-                className={cls(
-                  "imb-filter-chip",
-                  categoryFilter === name && "imb-is-on",
-                )}
-                onClick={() =>
-                  setCategoryFilter((current) =>
-                    current === name ? null : name,
-                  )
-                }
-              >
-                <span
-                  className="imb-filter-dot"
-                  style={{ background: labelColor(name) }}
-                />
-                {name}
-                <span className="imb-filter-n">{count}</span>
-              </button>
-            ))}
-          </div>
-        )}
+          ))}
+        </div>
+      )}
 
-        <div className="imb-board">
-          {COLUMNS.map((column) => (
-            <div
-              key={column.status}
+      {departments.length > 0 && (
+        <div className="imb-board-filters">
+          <span className="imb-board-filter-label">{t("Department")}</span>
+          <button
+            type="button"
+            className={cls(
+              "imb-filter-chip",
+              departmentFilter === null && "imb-is-on",
+            )}
+            onClick={() => setDepartmentFilter(null)}
+          >
+            {t("All")}
+          </button>
+          {departments.map((d) => (
+            <button
+              key={d.id}
+              type="button"
               className={cls(
-                "imb-board-col",
-                `imb-col-${column.status}`,
-                overStatus === column.status && "imb-is-drop",
+                "imb-filter-chip",
+                departmentFilter === d.id && "imb-is-on",
               )}
-              onDragOver={(e) => {
-                e.preventDefault();
-                if (overStatus !== column.status) setOverStatus(column.status);
-              }}
-              onDragLeave={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
-                  setOverStatus((s) => (s === column.status ? null : s));
-                }
-              }}
-              onDrop={() => void handleDrop(column.status)}
+              onClick={() =>
+                setDepartmentFilter((current) =>
+                  current === d.id ? null : d.id,
+                )
+              }
             >
-              <div className="imb-board-col-head">
-                <span
-                  className={`imb-col-dot imb-${column.status}`}
-                  aria-hidden="true"
-                />
-                <span className="imb-col-name">{t(column.labelKey)}</span>
-                <span className="imb-col-count">
-                  {byStatus[column.status].length}
-                </span>
-              </div>
-              <div className="imb-board-col-body">
-                {byStatus[column.status].map((card) => (
+              <span
+                className="imb-filter-dot"
+                style={{ background: deptColor(d) }}
+              />
+              {d.name || t("Unnamed department")}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="imb-board">
+        {COLUMNS.map((column) => (
+          <div
+            key={column.status}
+            className={cls(
+              "imb-board-col",
+              `imb-col-${column.status}`,
+              overStatus === column.status && "imb-is-drop",
+            )}
+            onDragOver={(e) => {
+              e.preventDefault();
+              if (overStatus !== column.status) setOverStatus(column.status);
+            }}
+            onDragLeave={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+                setOverStatus((s) => (s === column.status ? null : s));
+              }
+            }}
+            onDrop={() => void handleDrop(column.status)}
+          >
+            <div className="imb-board-col-head">
+              <span
+                className={`imb-col-dot imb-${column.status}`}
+                aria-hidden="true"
+              />
+              <span className="imb-col-name">{t(column.labelKey)}</span>
+              <span className="imb-col-count">
+                {byStatus[column.status].length}
+              </span>
+            </div>
+            <div className="imb-board-col-body">
+              {byStatus[column.status].map((card) => {
+                const dept =
+                  card.departmentId !== null
+                    ? (departmentById.get(card.departmentId) ?? null)
+                    : null;
+                return (
                   <TaskCard
                     key={card.key}
                     card={card}
                     employees={employees}
+                    department={
+                      dept ? { name: dept.name, color: deptColor(dept) } : null
+                    }
                     dragging={dragKey === card.key}
                     onDragStart={() => setDragKey(card.key)}
                     onDragEnd={() => {
@@ -308,27 +365,28 @@ export function TasksModule(): React.JSX.Element {
                       setOverStatus(null);
                     }}
                     onOpen={() =>
-                      card.source === "progress"
+                      card.steps.length > 0
                         ? setProgressCard(card)
                         : setDetailId(card.refId)
                     }
                     onEdit={() => openEdit(card)}
                     onArchive={() => void archiveCurrent(card)}
                   />
-                ))}
-                {!loading && byStatus[column.status].length === 0 && (
-                  <div className="imb-board-empty">{t("No tasks")}</div>
-                )}
-              </div>
+                );
+              })}
+              {!loading && byStatus[column.status].length === 0 && (
+                <div className="imb-board-empty">{t("No tasks")}</div>
+              )}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
+      </div>
 
-        {error !== null && (
-          <p className="imb-error-text imb-chat-error">{error}</p>
-        )}
-      </>
-    );
+      {error !== null && (
+        <p className="imb-error-text imb-chat-error">{error}</p>
+      )}
+    </>
+  );
 
   return (
     <>
@@ -357,5 +415,21 @@ function editableFromCard(card: BoardCard): EditableTask {
     flow: card.flow,
     status: card.status,
     assignees: card.assignees,
+    departmentId: card.departmentId,
   };
+}
+
+/** Department badge color (stored color, else the palette). */
+function deptColor(d: Department): string {
+  if (d.color) return d.color;
+  if (d.kind === "pool") return "#9b8b73";
+  const palette = [
+    "#e64980",
+    "#4c6ef5",
+    "#0ca678",
+    "#f59f00",
+    "#7950f2",
+    "#1098ad",
+  ];
+  return palette[d.id % palette.length];
 }

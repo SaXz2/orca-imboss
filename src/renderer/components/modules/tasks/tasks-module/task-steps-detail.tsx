@@ -189,7 +189,9 @@ export function TaskStepsDetail({
         <div className="imb-task-detail-pane">
           <div className="imb-task-detail-title">
             <h2>{card.title}</h2>
-            <span className={cls("imb-task-status-chip", `imb-is-${card.status}`)}>
+            <span
+              className={cls("imb-task-status-chip", `imb-is-${card.status}`)}
+            >
               {t(statusLabel)}
             </span>
           </div>
