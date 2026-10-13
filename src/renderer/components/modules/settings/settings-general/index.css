@@ -140,3 +140,26 @@
   outline: none;
   box-shadow: var(--imb-focus-ring);
 }
+
+/* Brand logo picker (Settings → General). */
+.imb-brand-logo-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.imb-brand-logo-preview {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: var(--imb-radius-md);
+  object-fit: contain;
+  border: 1px solid var(--imb-border);
+  background: var(--imb-surface);
+}
+
+.imb-brand-logo-empty {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  margin-right: 4px;
+}

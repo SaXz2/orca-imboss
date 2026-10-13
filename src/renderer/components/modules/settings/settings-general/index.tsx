@@ -3,11 +3,12 @@ import { SettingKeys } from "@shared/constants/settings";
 import { t } from "@shared/l10n";
 import type { ModelOption, WorkDirState } from "@shared/types";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useApp } from "../../../../app-store";
+import { appStore, useApp } from "../../../../app-store";
 import { setLocale } from "../../../../locale";
 import { DetailBody } from "../../../detail-pane/detail-body";
 import { DetailHead } from "../../../detail-pane/detail-head";
 import { Field } from "../../../field";
+import { AvatarCropModal } from "../../employees/avatar-crop-modal";
 import { IconPlus, IconTrash } from "../../../icons";
 import { Input } from "../../../input";
 import { Select } from "../../../select";
@@ -33,6 +34,12 @@ export function SettingsGeneral(): React.JSX.Element {
   const [models, setModels] = useState<ModelOption[]>([]);
   const [workdir, setWorkdir] = useState<WorkDirState | null>(null);
   const [workdirError, setWorkdirError] = useState<string | null>(null);
+  const [brandNameDraft, setBrandNameDraft] = useState("");
+  const [brandLogoDraft, setBrandLogoDraft] = useState<string | null>(null);
+  const [brandError, setBrandError] = useState<string | null>(null);
+  const brandLogoInputRef = useRef<HTMLInputElement>(null);
+  const [cropFile, setCropFile] = useState<File | null>(null);
+  const [cropOpen, setCropOpen] = useState(false);
   const envTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const persistEnv = useCallback((next: EnvVar[]): void => {
@@ -51,12 +58,16 @@ export function SettingsGeneral(): React.JSX.Element {
         envStored,
         models,
         workDir,
+        brandNameStored,
+        brandLogoStored,
       ] = await Promise.all([
         imb.settings.get(SettingKeys.DefaultModel),
         imb.settings.get(SettingKeys.DefaultThinkingLevel),
         imb.settings.get(SettingKeys.UserEnv),
         imb.models.list(),
         imb.workdir.get(),
+        imb.settings.get(SettingKeys.BrandName),
+        imb.settings.get(SettingKeys.BrandLogo),
       ]);
       if (!alive) return;
       setDefaultModel(defaultModelStored ?? "");
@@ -64,6 +75,8 @@ export function SettingsGeneral(): React.JSX.Element {
       setEnvVars(parseEnv(envStored));
       setModels(models);
       setWorkdir(workDir);
+      setBrandNameDraft(brandNameStored ?? "");
+      setBrandLogoDraft(brandLogoStored ? brandLogoStored : null);
     })();
     return () => {
       alive = false;
@@ -110,6 +123,46 @@ export function SettingsGeneral(): React.JSX.Element {
     updateEnv(envVars.filter((_, i) => i !== index));
   }
 
+  function onBrandNameChange(value: string): void {
+    setBrandNameDraft(value);
+    appStore.setBrand(value, brandLogoDraft);
+  }
+
+  function onBrandLogoPicked(file: File | undefined): void {
+    if (!file) return;
+    // Crop the picked image with the same interactive cropper the employee
+    // avatars use, then store the (compressed) result as a data URL.
+    setCropFile(file);
+    setCropOpen(true);
+  }
+
+  function onBrandCropConfirm(
+    croppedData: Uint8Array,
+    ext: string,
+  ): Promise<void> {
+    return new Promise((resolve) => {
+      const blob = new Blob([croppedData as unknown as BlobPart], {
+        type: `image/${ext}`,
+      });
+      const reader = new FileReader();
+      reader.onload = () => {
+        const url = typeof reader.result === "string" ? reader.result : null;
+        setBrandLogoDraft(url);
+        appStore.setBrand(brandNameDraft, url);
+        setBrandError(null);
+        resolve();
+      };
+      reader.onerror = () => resolve();
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  function clearBrandLogo(): void {
+    setBrandLogoDraft(null);
+    appStore.setBrand(brandNameDraft, null);
+    setBrandError(null);
+  }
+
   return (
     <>
       <DetailHead
@@ -118,6 +171,63 @@ export function SettingsGeneral(): React.JSX.Element {
         sub={t("App language and basic settings")}
       />
       <DetailBody>
+        <Field
+          label={t("App name")}
+          htmlFor="settings-brand-name"
+          hint={t("Shown at the top of the sidebar. Leave empty for \"imboss\".")}
+        >
+          <Input
+            id="settings-brand-name"
+            value={brandNameDraft}
+            maxLength={40}
+            placeholder="imboss"
+            onChange={(e) => onBrandNameChange(e.target.value)}
+          />
+        </Field>
+
+        <Field
+          label={t("App avatar")}
+          hint={t("Upload a logo image (PNG/SVG, max 1 MB).")}
+          error={brandError ?? undefined}
+        >
+          <div className="imb-brand-logo-row">
+            {brandLogoDraft ? (
+              <img
+                className="imb-brand-logo-preview"
+                src={brandLogoDraft}
+                alt=""
+              />
+            ) : (
+              <span className="imb-brand-logo-empty">{t("Default")}</span>
+            )}
+            <button
+              type="button"
+              className="imb-env-add-btn"
+              onClick={() => brandLogoInputRef.current?.click()}
+            >
+              {t("Change avatar")}
+            </button>
+            {brandLogoDraft && (
+              <button
+                type="button"
+                className="imb-env-add-btn"
+                onClick={clearBrandLogo}
+              >
+                {t("Remove")}
+              </button>
+            )}
+            <input
+              ref={brandLogoInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => {
+                onBrandLogoPicked(e.target.files?.[0]);
+                e.target.value = "";
+              }}
+            />
+          </div>
+        </Field>
         <Field
           label={t("App language")}
           hint={t(
@@ -270,6 +380,16 @@ export function SettingsGeneral(): React.JSX.Element {
           </div>
         </div>
       </DetailBody>
+
+      <AvatarCropModal
+        open={cropOpen}
+        imageFile={cropFile}
+        onClose={() => {
+          setCropOpen(false);
+          setCropFile(null);
+        }}
+        onConfirm={onBrandCropConfirm}
+      />
     </>
   );
 }

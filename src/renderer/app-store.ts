@@ -99,6 +99,18 @@ export const appStore = proxy({
   locale: imb.initialLocale,
   theme: { mode: "system", color: "#07C160" } as ThemeState,
   navCollapsed: false,
+  /** Custom brand name shown in the sidebar (empty = the built-in "imboss"). */
+  brandName: "",
+  /** Custom brand logo image data URL (null = the built-in logo). */
+  brandLogo: null as string | null,
+
+  /** Set the sidebar brand name and logo ("" / null restore the defaults). */
+  setBrand(name: string, logo: string | null): void {
+    appStore.brandName = name;
+    appStore.brandLogo = logo;
+    void imb.settings.set(SettingKeys.BrandName, name);
+    void imb.settings.set(SettingKeys.BrandLogo, logo ?? "");
+  },
   module: "chat" as AppModule,
 
   /** Folder id of the mini app currently open in `module === "miniapp"`. */
@@ -867,16 +879,29 @@ export async function initAppStore(): Promise<void> {
     imb.settings.get(SettingKeys.NavCollapse),
     imb.settings.get(SettingKeys.Module),
     imb.settings.get(SettingKeys.MiniAppActive),
-  ]).then(([theme, collapsed, storedModule, storedMiniApp]) => {
-    updateThemeState(theme);
-    if (collapsed === "1") {
-      appStore.navCollapsed = true;
-    }
-    if (storedModule && (VALID_MODULES as string[]).includes(storedModule)) {
-      appStore.module = storedModule as AppModule;
-    }
-    appStore.activeMiniAppId = storedMiniApp;
-  });
+    imb.settings.get(SettingKeys.BrandName),
+    imb.settings.get(SettingKeys.BrandLogo),
+  ]).then(
+    ([
+      theme,
+      collapsed,
+      storedModule,
+      storedMiniApp,
+      brandName,
+      brandLogo,
+    ]) => {
+      updateThemeState(theme);
+      if (collapsed === "1") {
+        appStore.navCollapsed = true;
+      }
+      if (storedModule && (VALID_MODULES as string[]).includes(storedModule)) {
+        appStore.module = storedModule as AppModule;
+      }
+      appStore.activeMiniAppId = storedMiniApp;
+      appStore.brandName = brandName ?? "";
+      appStore.brandLogo = brandLogo ?? null;
+    },
+  );
   imb.onLocaleChanged(updateLocale);
   imb.theme.onChanged(updateThemeState);
 
