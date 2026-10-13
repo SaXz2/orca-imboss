@@ -25,6 +25,7 @@ import type {
 } from "@shared/types";
 import { stat } from "fs/promises";
 import { basename, extname, resolve } from "path";
+import { t } from "@shared/l10n";
 import { Type } from "typebox";
 import * as cron from "../cron";
 import { getDB } from "../db";
@@ -937,7 +938,9 @@ function addParticipantTool(env: AgentEnvironment): AnyPiTool {
         senderEmployeeId: ASSISTANT_ID,
         chatId: updated.id,
         kind: "text",
-        content: `New participant(s) joined: ${names.join(", ")}`,
+        content: t("New participant(s) joined: ${names}", {
+          names: names.join(", "),
+        }),
         skipSenderCheck: true,
       });
 

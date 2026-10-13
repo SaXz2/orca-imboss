@@ -124,6 +124,7 @@
   "File location is unavailable.": "无法定位文件位置。",
   "File": "文件",
   "Folder": "文件夹",
+  "New participant(s) joined: ${names}": "新参与者加入：${names}",
   "Filter by name or role": "按名字或角色筛选",
   "Forest": "森林绿",
   "General": "通用",
