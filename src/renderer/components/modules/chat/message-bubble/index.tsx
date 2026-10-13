@@ -5,6 +5,7 @@ import { useState } from "react";
 import { cls } from "reactutils";
 import { IconFile } from "../../../icons";
 import { Markdown } from "../../../markdown";
+import { ImageAttachment, isImageAttachment } from "../image-attachment";
 import "./index.css";
 
 export interface MessageBubbleProps {
@@ -70,7 +71,7 @@ export function MessageBubble({
               const hasPath =
                 typeof attachment.path === "string" &&
                 attachment.path.length > 0;
-              return (
+              const chip = (
                 <button
                   key={`${attachment.name}-${attachment.size}-${index}`}
                   type="button"
@@ -95,6 +96,26 @@ export function MessageBubble({
                   </span>
                 </button>
               );
+              // Image attachments show inline *above* the file chip, so the
+              // name/size row (and its reveal action) stays available.
+              if (hasPath && isImageAttachment(attachment)) {
+                return (
+                  <div
+                    key={`${attachment.name}-${attachment.size}-${index}`}
+                    className="imb-bubble-attachment-image"
+                  >
+                    <ImageAttachment
+                      messageId={messageId}
+                      index={index}
+                      name={attachment.name}
+                      onReveal={() => void reveal(index)}
+                      fallback={null}
+                    />
+                    {chip}
+                  </div>
+                );
+              }
+              return chip;
             })}
             {hidden > 0 && (
               <span

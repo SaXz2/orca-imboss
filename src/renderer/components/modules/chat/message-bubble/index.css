@@ -124,3 +124,12 @@
     background: rgba(64, 64, 64, 0.4);
   }
 }
+
+/* An image attachment: inline preview stacked above its file chip. */
+.imb-bubble-attachment-image {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  max-width: 100%;
+}

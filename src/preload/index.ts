@@ -225,6 +225,13 @@ const api = {
         messageId,
         index,
       ) as Promise<void>,
+    /** Image attachment bytes as a data URL (for inline preview). */
+    attachmentData: (messageId: number, index: number) =>
+      ipcRenderer.invoke(
+        "messages:attachmentData",
+        messageId,
+        index,
+      ) as Promise<string>,
     onChanged: (
       cb: (payload: {
         chatId: number;
