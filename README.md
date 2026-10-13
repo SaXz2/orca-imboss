@@ -8,6 +8,11 @@ imboss is a desktop app where you chat with an AI **Assistant** who acts as your
 
 <img width="1938" height="1412" alt="imboss" src="https://github.com/user-attachments/assets/e785e2e1-145a-436b-a1e6-975710ffbd24" />
 
+## Intro Video
+
+[imboss intro video](https://www.bilibili.com/video/BV1e3po6rET6/?share_source=copy_web&vd_source=89506ada1738e6a7900dc6eb24d24da5)
+
+
 ## How it works
 
 1. **You talk to the Assistant.** Chat naturally, like messaging a colleague — no prompt engineering required.
@@ -136,6 +141,8 @@ imboss is **dual-licensed**:
 - **Commercial license.** Required for **any use by or within an enterprise, including purely internal use**. See [LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md) and contact [kefroth@outlook.com](mailto:kefroth@outlook.com) for details.
 
 If you use imboss under GPL-3.0 you must comply with all of its terms, including making your derivative work available under the same license. Note that GPL-3.0 compliance alone does **not** grant enterprise use: any use by or within an enterprise requires a commercial license. If you cannot or do not want to comply with GPL-3.0, or if you need enterprise use, a commercial license is required.
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) and the [Contributor License Agreement](CLA.md).
 
 ## Under the hood
 

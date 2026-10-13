@@ -42,9 +42,8 @@ function parseSteps(raw: string | null | undefined): MessageStep[] {
       continue;
     }
     out.push({
-      ...(typeof record["employeeId"] === "number"
-        ? { employeeId: record["employeeId"] }
-        : {}),
+      employeeId:
+        typeof record["employeeId"] === "number" ? record["employeeId"] : null,
       name: record["name"],
       role: typeof record["role"] === "string" ? record["role"] : "",
       status,
@@ -121,7 +120,7 @@ export function listBoardCards(): BoardCard[] {
     if (archived.has(`progress:${row.id}`)) continue;
 
     const owned = steps.map((step) => {
-      if (step.employeeId !== undefined) return step;
+      if (step.employeeId != null) return step;
       const person = people.find(
         (candidate) =>
           (candidate.name && candidate.name.trim() === step.name.trim()) ||
@@ -141,7 +140,7 @@ export function listBoardCards(): BoardCard[] {
     const activeHere =
       derived !== "done" &&
       owned.some((step) => {
-        if (step.employeeId === undefined) return false;
+        if (step.employeeId == null) return false;
         const chats = chatsOf(step.employeeId);
         return chats.has(workChatId) || chats.has(row.chat_id);
       });

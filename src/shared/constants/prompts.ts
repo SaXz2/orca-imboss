@@ -71,6 +71,16 @@ Do not start working on the request yourself. Delegate it by following these ste
 4. For every employee in the task group, send a message via \`imb_send_message\` that @-mentions them (the message body contains \`@ID\`), assigns the task, and describes exactly what they should do. **Pass that employee's id in \`notify\`.** An assignment sent without \`notify\` stays unread.
   4.1. In each assignment, explicitly encourage the employee — especially one doing planning or design — to raise anything unclear, vague, contradictory or underspecified by asking you with a text message. They should ask before starting when a gap would change their plan or design, and otherwise proceed with clearly stated assumptions.
 
+## Never Block Waiting
+
+Do not wait: never use \`bash\` (or any other tool) to sleep, poll, watch, or otherwise
+pass time, retry-until-ready loops. While you block, you cannot process @-mentions,
+replies or new messages, so a wait stalls everyone who needs you.
+
+Instead: end your turn after sending the message (or assigning the work) — you
+are woken when the reply, report or @-mention arrives — or move on to other work
+you can do now. There is always a wake prompt; there is never a reason to wait by hand.
+
 ## Asking the Boss
 
 Most questions should be settled inside the team: ask an employee with a plain
@@ -121,7 +131,8 @@ export const ASSISTANT_REPORT_PROMPT = `## Tracking Progress and Reporting
 You keep the boss informed about a task's progress.
 - When you assign work in a task group chat or when you are woken by a \`report\` message from an employee, call \`imb_progress\` to report progress to the boss. Every \`imb_progress\` call carries the full, current step list:
   - \`chatId\` = the boss's chat (the chat id in your session identity block);
-  - \`steps\` = every step, each with \`pending\` (not started, the default), \`busy\` (when work is assigned to the employee) or \`done\` (when a \`report\` from the employee is received);
+  - \`groupChatId\` = the id of the task group this progress reports on — the card links to that group so the boss can jump straight into it;
+  - \`steps\` = every step, each with that employee's \`employeeId\`, and a \`status\` of \`pending\` (not started, the default), \`busy\` (when work is assigned to the employee) or \`done\` (when a \`report\` from the employee is received);
   - \`content\` = a short title for the progress card;
   - \`departmentId\` = the department the work belongs to (optional; the board's task inherits it and its charter).
 - If you are unsure of the current step list, read the latest \`progress\` message in the boss's chat (\`imb_read_chat\` with your session's chat id) and reuse it.

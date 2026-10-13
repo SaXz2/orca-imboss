@@ -8,6 +8,10 @@ imboss 是一款桌面应用：你与一位担任「幕僚长」的 AI **助理*
 
 <img width="1938" height="1412" alt="imboss" src="https://github.com/user-attachments/assets/e785e2e1-145a-436b-a1e6-975710ffbd24" />
 
+## 介绍视频
+
+[imboss 介绍视频](https://www.bilibili.com/video/BV1e3po6rET6/?share_source=copy_web&vd_source=89506ada1738e6a7900dc6eb24d24da5)
+
 ## 工作原理
 
 1. **你和助理对话。** 像给同事发消息一样自然聊天，无需琢磨提示词。
@@ -136,6 +140,8 @@ imboss 采用**双重许可**模式：
 - **商业许可。** **只要在企业范围内使用 imboss——包括仅限内部使用——都需要付费授权**，详见 [LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md)；如有需要，请联系 [kefroth@outlook.com](mailto:kefroth@outlook.com) 了解细节。
 
 若你依据 GPL-3.0 使用 imboss，就需履行其全部义务，包括以相同许可开放你的衍生作品。但请注意，履行 GPL-3.0 本身**并不**授予企业使用权限：只要在企业范围内使用，都需要商业许可。若你无法或不愿履行 GPL-3.0，或者需要企业使用，则需要商业许可。
+
+欢迎参与贡献 —— 请参阅 [CONTRIBUTING.md](CONTRIBUTING.md) 与[贡献者许可协议](CLA.md)。
 
 ## 技术实现
 

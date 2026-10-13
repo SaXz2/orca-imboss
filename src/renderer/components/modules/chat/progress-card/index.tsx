@@ -88,7 +88,7 @@ export function ProgressCard({
         const employeeLabelInfo = resolveEmployeeLabel(
           step.name,
           employees,
-          step.employeeId,
+          step.employeeId ?? undefined,
         );
         const resolvedEmployee = employees.find(
           (e) =>
