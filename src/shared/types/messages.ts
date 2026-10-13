@@ -81,6 +81,8 @@ export interface MessageSearchResult {
 export interface AppendMessageOptions {
   kind?: MessageKind;
   steps?: MessageStep[];
+  /** Department this progress belongs to (the derived board task inherits it). */
+  departmentId?: number | null;
   /**
    * Task group a `progress` card links to (stored alongside `steps` in the
    * `steps` column). Required for `kind === "progress"`.

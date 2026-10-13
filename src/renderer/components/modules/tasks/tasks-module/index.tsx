@@ -2,6 +2,7 @@ import { t } from "@shared/l10n";
 import type {
   ArchivedTask,
   BoardCard,
+  Department,
   Task,
   TaskInput,
   TaskStatus,
@@ -40,15 +41,19 @@ export function TasksModule(): React.JSX.Element {
   const [archived, setArchived] = useState<ArchivedTask[]>([]);
   const [showArchive, setShowArchive] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [departmentFilter, setDepartmentFilter] = useState<number | null>(null);
 
   const reload = useCallback(async (): Promise<void> => {
     try {
-      const [cards, archives] = await Promise.all([
+      const [cards, archives, graph] = await Promise.all([
         imb.tasks.board(),
         imb.tasks.archives(),
+        imb.departments.graph(),
       ]);
       setCards(cards);
       setArchived(archives);
+      setDepartments(graph.departments);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -89,10 +94,17 @@ export function TasksModule(): React.JSX.Element {
     () =>
       cards.filter(
         (card) =>
-          categoryFilter === null || card.category === categoryFilter,
+          (categoryFilter === null || card.category === categoryFilter) &&
+          (departmentFilter === null || card.departmentId === departmentFilter),
       ),
-    [cards, categoryFilter],
+    [cards, categoryFilter, departmentFilter],
   );
+
+  const departmentById = useMemo(() => {
+    const map = new Map<number, Department>();
+    for (const d of departments) map.set(d.id, d);
+    return map;
+  }, [departments]);
 
   const byStatus = useMemo(() => {
     const map: Record<TaskStatus, BoardCard[]> = {
@@ -265,6 +277,43 @@ export function TasksModule(): React.JSX.Element {
         </div>
       )}
 
+      {departments.length > 0 && (
+        <div className="imb-board-filters">
+          <span className="imb-board-filter-label">{t("Department")}</span>
+          <button
+            type="button"
+            className={cls(
+              "imb-filter-chip",
+              departmentFilter === null && "imb-is-on",
+            )}
+            onClick={() => setDepartmentFilter(null)}
+          >
+            {t("All")}
+          </button>
+          {departments.map((d) => (
+            <button
+              key={d.id}
+              type="button"
+              className={cls(
+                "imb-filter-chip",
+                departmentFilter === d.id && "imb-is-on",
+              )}
+              onClick={() =>
+                setDepartmentFilter((current) =>
+                  current === d.id ? null : d.id,
+                )
+              }
+            >
+              <span
+                className="imb-filter-dot"
+                style={{ background: deptColor(d) }}
+              />
+              {d.name || t("Unnamed department")}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="imb-board">
         {COLUMNS.map((column) => (
           <div
@@ -297,11 +346,18 @@ export function TasksModule(): React.JSX.Element {
             </div>
             <div className="imb-board-col-body">
               {byStatus[column.status].map((card) => {
+                const dept =
+                  card.departmentId !== null
+                    ? (departmentById.get(card.departmentId) ?? null)
+                    : null;
                 return (
                   <TaskCard
                     key={card.key}
                     card={card}
                     employees={employees}
+                    department={
+                      dept ? { name: dept.name, color: deptColor(dept) } : null
+                    }
                     dragging={dragKey === card.key}
                     onDragStart={() => setDragKey(card.key)}
                     onDragEnd={() => {
@@ -359,6 +415,21 @@ function editableFromCard(card: BoardCard): EditableTask {
     flow: card.flow,
     status: card.status,
     assignees: card.assignees,
+    departmentId: card.departmentId,
   };
 }
 
+/** Department badge color (stored color, else the palette). */
+function deptColor(d: Department): string {
+  if (d.color) return d.color;
+  if (d.kind === "pool") return "#9b8b73";
+  const palette = [
+    "#e64980",
+    "#4c6ef5",
+    "#0ca678",
+    "#f59f00",
+    "#7950f2",
+    "#1098ad",
+  ];
+  return palette[d.id % palette.length];
+}

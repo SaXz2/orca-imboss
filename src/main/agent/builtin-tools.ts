@@ -154,6 +154,7 @@ async function performSendMessage(
     groupChatId?: number;
     attachments?: string[];
     attachmentTotal?: number;
+    departmentId?: number | null;
     notify?: number[];
     notifyPrompt?: string;
     skipSenderCheck?: boolean;
@@ -182,6 +183,7 @@ async function performSendMessage(
       groupChatId: input.groupChatId,
       attachments,
       attachmentTotal: input.attachmentTotal,
+      departmentId: input.departmentId,
     },
   );
 
@@ -556,13 +558,15 @@ function progressTool(env: AgentEnvironment): AnyPiTool {
       "card links to that group so the boss can open it. `content` is the card title and `steps` is " +
       "the full, current step list (one step per employee, each carrying that employee's " +
       "`employeeId`; `status` `pending` before work is assigned, `busy` once it is assigned and " +
-      "running, `done` when finished). Always resend the whole list on every update; no " +
-      "participant is notified.",
+      "running, `done` when finished). Pass `departmentId` when the work belongs to a department: " +
+      "the board's task inherits it and its charter. Always resend the whole list on every " +
+      "update; no participant is notified.",
     promptSnippet: "post a progress card",
     parameters: Type.Object({
       chatId: Type.Integer({ minimum: 1 }),
       groupChatId: Type.Integer({ minimum: 1 }),
       content: Type.String({ minLength: 1, maxLength: 100000 }),
+      departmentId: Type.Optional(Type.Integer({ minimum: 1 })),
       steps: Type.Array(
         Type.Object({
           name: Type.String({ minLength: 1, maxLength: 256 }),
@@ -583,6 +587,7 @@ function progressTool(env: AgentEnvironment): AnyPiTool {
         groupChatId: number;
         content: string;
         steps: MessageStep[];
+        departmentId?: number;
       };
       // Validate the link and every step employee before anything is written:
       // a dangling id would render as a dead click target the model can no
@@ -603,6 +608,7 @@ function progressTool(env: AgentEnvironment): AnyPiTool {
         content: input.content,
         steps: input.steps,
         groupChatId: input.groupChatId,
+        departmentId: input.departmentId,
       });
       return toolResult({ id: message.id });
     },

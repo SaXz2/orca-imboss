@@ -54,6 +54,7 @@ function toTask(row: TaskRow): Task {
           : "completed"
         : null,
     assignees: parseNumberArray(row.assignees),
+    departmentId: row.department_id ?? null,
     sortOrder: row.sort_order,
     progressKey: row.progress_key,
     workChatId: row.work_chat_id,
@@ -82,9 +83,11 @@ export function ensureProgressTask(input: {
   status?: TaskStatus;
   assignees?: number[];
   workChatId?: number | null;
+  departmentId?: number | null;
 }): Task {
   const key = input.progressKey.slice(0, 200);
   if (key.length === 0) throw new Error("A progress key is required.");
+  const departmentId = cleanDepartmentId(input.departmentId);
   const db = getDB();
   const existing = db
     .prepare("SELECT id, status FROM tasks WHERE progress_key = ?")
@@ -96,7 +99,7 @@ export function ensureProgressTask(input: {
     const nextStatus = existing.status === "closed" ? "closed" : status;
     db.prepare(
       "UPDATE tasks SET title = ?, flow = ?, status = ?, assignees = ?, " +
-        "work_chat_id = ?, " +
+        "work_chat_id = ?, department_id = COALESCE(?, department_id), " +
         "updated_at = CAST(strftime('%s', 'now') AS INTEGER) WHERE id = ?",
     ).run(
       cleanText(input.title, MAX_TITLE) || "—",
@@ -104,6 +107,7 @@ export function ensureProgressTask(input: {
       nextStatus,
       stringifyArray(cleanAssignees(input.assignees)),
       typeof input.workChatId === "number" ? input.workChatId : null,
+      departmentId,
       existing.id,
     );
     const updated = getTask(existing.id);
@@ -117,8 +121,8 @@ export function ensureProgressTask(input: {
   const result = db
     .prepare(
       "INSERT INTO tasks (title, detail, category, flow, status, assignees, " +
-        "sort_order, progress_key, work_chat_id) " +
-        "VALUES (?, '', '', ?, ?, ?, ?, ?, ?)",
+        "sort_order, progress_key, work_chat_id, department_id) " +
+        "VALUES (?, '', '', ?, ?, ?, ?, ?, ?, ?)",
     )
     .run(
       cleanText(input.title, MAX_TITLE) || "—",
@@ -128,6 +132,7 @@ export function ensureProgressTask(input: {
       maxRow.m + 1,
       key,
       typeof input.workChatId === "number" ? input.workChatId : null,
+      departmentId,
     );
   const id = Number(result.lastInsertRowid);
   logTaskEvent(id, "created", { meta: { title: input.title, status } });
@@ -149,6 +154,12 @@ function validateTitle(value: unknown): string {
   return title;
 }
 
+function cleanDepartmentId(value: unknown): number | null {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 1
+    ? value
+    : null;
+}
+
 function cleanText(value: unknown, max: number): string {
   return typeof value === "string" ? value.slice(0, max) : "";
 }
@@ -165,6 +176,13 @@ function cleanAssignees(value: unknown): number[] {
         .slice(0, MAX_ASSIGNEES),
     ),
   ];
+}
+
+/** A department id (>= 1) or null. */
+function cleanDeptId(value: unknown): number | null {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 1
+    ? value
+    : null;
 }
 
 function now(): number {
@@ -189,8 +207,8 @@ export function createTask(input: TaskInput): Task {
     .get(status) as { m: number };
   const result = db
     .prepare(
-      "INSERT INTO tasks (title, detail, category, flow, status, assignees, sort_order) " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO tasks (title, detail, category, flow, status, assignees, department_id, sort_order) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .run(
       title,
@@ -199,6 +217,7 @@ export function createTask(input: TaskInput): Task {
       cleanText(input.flow, MAX_FLOW),
       status,
       stringifyArray(cleanAssignees(input.assignees)),
+      cleanDeptId(input.departmentId),
       maxRow.m + 1,
     );
   const id = Number(result.lastInsertRowid);
@@ -272,6 +291,10 @@ export function updateTask(id: number, input: TaskInput): Task | null {
     if (before !== after) {
       events.push(() => logTaskEvent(id, "assigned", { meta: { assignees } }));
     }
+  }
+  if (input.departmentId !== undefined) {
+    sets.push("department_id = ?");
+    values.push(cleanDeptId(input.departmentId));
   }
   if (sets.length === 0) return current;
   sets.push("updated_at = CAST(strftime('%s', 'now') AS INTEGER)");

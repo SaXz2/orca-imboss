@@ -129,7 +129,8 @@ You keep the boss informed about a task's progress.
   - \`chatId\` = the boss's chat (the chat id in your session identity block);
   - \`groupChatId\` = the id of the task group this progress reports on — the card links to that group so the boss can jump straight into it;
   - \`steps\` = every step, each with that employee's \`employeeId\`, and a \`status\` of \`pending\` (not started, the default), \`busy\` (when work is assigned to the employee) or \`done\` (when a \`report\` from the employee is received);
-  - \`content\` = a short title for the progress card.
+  - \`content\` = a short title for the progress card;
+  - \`departmentId\` = the department the work belongs to (optional; the board's task inherits it and its charter).
 - If you are unsure of the current step list, read the latest \`progress\` message in the boss's chat (\`imb_read_chat\` with your session's chat id) and reuse it.
 - Once every step is \`done\`, post a final summary to the boss in that same chat with \`imb_send_message\` (\`kind: "report"\`, \`senderEmployeeId: 0\`, no \`notify\`) and call \`imb_notify\` so the boss is alerted.`;
 

@@ -72,6 +72,8 @@ export interface Task {
   closeReason: TaskCloseReason | null;
   /** Assigned employee ids. */
   assignees: number[];
+  /** Department this task belongs to (ownership/roll-up; execution is people). */
+  departmentId: number | null;
   /** Manual ordering within a column (ascending). */
   sortOrder: number;
   /**
@@ -96,6 +98,7 @@ export interface TaskRow {
   status: string;
   close_reason: string | null;
   assignees: string;
+  department_id: number | null;
   sort_order: number;
   progress_key: string | null;
   work_chat_id: number | null;
@@ -133,6 +136,7 @@ export interface TaskInput {
   status?: TaskStatus;
   closeReason?: TaskCloseReason | null;
   assignees?: number[];
+  departmentId?: number | null;
   sortOrder?: number;
 }
 
@@ -253,6 +257,8 @@ export interface BoardCard {
   /** Set only while `status` is `closed` (task cards only). */
   closeReason: TaskCloseReason | null;
   assignees: number[];
+  /** Department this task belongs to (ownership/roll-up; execution is people). */
+  departmentId: number | null;
   updatedAt: number;
   /** Latest progress steps (progress cards only; for a compact stepper). */
   steps: import("./messages").MessageStep[];

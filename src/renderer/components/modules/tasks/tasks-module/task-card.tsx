@@ -18,6 +18,7 @@ type EmployeeList = readonly {
 export function TaskCard({
   card,
   employees,
+  department,
   dragging,
   onDragStart,
   onDragEnd,
@@ -27,6 +28,8 @@ export function TaskCard({
 }: {
   card: BoardCard;
   employees: EmployeeList;
+  /** The task's department, for the badge (name + color). */
+  department?: { name: string; color: string } | null;
   dragging: boolean;
   onDragStart: () => void;
   onDragEnd: () => void;
@@ -64,8 +67,20 @@ export function TaskCard({
     >
       <div className="imb-gh-card-title">{card.title}</div>
 
-      {(card.category || totalSteps > 0 || closed) && (
+      {(card.category || totalSteps > 0 || closed || department) && (
         <div className="imb-gh-card-labels">
+          {department && (
+            <span
+              className="imb-gh-label imb-gh-dept"
+              style={{
+                color: department.color,
+                borderColor: department.color,
+                background: `color-mix(in srgb, ${department.color} 12%, transparent)`,
+              }}
+            >
+              {department.name}
+            </span>
+          )}
           {closed && card.closeReason && (
             <span className="imb-gh-label imb-gh-reason">
               {t(CLOSE_REASON_KEYS[card.closeReason])}

@@ -66,6 +66,7 @@ interface ProgressRow {
   content: string | null;
   steps: string | null;
   created_at: number;
+  department_id: number | null;
 }
 
 export function listBoardCards(): BoardCard[] {
@@ -96,7 +97,7 @@ export function listBoardCards(): BoardCard[] {
   const live = new Map<number, Live>();
   const rows = getDB()
     .prepare(
-      `SELECT id, chat_id, content, steps, created_at
+      `SELECT id, chat_id, content, steps, created_at, department_id
          FROM messages
         WHERE kind = 'progress'
         ORDER BY id DESC
@@ -148,6 +149,7 @@ export function listBoardCards(): BoardCard[] {
       title: title || t("Untitled"),
       flow,
       status: activeHere ? "running" : derived,
+      departmentId: row.department_id,
       assignees,
       workChatId,
     });
@@ -181,6 +183,7 @@ export function listBoardCards(): BoardCard[] {
       status,
       closeReason: gone ? "completed" : (info?.closeReason ?? task.closeReason),
       assignees: task.assignees,
+      departmentId: task.departmentId,
       updatedAt: info?.updatedAt ?? task.updatedAt,
       steps: info?.steps ?? [],
       chatId: info?.chatId ?? null,
