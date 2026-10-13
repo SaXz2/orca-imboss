@@ -41,6 +41,8 @@ export interface Department {
   kind: DepartmentKind;
   /** Accent color ('' = derive from the department palette). */
   color: string;
+  /** Free-text charter: the department's rules, standards and shared context. */
+  charter: string;
   /** Canvas layout, in canvas units. */
   x: number;
   y: number;
@@ -101,6 +103,7 @@ export interface DepartmentInput {
   name?: string;
   kind?: DepartmentKind;
   color?: string;
+  charter?: string;
   x?: number;
   y?: number;
   w?: number;

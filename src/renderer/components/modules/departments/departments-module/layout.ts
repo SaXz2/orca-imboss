@@ -13,6 +13,7 @@ export const DEPT_HEADER_H = 46;
 export const DEPT_PAD_TOP = 68;
 export const DEPT_LEVEL_H = 106;
 export const DEPT_PAD_BOTTOM = 26;
+export const DEPT_FOOTER_H = 30;
 export const PEER_HALF = 27;
 export const CHILD_HALF = 24;
 export const SLOT_W = 190;
@@ -63,7 +64,11 @@ export function layoutDepartment(department: Department): DeptLayout {
     return {
       width: baseWidth,
       height: Math.max(
-        DEPT_HEADER_H + DEPT_PAD_TOP + CHILD_HALF * 2 + DEPT_PAD_BOTTOM,
+        DEPT_HEADER_H +
+          DEPT_PAD_TOP +
+          CHILD_HALF * 2 +
+          DEPT_PAD_BOTTOM +
+          DEPT_FOOTER_H,
         department.h,
       ),
       nodes: [],
@@ -164,7 +169,8 @@ export function layoutDepartment(department: Department): DeptLayout {
       DEPT_PAD_TOP +
       maxDepth * DEPT_LEVEL_H +
       deepestHalf +
-      DEPT_PAD_BOTTOM,
+      DEPT_PAD_BOTTOM +
+      DEPT_FOOTER_H,
     department.h,
   );
   return { width, height, nodes, paths };

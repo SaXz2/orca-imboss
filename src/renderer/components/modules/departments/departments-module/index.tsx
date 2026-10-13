@@ -9,6 +9,7 @@ import {
   type EmployeeMetric,
   type LinkKind,
   type LinkSide,
+  type StatDaily,
 } from "@shared/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cls } from "reactutils";
@@ -134,6 +135,7 @@ export function DepartmentsModule(): React.JSX.Element {
   const [metrics, setMetrics] = useState<Map<number, EmployeeMetric>>(
     () => new Map(),
   );
+  const [stats, setStats] = useState<StatDaily[]>([]);
 
   const viewportRef = useRef(viewport);
   useEffect(() => {
@@ -177,6 +179,10 @@ export function DepartmentsModule(): React.JSX.Element {
     void reloadGraph();
     void appStore.reloadEmployees();
     void reloadMetrics();
+    void imb.stats
+      .list()
+      .then(setStats)
+      .catch(() => undefined);
     const off = imb.departments.onChanged(() => void reloadGraph());
     const timer = window.setInterval(() => void reloadMetrics(), 6000);
     return () => {
@@ -477,6 +483,15 @@ export function DepartmentsModule(): React.JSX.Element {
     patchLocal(id, { color });
     try {
       await imb.departments.update(id, { color });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  async function setDeptCharter(id: number, charter: string): Promise<void> {
+    patchLocal(id, { charter });
+    try {
+      await imb.departments.update(id, { charter });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -936,6 +951,32 @@ export function DepartmentsModule(): React.JSX.Element {
     return set;
   }, [metrics]);
 
+  // Per-department output (done tasks + reports) and worked hours, for the card
+  // footer's value ratio. Reports/hours come from the persistent daily stats
+  // (so they survive chat deletion); tasks stay live.
+  const statsByDept = useMemo(() => {
+    const statById = new Map<number, { runMs: number; reports: number }>();
+    for (const s of stats) {
+      const cur = statById.get(s.employeeId) ?? { runMs: 0, reports: 0 };
+      cur.runMs += s.runMs;
+      cur.reports += s.reports;
+      statById.set(s.employeeId, cur);
+    }
+    const map = new Map<number, { output: number; hoursMs: number }>();
+    for (const d of departments) {
+      let output = 0;
+      let hoursMs = 0;
+      for (const m of d.members) {
+        const st = statById.get(m.employeeId);
+        const metric = metrics.get(m.employeeId);
+        output += (st?.reports ?? 0) + (metric?.tasks.done ?? 0);
+        hoursMs += st?.runMs ?? 0;
+      }
+      map.set(d.id, { output, hoursMs });
+    }
+    return map;
+  }, [departments, metrics, stats]);
+
   const colorById = useMemo(
     () =>
       new Map(
@@ -1077,11 +1118,15 @@ export function DepartmentsModule(): React.JSX.Element {
               employeeById={employeeById}
               othersByEmployee={othersByEmployee}
               workingIds={workingIds}
+              stats={
+                statsByDept.get(department.id) ?? { output: 0, hoursMs: 0 }
+              }
               onSelect={setSelectedId}
               onPatch={patchLocal}
               onCommit={() => void commitLayout()}
               onRename={(id, name) => void renameDepartment(id, name)}
               onColor={(id, color) => void setDeptColor(id, color)}
+              onCharter={(id, charter) => void setDeptCharter(id, charter)}
               onDelete={(id) => void deleteDepartment(id)}
               onOpenMemberPicker={setPickerDeptId}
               onRemoveMember={(id, employeeId) =>

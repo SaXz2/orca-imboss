@@ -152,6 +152,7 @@ async function performSendMessage(
     steps?: MessageStep[];
     attachments?: string[];
     attachmentTotal?: number;
+    departmentId?: number | null;
     notify?: number[];
     notifyPrompt?: string;
     skipSenderCheck?: boolean;
@@ -179,6 +180,7 @@ async function performSendMessage(
       steps: input.steps,
       attachments,
       attachmentTotal: input.attachmentTotal,
+      departmentId: input.departmentId,
     },
   );
 
@@ -431,6 +433,7 @@ function setDepartmentsTool(): AnyPiTool {
             Type.Union([Type.Literal("team"), Type.Literal("pool")]),
           ),
           color: Type.Optional(Type.String({ maxLength: 7 })),
+          charter: Type.Optional(Type.String({ maxLength: 20000 })),
           members: Type.Optional(
             Type.Array(
               Type.Object({
@@ -455,6 +458,7 @@ function setDepartmentsTool(): AnyPiTool {
           name?: string;
           kind?: "team" | "pool";
           color?: string;
+          charter?: string;
           members?: {
             employeeId: number;
             roleInDept?: string;
@@ -572,6 +576,7 @@ function listDepartmentsTool(): AnyPiTool {
           id: department.id,
           name: department.name,
           kind: department.kind,
+          charter: department.charter,
           members: department.members.map((member) => ({
             employeeId: member.employeeId,
             roleInDept: member.roleInDept,
@@ -737,12 +742,15 @@ function progressTool(env: AgentEnvironment): AnyPiTool {
     description:
       "Post a task-progress card into a chat as the assistant. `content` is the card title and " +
       "`steps` is the full, current step list (one step per employee, `status` `pending` before " +
-      "work is assigned, `busy` once it is assigned and running, `done` when finished). Always " +
-      "resend the whole list on every update; no participant is notified.",
+      "work is assigned, `busy` once it is assigned and running, `done` when finished). Pass " +
+      "`departmentId` when the work belongs to a department: the task board derives its task from " +
+      "this card and inherits that department (and its charter). Always resend the whole list on " +
+      "every update; no participant is notified.",
     promptSnippet: "post a progress card",
     parameters: Type.Object({
       chatId: Type.Integer({ minimum: 1 }),
       content: Type.String({ minLength: 1, maxLength: 100000 }),
+      departmentId: Type.Optional(Type.Integer({ minimum: 1 })),
       steps: Type.Array(
         Type.Object({
           employeeId: Type.Optional(Type.Integer({ minimum: 0 })),
@@ -762,6 +770,7 @@ function progressTool(env: AgentEnvironment): AnyPiTool {
         chatId: number;
         content: string;
         steps: MessageStep[];
+        departmentId?: number;
       };
       const message = await performSendMessage(env, {
         senderEmployeeId: ASSISTANT_ID,
@@ -769,6 +778,7 @@ function progressTool(env: AgentEnvironment): AnyPiTool {
         kind: "progress",
         content: input.content,
         steps: input.steps,
+        departmentId: input.departmentId,
       });
       return toolResult({ id: message.id });
     },

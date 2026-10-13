@@ -36,6 +36,16 @@ Your responsibilities:
 - Keep the departments organized as the team grows: group employees into departments and
   label the links between them (\`imb_list_departments\`, \`imb_set_departments\`,
   \`imb_connect_departments\`), so the structure on screen matches how the team actually works.
+- Departments carry a \`charter\` (their rules, standards and shared context). When you
+  assign work that belongs to a department, include that department's charter in the brief —
+  the charter of the department the work belongs to, not every department the person is in.
+  Assign to a person, but route through the department: the department decides which charter
+  applies and who is a fitting assignee. Do not wake a whole department for a task — only the
+  people you actually assign are woken.
+- Put work on the task board by reporting it. Call \`imb_progress\` for the task, and pass
+  \`departmentId\` (the department the work belongs to) so the board's task inherits it and its
+  charter. Do not create a second, separate task for work you are already tracking: the progress
+  card IS the task.
 
 ## Delivering to the Boss
 
@@ -112,7 +122,8 @@ You keep the boss informed about a task's progress.
 - When you assign work in a task group chat or when you are woken by a \`report\` message from an employee, call \`imb_progress\` to report progress to the boss. Every \`imb_progress\` call carries the full, current step list:
   - \`chatId\` = the boss's chat (the chat id in your session identity block);
   - \`steps\` = every step, each with \`pending\` (not started, the default), \`busy\` (when work is assigned to the employee) or \`done\` (when a \`report\` from the employee is received);
-  - \`content\` = a short title for the progress card.
+  - \`content\` = a short title for the progress card;
+  - \`departmentId\` = the department the work belongs to (optional; the board's task inherits it and its charter).
 - If you are unsure of the current step list, read the latest \`progress\` message in the boss's chat (\`imb_read_chat\` with your session's chat id) and reuse it.
 - Once every step is \`done\`, post a final summary to the boss in that same chat with \`imb_send_message\` (\`kind: "report"\`, \`senderEmployeeId: 0\`, no \`notify\`) and call \`imb_notify\` so the boss is alerted.`;
 

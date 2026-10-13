@@ -23,6 +23,7 @@ interface DepartmentRow {
   name: string;
   kind: string;
   color: string;
+  charter: string;
   x: number;
   y: number;
   w: number;
@@ -70,6 +71,7 @@ const MAX_BATCH = 100;
  * silently instead of leaving dangling nodes on the canvas.
  */
 export function getGraph(): DepartmentGraph {
+  ensurePool();
   const db = getDB();
   const deptRows = db
     .prepare("SELECT * FROM departments ORDER BY sort_order ASC, id ASC")
@@ -123,12 +125,13 @@ export function createDepartment(input: DepartmentInput): Department {
     .get() as { m: number };
   const result = db
     .prepare(
-      "INSERT INTO departments (name, kind, color, x, y, w, h, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO departments (name, kind, color, charter, x, y, w, h, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .run(
       validateName(input.name) ?? "",
       validateKind(input.kind) ?? "team",
       validateColor(input.color) ?? "",
+      validateCharter(input.charter) ?? "",
       validateCoord(input.x) ?? 0,
       validateCoord(input.y) ?? 0,
       validateSize(input.w, MIN_W) ?? 320,
@@ -148,7 +151,7 @@ export function updateDepartment(
   if (!current) return null;
   const db = getDB();
   db.prepare(
-    "UPDATE departments SET name = ?, kind = ?, color = ?, x = ?, y = ?, w = ?, h = ? WHERE id = ?",
+    "UPDATE departments SET name = ?, kind = ?, color = ?, charter = ?, x = ?, y = ?, w = ?, h = ? WHERE id = ?",
   ).run(
     input.name !== undefined ? (validateName(input.name) ?? "") : current.name,
     input.kind !== undefined
@@ -157,6 +160,9 @@ export function updateDepartment(
     input.color !== undefined
       ? (validateColor(input.color) ?? "")
       : current.color,
+    input.charter !== undefined
+      ? (validateCharter(input.charter) ?? "")
+      : current.charter,
     input.x !== undefined ? (validateCoord(input.x) ?? current.x) : current.x,
     input.y !== undefined ? (validateCoord(input.y) ?? current.y) : current.y,
     input.w !== undefined
@@ -449,12 +455,28 @@ function replaceMembers(
 // helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * Guarantee the outsourcing pool exists — it is a permanent structural node and
+ * must never be missing (e.g. if an older build allowed deleting it).
+ */
+export function ensurePool(): void {
+  const db = getDB();
+  const pool = db
+    .prepare("SELECT id FROM departments WHERE kind = 'pool' LIMIT 1")
+    .get();
+  if (pool) return;
+  db.prepare(
+    "INSERT INTO departments (name, kind, x, y, w, h, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)",
+  ).run("外包人才池", "pool", 120, 360, 300, 240, 0);
+}
+
 function toCore(row: DepartmentRow): Omit<Department, "members"> {
   return {
     id: row.id,
     name: row.name ?? "",
     kind: row.kind === "pool" ? "pool" : "team",
     color: row.color ?? "",
+    charter: row.charter ?? "",
     x: row.x ?? 0,
     y: row.y ?? 0,
     w: row.w ?? 320,
@@ -601,6 +623,14 @@ function validateName(name: string | undefined): string | undefined {
   if (name === undefined) return undefined;
   if (name.length > MAX_NAME) throw new Error("Department name is too long.");
   return name;
+}
+
+function validateCharter(charter: string | undefined): string | undefined {
+  if (charter === undefined) return undefined;
+  if (charter.length > 20_000) {
+    throw new Error("Department charter is too long.");
+  }
+  return charter;
 }
 
 function validateKind(kind: string | undefined): DepartmentKind | undefined {

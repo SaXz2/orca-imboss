@@ -7,7 +7,9 @@ import {
   type ContextMenuItem,
   type ContextMenuState,
 } from "../../../context-menu";
+import { Button } from "../../../button";
 import { EmployeeAvatar } from "../../../employee-avatar";
+import { Modal } from "../../../modal";
 import type { DeptLayout } from "./layout";
 import "./index.css";
 
@@ -43,11 +45,14 @@ export interface DepartmentCardProps {
   /** Employee id → the *other* departments they also belong to. */
   othersByEmployee: Map<number, { id: number; name: string }[]>;
   workingIds: Set<number>;
+  /** Output (done + reports) and worked hours, for the footer. */
+  stats: { output: number; hoursMs: number };
   onSelect: (id: number) => void;
   onPatch: (id: number, patch: Partial<Department>) => void;
   onCommit: () => void;
   onRename: (id: number, name: string) => void;
   onColor: (id: number, color: string) => void;
+  onCharter: (id: number, charter: string) => void;
   onDelete: (id: number) => void;
   onOpenMemberPicker: (id: number) => void;
   onRemoveMember: (departmentId: number, employeeId: number) => void;
@@ -81,11 +86,13 @@ export function DepartmentCard({
   employeeById,
   othersByEmployee,
   workingIds,
+  stats,
   onSelect,
   onPatch,
   onCommit,
   onRename,
   onColor,
+  onCharter,
   onDelete,
   onOpenMemberPicker,
   onRemoveMember,
@@ -98,6 +105,8 @@ export function DepartmentCard({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [charterOpen, setCharterOpen] = useState(false);
+  const [charterDraft, setCharterDraft] = useState("");
   const [menu, setMenu] = useState<ContextMenuState | null>(null);
   const pool = department.kind === "pool";
 
@@ -216,6 +225,14 @@ export function DepartmentCard({
         key: "add",
         label: t("Add member"),
         onSelect: () => onOpenMemberPicker(department.id),
+      },
+      {
+        key: "charter",
+        label: t("Department charter"),
+        onSelect: () => {
+          setCharterDraft(department.charter);
+          setCharterOpen(true);
+        },
       },
       {
         key: "rename",
@@ -363,6 +380,23 @@ export function DepartmentCard({
         <span className="imb-dept-count">
           {t("${count} people", { count: String(department.members.length) })}
         </span>
+        <button
+          type="button"
+          className={cls(
+            "imb-dept-charterbtn",
+            department.charter && "imb-is-set",
+          )}
+          title={t("Department charter")}
+          aria-label={t("Department charter")}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            setCharterDraft(department.charter);
+            setCharterOpen(true);
+          }}
+        >
+          {t("Charter")}
+        </button>
         {!pool && (
           <button
             type="button"
@@ -546,7 +580,58 @@ export function DepartmentCard({
         aria-label={t("Drag to link another department")}
         onPointerDown={(event) => onFramePortDown(department.id, "r", event)}
       />
+      <div className="imb-dept-foot">
+        <span>
+          {t("Output")} <b>{stats.output}</b>
+        </span>
+        <span className="imb-dept-foot-sep" />
+        <span>
+          {t("Hours")} <b>{(stats.hoursMs / 3_600_000).toFixed(1)}h</b>
+        </span>
+        <span className="imb-dept-foot-sep" />
+        <span>
+          {t("Value")}{" "}
+          <b>
+            {stats.hoursMs >= 360_000
+              ? (stats.output / (stats.hoursMs / 3_600_000)).toFixed(1)
+              : "—"}
+          </b>
+        </span>
+      </div>
+
       <ContextMenu state={menu} onClose={() => setMenu(null)} />
+
+      <Modal
+        open={charterOpen}
+        onClose={() => setCharterOpen(false)}
+        title={t("Department charter")}
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => setCharterOpen(false)}>
+              {t("Cancel")}
+            </Button>
+            <Button
+              onClick={() => {
+                setCharterOpen(false);
+                onCharter(department.id, charterDraft);
+              }}
+            >
+              {t("Save")}
+            </Button>
+          </>
+        }
+      >
+        <textarea
+          className="imb-dept-charter-input"
+          value={charterDraft}
+          maxLength={20000}
+          rows={8}
+          placeholder={t(
+            "Rules, standards and shared context for this department…",
+          )}
+          onChange={(event) => setCharterDraft(event.target.value)}
+        />
+      </Modal>
     </div>
   );
 }
