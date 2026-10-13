@@ -200,6 +200,16 @@ const api = {
       ipcRenderer.invoke("chats:setPinned", id, pinned) as Promise<
         Chat | null
       >,
+    /** Archived conversations (the archive view). */
+    archives: () =>
+      ipcRenderer.invoke("chats:archives") as Promise<ChatSummary[]>,
+    /** Archive or restore one conversation. */
+    setArchived: (id: number, archived: boolean) =>
+      ipcRenderer.invoke(
+        "chats:setArchived",
+        id,
+        archived,
+      ) as Promise<Chat | null>,
     summariesPage: (page: PageQuery) =>
       ipcRenderer.invoke("chats:summariesPage", page) as Promise<
         PageResult<ChatSummary>

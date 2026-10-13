@@ -13,6 +13,8 @@ export interface ListRowProps {
   sub?: ReactNode;
   badge?: ReactNode;
   className?: string;
+  /** Optional extra content rendered below the sub/badge line. */
+  extra?: ReactNode;
 }
 
 /** Generic list row reused by every module's list pane. */
@@ -27,6 +29,7 @@ export function ListRow({
   sub,
   badge,
   className,
+  extra,
 }: ListRowProps): React.JSX.Element {
   return (
     <button
@@ -55,6 +58,9 @@ export function ListRow({
             )}
             {badge !== undefined && badge}
           </span>
+        )}
+        {extra !== undefined && (
+          <span className="imb-list-row-extra">{extra}</span>
         )}
       </span>
     </button>

@@ -17,6 +17,8 @@ export interface Chat {
   source: IntegrationPlatform | null;
   /** Pinned conversations sort above the rest of the list. */
   pinned: boolean;
+  /** Archived conversations are hidden from the list but kept restorable. */
+  archived: boolean;
 }
 
 /** List item of the chat module: chat + derived last-message preview. */
@@ -47,6 +49,7 @@ export interface ChatRow {
   from_chat_id: number | null;
   source: string | null;
   pinned: number;
+  archived: number;
 }
 
 export interface ChatSummaryRow extends ChatRow {

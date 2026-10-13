@@ -31,6 +31,15 @@ export function registerChatHandlers(): void {
     },
   );
 
+  // Archive: hide a conversation from the list while keeping it restorable.
+  ipcMain.handle("chats:archives", () => dbChats.listArchivedSummaries());
+
+  ipcMain.handle(
+    "chats:setArchived",
+    (_event, id: unknown, archived: unknown) =>
+      dbChats.setArchived(assertInteger(id, "chat id"), archived === true),
+  );
+
   ipcMain.handle("chats:summariesPage", (_event, page: unknown) =>
     dbChats.listChatSummariesPage(parsePageQuery(page)),
   );
