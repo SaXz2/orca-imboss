@@ -165,6 +165,14 @@ export function IconPlus(props: IconProps): React.JSX.Element {
   );
 }
 
+export function IconFolder(props: IconProps): React.JSX.Element {
+  return (
+    <svg {...base(props)} strokeWidth={1.8}>
+      <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    </svg>
+  );
+}
+
 export function IconSend(props: IconProps): React.JSX.Element {
   return (
     <svg {...base(props)} strokeWidth={2.2}>

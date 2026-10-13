@@ -1,4 +1,5 @@
 import { ASSISTANT_ID } from "@shared/constants/employees";
+import { t } from "@shared/l10n";
 import type { ChatParticipantUpdate, MessageAttachment } from "@shared/types";
 import { ipcMain } from "electron";
 import { isAbsolute } from "path";
@@ -6,12 +7,44 @@ import { abortChat, deliver, disposeForChat } from "../agent/session-queue";
 import { integrationManager } from "../integrations";
 import { maybeGenerateChatTitle } from "../agent/title-gen";
 import * as cron from "../cron";
+import * as dbChatGroups from "../db/chat-groups";
 import * as dbChats from "../db/chats";
 import * as dbMessages from "../db/messages";
 import { listByChat, unlinkSessionFile } from "../db/sessions";
 import { pruneArchivedTasks } from "../task-archive";
 import { notifyUnread, sendToRenderer } from "../notifications";
 import { assertInteger, assertString, parsePageQuery } from "./helpers";
+import { showOpenDialog } from "./dialog";
+import { SettingKeys } from "@shared/constants/settings";
+import { getSetting, setSetting } from "../db/settings";
+
+/** Max recently-used workspace folders remembered for the picker. */
+const FOLDER_HISTORY_MAX = 12;
+
+/** Recently used conversation-folder workspaces, newest first. */
+function readFolderHistory(): string[] {
+  const raw = getSetting(SettingKeys.ChatFolderHistory);
+  if (!raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((value): value is string => typeof value === "string")
+      .slice(0, FOLDER_HISTORY_MAX);
+  } catch {
+    return [];
+  }
+}
+
+/** Remember a folder, moving it to the front of the history. */
+function pushFolderHistory(folder: string | null): void {
+  if (!folder) return;
+  const next = [
+    folder,
+    ...readFolderHistory().filter((value) => value !== folder),
+  ].slice(0, FOLDER_HISTORY_MAX);
+  setSetting(SettingKeys.ChatFolderHistory, JSON.stringify(next));
+}
 
 export function registerChatHandlers(): void {
   ipcMain.handle("chats:list", () => dbChats.listChats());
@@ -27,17 +60,91 @@ export function registerChatHandlers(): void {
       dbChats.setArchived(assertInteger(id, "chat id"), archived === true),
   );
 
+  // Conversation groups ("projects"): browse chats by group and pin a folder
+  // as the group's workspace (the cwd its sessions run in).
+  ipcMain.handle("chats:groups", () => dbChatGroups.listGroups());
+
   ipcMain.handle(
-    "chats:setPinned",
-    (_event, id: unknown, pinned: unknown) => {
-      const safeId = assertInteger(id, "chat id");
-      const updated = dbChats.setPinned(safeId, pinned === true);
-      if (updated !== null) {
-        sendToRenderer("chats:changed", { chatId: safeId });
-      }
+    "chats:createGroup",
+    (_event, name: unknown, folder: unknown) => {
+      const safeFolder = typeof folder === "string" ? folder : null;
+      const group = dbChatGroups.createGroup(
+        typeof name === "string" ? name : "",
+        safeFolder,
+      );
+      pushFolderHistory(safeFolder);
+      return group;
+    },
+  );
+
+  ipcMain.handle("chats:renameGroup", (_event, id: unknown, name: unknown) =>
+    dbChatGroups.renameGroup(
+      assertInteger(id, "group id"),
+      assertString(name, "group name"),
+    ),
+  );
+
+  ipcMain.handle(
+    "chats:setGroupFolder",
+    (_event, id: unknown, folder: unknown) => {
+      const safeFolder =
+        typeof folder === "string" && folder.length > 0 ? folder : null;
+      const updated = dbChatGroups.setGroupFolder(
+        assertInteger(id, "group id"),
+        safeFolder,
+      );
+      pushFolderHistory(safeFolder);
       return updated;
     },
   );
+
+  ipcMain.handle("chats:deleteGroup", (_event, id: unknown) =>
+    dbChatGroups.deleteGroup(assertInteger(id, "group id")),
+  );
+
+  ipcMain.handle(
+    "chats:setChatGroup",
+    (_event, chatId: unknown, groupId: unknown) => {
+      const safeChatId = assertInteger(chatId, "chat id");
+      const safeGroupId =
+        groupId === null || groupId === undefined
+          ? null
+          : assertInteger(groupId, "group id");
+      const ok = dbChatGroups.setChatGroup(safeChatId, safeGroupId);
+      if (ok) sendToRenderer("chats:changed", { chatId: safeChatId });
+      return ok;
+    },
+  );
+
+  // Native folder picker for a group's workspace.
+  ipcMain.handle("chats:pickFolder", async () => {
+    const picked = await showOpenDialog({
+      title: t("Choose a folder"),
+      properties: ["openDirectory"],
+    });
+    const chosen = picked?.[0] ?? null;
+    pushFolderHistory(chosen);
+    return chosen;
+  });
+
+  // Recently used workspace folders (for the folder editor's history list).
+  ipcMain.handle("chats:recentFolders", () => readFolderHistory());
+
+  ipcMain.handle("chats:forgetFolder", (_event, folder: unknown) => {
+    if (typeof folder !== "string") return false;
+    const next = readFolderHistory().filter((value) => value !== folder);
+    setSetting(SettingKeys.ChatFolderHistory, JSON.stringify(next));
+    return true;
+  });
+
+  ipcMain.handle("chats:setPinned", (_event, id: unknown, pinned: unknown) => {
+    const safeId = assertInteger(id, "chat id");
+    const updated = dbChats.setPinned(safeId, pinned === true);
+    if (updated !== null) {
+      sendToRenderer("chats:changed", { chatId: safeId });
+    }
+    return updated;
+  });
 
   ipcMain.handle("chats:summariesPage", (_event, page: unknown) =>
     dbChats.listChatSummariesPage(parsePageQuery(page)),

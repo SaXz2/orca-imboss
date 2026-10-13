@@ -3,6 +3,8 @@ import type { WorkDirState } from "@shared/types";
 import { mkdirSync } from "fs";
 import { isAbsolute } from "path";
 import { getWorkDir } from "../data-dir";
+import { folderForChat } from "../db/chat-groups";
+import { getRootChatId } from "../db/chats";
 import { getSetting } from "../db/settings";
 
 /**
@@ -49,4 +51,27 @@ export function getWorkDirState(): WorkDirState {
     effective: resolveWorkDir(),
     isDefault: configured === null,
   };
+}
+
+/**
+ * Working directory for a chat's agent sessions.
+ *
+ * A chat inherits the workspace folder of its conversation group (falling back
+ * to the root chat's group, so a task chat spawned inside a project still runs
+ * in that project's workspace). With no group folder it is the global workdir.
+ * The chosen folder is re-created if missing, mirroring `resolveWorkDir`.
+ */
+export function resolveChatWorkDir(chatId: number): string {
+  const folder = folderForChat(chatId) ?? folderForChat(getRootChatId(chatId));
+  if (!folder || !isAbsolute(folder)) return resolveWorkDir();
+  try {
+    mkdirSync(folder, { recursive: true });
+  } catch (err) {
+    console.error(
+      `[workdir] Failed to ensure group workspace ${folder}:`,
+      err instanceof Error ? err.message : err,
+    );
+    return resolveWorkDir();
+  }
+  return folder;
 }

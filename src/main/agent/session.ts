@@ -47,7 +47,7 @@ import { loadPiSdk, type PiSdk } from "./pi-sdk";
 import { listSkills } from "./skills";
 import { createShellToolDefinitions } from "./tools";
 import { readUserEnv } from "./user-env";
-import { resolveWorkDir } from "./workdir";
+import { resolveChatWorkDir, resolveWorkDir } from "./workdir";
 
 /**
  * Pi-backed agent session.
@@ -261,7 +261,11 @@ export class AgentSession {
         ? employee.thinkingLevel
         : null) ?? (isThinkingLevel(storedThinking) ? storedThinking : null);
 
-    const cwd = resolveWorkDir();
+    // A chat in a conversation group runs in that group's workspace folder;
+    // otherwise the global working directory applies.
+    const cwd = this.context
+      ? resolveChatWorkDir(this.context.chatId)
+      : resolveWorkDir();
     const agentRoot = getAgentRoot();
 
     const employeeMcp = [...(employee?.mcp ?? [])].sort((a, b) =>

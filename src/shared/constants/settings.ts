@@ -15,6 +15,8 @@ export const SettingKeys = {
   WindowState: "ui.window",
   /** Folder id of the last opened mini app (restored on next launch). */
   MiniAppActive: "ui.miniAppActive",
+  /** Recently used conversation-folder workspaces (JSON array of paths). */
+  ChatFolderHistory: "ui.chatFolderHistory",
   /** Custom app/brand name shown in the sidebar (empty = "imboss"). */
   BrandName: "ui.brand.name",
   /** Custom brand logo image as a data URL (empty = built-in logo). */

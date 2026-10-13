@@ -1,0 +1,116 @@
+.imb-folder-editor-label {
+  margin: 14px 0 6px;
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+}
+.imb-folder-editor-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.imb-folder-editor-path {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  background: var(--imb-surface);
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-md);
+  cursor: pointer;
+  text-align: left;
+}
+.imb-folder-editor-path:hover {
+  color: var(--imb-fg);
+}
+.imb-folder-editor-path-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.imb-folder-editor-path.imb-is-set {
+  color: var(--imb-fg);
+}
+.imb-folder-editor-recent {
+  margin-top: 12px;
+}
+.imb-folder-editor-recent-title {
+  margin-bottom: 6px;
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+}
+.imb-folder-editor-recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 168px;
+  overflow-y: auto;
+}
+.imb-folder-editor-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--imb-radius-md);
+}
+.imb-folder-editor-item:hover {
+  background: var(--imb-surface-sunken);
+}
+.imb-folder-editor-item.imb-is-active {
+  background: color-mix(in oklch, var(--imb-accent) 12%, transparent);
+}
+.imb-folder-editor-item-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  background: transparent;
+  border: 0;
+  color: var(--imb-fg);
+  text-align: left;
+  cursor: pointer;
+}
+.imb-folder-editor-item-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.imb-folder-editor-item-name {
+  font-size: var(--imb-text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.imb-folder-editor-item-path {
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.imb-folder-editor-item-x {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin-right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--imb-radius-md);
+  color: var(--imb-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+.imb-folder-editor-item-x:hover {
+  background: var(--imb-surface-raised);
+  color: var(--imb-fg);
+}

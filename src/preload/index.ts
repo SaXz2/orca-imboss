@@ -5,6 +5,7 @@ import type {
   AgentStreamPayload,
   ArchivedTask,
   Chat,
+  ChatGroup,
   ChatParticipantUpdate,
   ChatSummary,
   CronJob,
@@ -327,6 +328,42 @@ const api = {
     /** Pin or unpin one conversation (sorts above the rest). */
     setPinned: (id: number, pinned: boolean) =>
       ipcRenderer.invoke("chats:setPinned", id, pinned) as Promise<Chat | null>,
+    /** Conversation groups ("projects"). */
+    groups: () => ipcRenderer.invoke("chats:groups") as Promise<ChatGroup[]>,
+    createGroup: (name: string, folder: string | null) =>
+      ipcRenderer.invoke(
+        "chats:createGroup",
+        name,
+        folder,
+      ) as Promise<ChatGroup>,
+    renameGroup: (id: number, name: string) =>
+      ipcRenderer.invoke(
+        "chats:renameGroup",
+        id,
+        name,
+      ) as Promise<ChatGroup | null>,
+    setGroupFolder: (id: number, folder: string | null) =>
+      ipcRenderer.invoke(
+        "chats:setGroupFolder",
+        id,
+        folder,
+      ) as Promise<ChatGroup | null>,
+    deleteGroup: (id: number) =>
+      ipcRenderer.invoke("chats:deleteGroup", id) as Promise<boolean>,
+    setChatGroup: (chatId: number, groupId: number | null) =>
+      ipcRenderer.invoke(
+        "chats:setChatGroup",
+        chatId,
+        groupId,
+      ) as Promise<boolean>,
+    pickFolder: () =>
+      ipcRenderer.invoke("chats:pickFolder") as Promise<string | null>,
+    /** Recently used workspace folders (for the folder editor's history). */
+    recentFolders: () =>
+      ipcRenderer.invoke("chats:recentFolders") as Promise<string[]>,
+    /** Forget one folder in the history list. */
+    forgetFolder: (folder: string) =>
+      ipcRenderer.invoke("chats:forgetFolder", folder) as Promise<boolean>,
     summariesPage: (page: PageQuery) =>
       ipcRenderer.invoke("chats:summariesPage", page) as Promise<
         PageResult<ChatSummary>

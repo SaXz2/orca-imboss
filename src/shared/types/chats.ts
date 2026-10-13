@@ -19,6 +19,30 @@ export interface Chat {
   archived: boolean;
   /** Pinned conversations sort above the rest of the list. */
   pinned: boolean;
+  /** Conversation group ("project") this chat belongs to, or null. */
+  groupId: number | null;
+}
+
+/**
+ * A conversation group ("project"): a named container for chats that can also
+ * pin a folder as its workspace — the working directory its sessions run in.
+ */
+export interface ChatGroup {
+  id: number;
+  name: string;
+  /** Absolute path of the group's workspace folder, or null (global workdir). */
+  folder: string | null;
+  sortOrder: number;
+  createdAt: number;
+}
+
+/** One row of the `chat_groups` table. */
+export interface ChatGroupRow {
+  id: number;
+  name: string;
+  folder: string | null;
+  sort_order: number;
+  created_at: number;
 }
 
 /** List item of the chat module: chat + derived last-message preview. */
@@ -50,6 +74,7 @@ export interface ChatRow {
   source: string | null;
   archived: number;
   pinned: number;
+  group_id: number | null;
 }
 
 export interface ChatSummaryRow extends ChatRow {

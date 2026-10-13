@@ -232,3 +232,109 @@
 .imb-search-hit-current > * {
   box-shadow: 0 0 0 2px var(--imb-accent);
 }
+
+/* Conversation folders: in-list folder rows that expand to reveal their chats. */
+.imb-chat-folders {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px 0 10px;
+}
+.imb-chat-folder {
+  display: flex;
+  flex-direction: column;
+}
+.imb-chat-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 8px;
+  background: var(--imb-surface-sunken);
+  border: 0;
+  border-radius: var(--imb-radius-md);
+  color: var(--imb-fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.imb-chat-folder-row:hover {
+  background: color-mix(in oklab, var(--imb-fg) 7%, var(--imb-surface-sunken));
+}
+.imb-chat-folder-chev {
+  display: flex;
+  width: 14px;
+  flex: none;
+  color: var(--imb-muted);
+}
+.imb-chat-folder-chev .imb-icon {
+  transform: rotate(-90deg);
+  transition: transform var(--imb-duration-fast) var(--imb-ease-standard);
+}
+.imb-chat-folder-chev.imb-is-open .imb-icon {
+  transform: rotate(0deg);
+}
+.imb-chat-folder-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: var(--imb-radius-md);
+  background: var(--imb-surface-raised);
+  border: 1px solid var(--imb-border);
+  color: var(--imb-accent);
+}
+.imb-chat-folder-body {
+  flex: 1;
+  min-width: 0;
+}
+.imb-chat-folder-name {
+  display: block;
+  font-size: var(--imb-text-sm);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.imb-chat-folder-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.imb-chat-folder-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 7px;
+  font-size: var(--imb-text-xs);
+  color: var(--imb-muted);
+  background: var(--imb-surface-raised);
+  border: 1px solid var(--imb-border);
+  border-radius: var(--imb-radius-pill);
+}
+.imb-chat-folder-kids {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 2px 0 4px 22px;
+  padding-left: 12px;
+  border-left: 2px solid var(--imb-border);
+}
+.imb-chat-kid {
+  display: flex;
+  flex-direction: column;
+}
+.imb-chat-kid .imb-list-row {
+  width: 100%;
+  padding: 9px 8px;
+}

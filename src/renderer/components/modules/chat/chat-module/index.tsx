@@ -1,15 +1,24 @@
 import { ASSISTANT_ID } from "@shared/constants/employees";
 import { INTEGRATION_LABEL_KEYS } from "@shared/constants/integrations";
 import { getLocale, t } from "@shared/l10n";
+import { cls } from "reactutils";
 import type {
   AgentStreamEvent,
+  ChatGroup,
   ChatSummary,
   Message,
   MessageAttachment,
   PageQuery,
   PageResult,
 } from "@shared/types";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { appStore, IS_MAC, useApp } from "../../../../app-store";
 import { displayChatTitle } from "../../../../chat-title";
 import { useInfiniteList } from "../../../../hooks/use-infinite-list";
@@ -24,6 +33,7 @@ import {
   IconArchive,
   IconBack,
   IconChevronDown,
+  IconFolder,
   IconSearch,
   IconX,
 } from "../../../icons";
@@ -37,6 +47,7 @@ import { SearchInput } from "../../../search-input";
 import { Tooltip } from "../../../tooltip";
 import { pairAskAnswers } from "../ask-answer";
 import { ChatInputBar } from "../chat-input-bar";
+import { FolderEditor } from "../folder-editor";
 import { MessageItem } from "../message-item";
 import { SelectionQuoteLayer } from "../selection-quote";
 import { formatChatTime, previewText } from "../relative-time";
@@ -44,6 +55,12 @@ import "../thread.css";
 import "./index.css";
 
 const PAGE_SIZE = 50;
+
+/** Shorten an absolute folder path to its last segment for display. */
+function folderBaseName(path: string): string {
+  const parts = path.split(/[\\/]/).filter((part) => part.length > 0);
+  return parts[parts.length - 1] ?? path;
+}
 
 /**
  * Chat title for display: untitled chats fall back to the localized default
@@ -160,6 +177,27 @@ export function ChatModule(): React.JSX.Element {
   const [deleteIds, setDeleteIds] = useState<number[]>([]);
   const [showArchive, setShowArchive] = useState(false);
   const [archivedChats, setArchivedChats] = useState<ChatSummary[]>([]);
+  const [groups, setGroups] = useState<ChatGroup[]>([]);
+  // Which folders are expanded (their chats shown inline).
+  const [expandedGroups, setExpandedGroups] = useState<Set<number>>(
+    () => new Set(),
+  );
+  // The create/rename-folder modal, or null when closed.
+  const [folderEditor, setFolderEditor] = useState<
+    { mode: "create" } | { mode: "rename"; group: ChatGroup } | null
+  >(null);
+
+  const reloadGroups = useCallback(async (): Promise<void> => {
+    try {
+      setGroups(await imb.chats.groups());
+    } catch {
+      // Best-effort: keep the last snapshot.
+    }
+  }, []);
+
+  useEffect(() => {
+    void reloadGroups();
+  }, [reloadGroups]);
 
   const reloadArchived = useCallback(async (): Promise<void> => {
     try {
@@ -194,6 +232,100 @@ export function ChatModule(): React.JSX.Element {
       }
     },
     [],
+  );
+
+  /** Expand/collapse a folder in place. */
+  const toggleExpanded = useCallback((id: number): void => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  /** Move a conversation into a group (null clears it), then refresh. */
+  const moveChatToGroup = useCallback(
+    async (chatId: number, groupId: number | null): Promise<void> => {
+      try {
+        await imb.chats.setChatGroup(chatId, groupId);
+        // Show the destination so the move is visible.
+        if (groupId !== null) {
+          setExpandedGroups((prev) => new Set(prev).add(groupId));
+        }
+        await appStore.reloadChats();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [],
+  );
+
+  /** Commit the create/rename-folder modal. */
+  const submitFolder = useCallback(
+    async (name: string, folder: string | null): Promise<void> => {
+      const editor = folderEditor;
+      if (editor === null) return;
+      try {
+        if (editor.mode === "create") {
+          const group = await imb.chats.createGroup(name, folder);
+          await reloadGroups();
+          setExpandedGroups((prev) => new Set(prev).add(group.id));
+        } else {
+          await imb.chats.renameGroup(editor.group.id, name);
+          await reloadGroups();
+        }
+        setFolderEditor(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [folderEditor, reloadGroups],
+  );
+
+  const chooseGroupFolder = useCallback(
+    async (group: ChatGroup): Promise<void> => {
+      try {
+        const picked = await imb.chats.pickFolder();
+        if (!picked) return;
+        await imb.chats.setGroupFolder(group.id, picked);
+        await reloadGroups();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [reloadGroups],
+  );
+
+  const clearGroupFolder = useCallback(
+    async (group: ChatGroup): Promise<void> => {
+      try {
+        await imb.chats.setGroupFolder(group.id, null);
+        await reloadGroups();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [reloadGroups],
+  );
+
+  /** Delete a folder; its chats survive and return to the root list. */
+  const removeGroup = useCallback(
+    async (group: ChatGroup): Promise<void> => {
+      try {
+        await imb.chats.deleteGroup(group.id);
+        setExpandedGroups((prev) => {
+          const next = new Set(prev);
+          next.delete(group.id);
+          return next;
+        });
+        await reloadGroups();
+        await appStore.reloadChats();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [reloadGroups],
   );
 
   useEffect(() => {
@@ -255,6 +387,29 @@ export function ChatModule(): React.JSX.Element {
   const chats = isSearching
     ? search.items
     : (data.chats.items as ChatSummary[]);
+
+  // Chats shown in the main list: ungrouped ones, or every search hit.
+  const looseChats = useMemo(
+    () => (isSearching ? chats : chats.filter((chat) => chat.groupId === null)),
+    [chats, isSearching],
+  );
+
+  // Folders that already contain chats start expanded, so their content is
+  // visible from the start; the user can collapse them freely afterwards.
+  const expandedInitRef = useRef(false);
+  useEffect(() => {
+    if (expandedInitRef.current || groups.length === 0) return;
+    const withChats = new Set<number>();
+    for (const chat of chats) {
+      if (chat.groupId !== null) withChats.add(chat.groupId);
+    }
+    // Wait until the chat list has actually loaded: an empty list here may just
+    // mean it has not arrived yet, not that no folder has chats.
+    if (withChats.size === 0 && chats.length === 0) return;
+    expandedInitRef.current = true;
+    if (withChats.size > 0) setExpandedGroups(withChats);
+  }, [groups, chats]);
+  // Chat counts per folder, for the folder rows' count pill.
   const totalUnread = useMemo(
     () => chats.reduce((sum, chat) => sum + (chat.unread ?? 0), 0),
     [chats],
@@ -369,7 +524,7 @@ export function ChatModule(): React.JSX.Element {
 
   const multi = useMultiSelect<ChatSummary, number>({
     getKey: (chat) => chat.id,
-    items: chats,
+    items: looseChats,
     onActivate: (chat) => selectChat(chat.id),
   });
   const clearSelection = multi.clear;
@@ -624,7 +779,10 @@ export function ChatModule(): React.JSX.Element {
   // Cmd/Ctrl+K focuses the chat search (the same muscle memory as most apps).
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "k") {
+      if (
+        !(event.metaKey || event.ctrlKey) ||
+        event.key.toLowerCase() !== "k"
+      ) {
         return;
       }
       const input = document.querySelector<HTMLInputElement>(
@@ -751,12 +909,15 @@ export function ChatModule(): React.JSX.Element {
   }, [deleteIds, clearSelection]);
 
   const toggleSelectAll = useCallback((): void => {
-    if (multi.selectedKeys.size === chats.length && chats.length > 0) {
+    if (
+      multi.selectedKeys.size === looseChats.length &&
+      looseChats.length > 0
+    ) {
       multi.clear();
     } else {
       multi.selectAll();
     }
-  }, [multi, chats.length]);
+  }, [multi, looseChats.length]);
 
   const selected = chats.find((chat) => chat.id === selectedId) ?? null;
 
@@ -805,6 +966,102 @@ export function ChatModule(): React.JSX.Element {
       setError(err instanceof Error ? err.message : String(err));
     }
   }, [selectedId, selectedRawTitle, titleDraft]);
+
+  // One chat row, shared by the loose list and a folder's expanded children.
+  const renderChatRow = (
+    chat: ChatSummary,
+    isSelectedRow: boolean,
+    onRowClick?: () => void,
+  ): React.JSX.Element => (
+    <ListRow
+      active={chat.id === selectedId}
+      selected={isSelectedRow}
+      onClick={onRowClick}
+      avatar={
+        <Avatar
+          letter={displayTitle(chat.title).slice(0, 1)}
+          name={displayTitle(chat.title)}
+        />
+      }
+      name={
+        <span className="imb-chat-name-wrap">
+          {chat.pinned && (
+            <PinGlyph className="imb-chat-pin" aria-hidden="true" />
+          )}
+          <span className="imb-chat-name-text">{displayTitle(chat.title)}</span>
+          {chat.source && (
+            <span className="imb-chat-source">
+              {t(INTEGRATION_LABEL_KEYS[chat.source])}
+            </span>
+          )}
+        </span>
+      }
+      meta={formatChatTime(chat.lastAt, locale)}
+      sub={previewText(chat.preview ?? "", 80, resolveMention)}
+      badge={
+        chat.unread > 0 ? (
+          <span className="imb-unread">
+            {chat.unread > 99 ? "99+" : chat.unread}
+          </span>
+        ) : undefined
+      }
+      onContextMenu={(e) => {
+        e.preventDefault();
+        setCtxMenu({
+          x: e.clientX,
+          y: e.clientY,
+          items: [
+            {
+              key: "select-all",
+              label: t("Select all"),
+              onSelect: toggleSelectAll,
+            },
+            {
+              key: "pin",
+              label: chat.pinned ? t("Unpin") : t("Pin"),
+              onSelect: () => void togglePin(chat.id, !chat.pinned),
+            },
+            ...groups.map((group) => ({
+              key: `move-${group.id}`,
+              label: t("Move to: ${name}", {
+                name: group.name || t("Untitled folder"),
+              }),
+              onSelect: () => void moveChatToGroup(chat.id, group.id),
+            })),
+            ...(chat.groupId !== null
+              ? [
+                  {
+                    key: "ungroup",
+                    label: t("Remove from folder"),
+                    onSelect: () => void moveChatToGroup(chat.id, null),
+                  },
+                ]
+              : []),
+            {
+              key: "archive",
+              label: t("Archive"),
+              onSelect: () => void setArchived(chat.id, true),
+            },
+            {
+              key: "delete",
+              label: t("Delete"),
+              danger: true,
+              onSelect: () => {
+                // Selection-aware: a right-click on an already-selected row
+                // deletes the whole selection; otherwise just that chat.
+                setDeleteIds(
+                  multi.selectedKeys.has(chat.id)
+                    ? [...multi.selectedKeys]
+                    : [chat.id],
+                );
+                setDeleteOpen(true);
+              },
+            },
+          ],
+        });
+      }}
+    />
+  );
 
   const listPane = showArchive ? (
     <ListPane
@@ -864,20 +1121,31 @@ export function ChatModule(): React.JSX.Element {
         </>
       }
       actions={
-        <button
-          type="button"
-          className="imb-chat-archive-btn"
-          title={t("Archived chats")}
-          aria-label={t("Archived chats")}
-          onClick={() => setShowArchive(true)}
-        >
-          <IconArchive />
-          {archivedChats.length > 0 && (
-            <span className="imb-chat-archive-count">
-              {archivedChats.length}
-            </span>
-          )}
-        </button>
+        <>
+          <button
+            type="button"
+            className="imb-chat-archive-btn"
+            title={t("New folder")}
+            aria-label={t("New folder")}
+            onClick={() => setFolderEditor({ mode: "create" })}
+          >
+            <IconFolder />
+          </button>
+          <button
+            type="button"
+            className="imb-chat-archive-btn"
+            title={t("Archived chats")}
+            aria-label={t("Archived chats")}
+            onClick={() => setShowArchive(true)}
+          >
+            <IconArchive />
+            {archivedChats.length > 0 && (
+              <span className="imb-chat-archive-count">
+                {archivedChats.length}
+              </span>
+            )}
+          </button>
+        </>
       }
       search={
         <SearchInput
@@ -893,97 +1161,114 @@ export function ChatModule(): React.JSX.Element {
         </Button>
       }
     >
-      <ItemList
-        items={chats}
-        getItemKey={(chat) => chat.id}
-        loading={listLoading}
-        loadingMore={listLoadingMore}
-        hasMore={listHasMore}
-        loadMore={() => void search.loadMore()}
-        loadError={listError}
-        animateNewTop
-        selectable
-        selectedKeys={multi.selectedKeys}
-        onItemClick={(chat, index, mods) =>
-          multi.onItemClick(chat, index, mods)
-        }
-        renderItem={(chat, { selected: isSelectedRow }) => (
-          <ListRow
-            active={chat.id === selectedId}
-            selected={isSelectedRow}
-            avatar={
-              <Avatar
-                letter={displayTitle(chat.title).slice(0, 1)}
-                name={displayTitle(chat.title)}
-              />
-            }
-            name={
-              <span className="imb-chat-name-wrap">
-                {chat.pinned && (
-                  <PinGlyph className="imb-chat-pin" aria-hidden="true" />
-                )}
-                <span className="imb-chat-name-text">
-                  {displayTitle(chat.title)}
-                </span>
-                {chat.source && (
-                  <span className="imb-chat-source">
-                    {t(INTEGRATION_LABEL_KEYS[chat.source])}
+      {!isSearching && groups.length > 0 && (
+        <div className="imb-chat-folders">
+          {groups.map((group) => {
+            const open = expandedGroups.has(group.id);
+            const kids = chats.filter((chat) => chat.groupId === group.id);
+            return (
+              <div key={group.id} className="imb-chat-folder">
+                <button
+                  type="button"
+                  className="imb-chat-folder-row"
+                  onClick={() => toggleExpanded(group.id)}
+                  onContextMenu={(event) => {
+                    event.preventDefault();
+                    setCtxMenu({
+                      x: event.clientX,
+                      y: event.clientY,
+                      items: [
+                        {
+                          key: "rename",
+                          label: t("Rename"),
+                          onSelect: () =>
+                            setFolderEditor({ mode: "rename", group }),
+                        },
+                        {
+                          key: "folder",
+                          label: t("Choose a folder"),
+                          onSelect: () => void chooseGroupFolder(group),
+                        },
+                        ...(group.folder
+                          ? [
+                              {
+                                key: "clear-folder",
+                                label: t("Clear workspace folder"),
+                                onSelect: () => void clearGroupFolder(group),
+                              },
+                            ]
+                          : []),
+                        {
+                          key: "delete",
+                          label: t("Delete folder"),
+                          danger: true,
+                          onSelect: () => void removeGroup(group),
+                        },
+                      ],
+                    });
+                  }}
+                >
+                  <span
+                    className={cls(
+                      "imb-chat-folder-chev",
+                      open && "imb-is-open",
+                    )}
+                  >
+                    <IconChevronDown className="imb-icon imb-xs" />
                   </span>
+                  <span className="imb-chat-folder-icon">
+                    <IconFolder className="imb-icon imb-sm" />
+                  </span>
+                  <span className="imb-chat-folder-body">
+                    <span className="imb-chat-folder-name">
+                      {group.name || t("Untitled folder")}
+                    </span>
+                    {group.folder !== null && (
+                      <span className="imb-chat-folder-sub">
+                        {t("Workspace · ${name}", {
+                          name: folderBaseName(group.folder),
+                        })}
+                      </span>
+                    )}
+                  </span>
+                  <span className="imb-chat-folder-count">{kids.length}</span>
+                </button>
+                {open && kids.length > 0 && (
+                  <div className="imb-chat-folder-kids">
+                    {kids.map((chat) => (
+                      <div key={chat.id} className="imb-chat-kid">
+                        {renderChatRow(
+                          chat,
+                          multi.selectedKeys.has(chat.id),
+                          () => selectChat(chat.id),
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
-              </span>
-            }
-            meta={formatChatTime(chat.lastAt, locale)}
-            sub={previewText(chat.preview ?? "", 80, resolveMention)}
-            badge={
-              chat.unread > 0 ? (
-                <span className="imb-unread">
-                  {chat.unread > 99 ? "99+" : chat.unread}
-                </span>
-              ) : undefined
-            }
-            onContextMenu={(e) => {
-              e.preventDefault();
-              setCtxMenu({
-                x: e.clientX,
-                y: e.clientY,
-                items: [
-                  {
-                    key: "select-all",
-                    label: t("Select all"),
-                    onSelect: toggleSelectAll,
-                  },
-                  {
-                    key: "pin",
-                    label: chat.pinned ? t("Unpin") : t("Pin"),
-                    onSelect: () => void togglePin(chat.id, !chat.pinned),
-                  },
-                  {
-                    key: "archive",
-                    label: t("Archive"),
-                    onSelect: () => void setArchived(chat.id, true),
-                  },
-                  {
-                    key: "delete",
-                    label: t("Delete"),
-                    danger: true,
-                    onSelect: () => {
-                      // Selection-aware: a right-click on an already-selected
-                      // row deletes the whole selection; otherwise it deletes
-                      // just the right-clicked chat (never a hidden select-all).
-                      setDeleteIds(
-                        multi.selectedKeys.has(chat.id)
-                          ? [...multi.selectedKeys]
-                          : [chat.id],
-                      );
-                      setDeleteOpen(true);
-                    },
-                  },
-                ],
-              });
-            }}
-          />
-        )}
-      />
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {(isSearching || looseChats.length > 0 || groups.length === 0) && (
+        <ItemList
+          items={looseChats}
+          getItemKey={(chat) => chat.id}
+          loading={listLoading}
+          loadingMore={listLoadingMore}
+          hasMore={listHasMore}
+          loadMore={() => void search.loadMore()}
+          loadError={listError}
+          animateNewTop
+          selectable
+          selectedKeys={multi.selectedKeys}
+          onItemClick={(chat, index, mods) =>
+            multi.onItemClick(chat, index, mods)
+          }
+          renderItem={(chat, { selected }) => renderChatRow(chat, selected)}
+        />
+      )}
     </ListPane>
   );
 
@@ -1169,6 +1454,19 @@ export function ChatModule(): React.JSX.Element {
     <>
       <ModuleView list={listPane} detail={detail} />
       <ContextMenu state={ctxMenu} onClose={() => setCtxMenu(null)} />
+      <FolderEditor
+        open={folderEditor !== null}
+        title={
+          folderEditor?.mode === "rename" ? t("Rename folder") : t("New folder")
+        }
+        submitLabel={folderEditor?.mode === "rename" ? t("Save") : t("Create")}
+        withFolder={folderEditor?.mode === "create"}
+        initialName={
+          folderEditor?.mode === "rename" ? folderEditor.group.name : ""
+        }
+        onCancel={() => setFolderEditor(null)}
+        onSubmit={(name, folder) => void submitFolder(name, folder)}
+      />
       <Modal
         open={deleteOpen}
         onClose={() => setDeleteOpen(false)}
