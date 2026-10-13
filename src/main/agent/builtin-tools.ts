@@ -28,6 +28,7 @@ import * as cron from "../cron";
 import { getDB } from "../db";
 import * as dbChats from "../db/chats";
 import { parseCronJobId } from "../db/cron";
+import * as dbDepartments from "../db/departments";
 import * as dbEmployees from "../db/employees";
 import * as dbMessages from "../db/messages";
 import * as dbReadCursors from "../db/read-cursors";
@@ -925,6 +926,200 @@ function askTool(env: AgentEnvironment): AnyPiTool {
  *   marker is present in `mcp`. Employees have no structured ask/answer
  *   tools — they exchange questions and answers as plain text messages.
  */
+/**
+ * `imb_set_departments` — batch create/update department tiles and assign
+ * employees to them. Omitting `id` creates a department; passing `id` updates
+ * it. A provided `members` list replaces that department's whole membership, so
+ * one call can move people in and out.
+ */
+function setDepartmentsTool(): AnyPiTool {
+  return {
+    name: "imb_set_departments",
+    label: "Set departments",
+    description:
+      "Create or update departments on the department board and assign employees to them. " +
+      "Each item omits `id` to create a department or passes `id` to update one. " +
+      "A provided `members` list REPLACES that department's membership (pass the full desired list; an empty list removes everyone). " +
+      "`kind` is 'team' for a regular department or 'pool' for an independent talent pool. " +
+      "Returns the array of department ids created or updated.",
+    promptSnippet: "organize departments and staff them",
+    parameters: Type.Object({
+      departments: Type.Array(
+        Type.Object({
+          id: Type.Optional(Type.Integer({ minimum: 1 })),
+          name: Type.Optional(Type.String({ maxLength: 200 })),
+          kind: Type.Optional(
+            Type.Union([Type.Literal("team"), Type.Literal("pool")]),
+          ),
+          color: Type.Optional(Type.String({ maxLength: 7 })),
+          charter: Type.Optional(Type.String({ maxLength: 20000 })),
+          members: Type.Optional(
+            Type.Array(
+              Type.Object({
+                employeeId: Type.Integer({ minimum: 1 }),
+                roleInDept: Type.Optional(Type.String({ maxLength: 200 })),
+                isLead: Type.Optional(Type.Boolean()),
+                reportsTo: Type.Optional(
+                  Type.Union([Type.Integer({ minimum: 1 }), Type.Null()]),
+                ),
+              }),
+              { maxItems: 200 },
+            ),
+          ),
+        }),
+        { minItems: 1, maxItems: 100 },
+      ),
+    }),
+    execute: async (_toolCallId, params) => {
+      const input = params as {
+        departments: {
+          id?: number;
+          name?: string;
+          kind?: "team" | "pool";
+          color?: string;
+          charter?: string;
+          members?: {
+            employeeId: number;
+            roleInDept?: string;
+            isLead?: boolean;
+            reportsTo?: number | null;
+          }[];
+        }[];
+      };
+      const ids = dbDepartments.upsertDepartments(
+        input.departments.map((item) => ({ ...item })),
+      );
+      if (ids.length > 0) sendToRenderer("departments:changed", {});
+      return toolResult({ ids });
+    },
+  };
+}
+
+/** `imb_connect_departments` — draw one labeled link between two departments. */
+function connectDepartmentsTool(): AnyPiTool {
+  return {
+    name: "imb_connect_departments",
+    label: "Connect departments",
+    description:
+      "Draw a directed, labeled link between two departments on the department board " +
+      "(e.g. '需求协作', '交付协调', '按需派单'). Re-connecting the same ordered pair just updates its label.",
+    promptSnippet: "link two departments",
+    parameters: Type.Object({
+      fromDepartmentId: Type.Integer({ minimum: 1 }),
+      toDepartmentId: Type.Integer({ minimum: 1 }),
+      label: Type.Optional(Type.String({ maxLength: 120 })),
+      kind: Type.Optional(
+        Type.Union([
+          Type.Literal("collab"),
+          Type.Literal("depend"),
+          Type.Literal("report"),
+          Type.Literal("ref"),
+        ]),
+      ),
+    }),
+    execute: async (_toolCallId, params) => {
+      const input = params as {
+        fromDepartmentId: number;
+        toDepartmentId: number;
+        label?: string;
+        kind?: "collab" | "depend" | "report" | "ref";
+      };
+      const edge = dbDepartments.addEdge({
+        fromDeptId: input.fromDepartmentId,
+        toDeptId: input.toDepartmentId,
+        label: input.label,
+        kind: input.kind,
+      });
+      sendToRenderer("departments:changed", {});
+      return toolResult({ id: edge.id });
+    },
+  };
+}
+
+/** `imb_connect_employees` — draw a labeled person-to-person link (may cross departments). */
+function connectEmployeesTool(): AnyPiTool {
+  return {
+    name: "imb_connect_employees",
+    label: "Connect employees",
+    description:
+      "Draw a directed, labeled link between two specific employees on the department board, independent of departments " +
+      "(e.g. '接口对接' between an engineer and a product manager). May cross department boundaries. " +
+      "Re-connecting the same ordered pair just updates its label.",
+    promptSnippet: "link two people",
+    parameters: Type.Object({
+      fromEmployeeId: Type.Integer({ minimum: 1 }),
+      toEmployeeId: Type.Integer({ minimum: 1 }),
+      label: Type.Optional(Type.String({ maxLength: 120 })),
+      kind: Type.Optional(
+        Type.Union([
+          Type.Literal("collab"),
+          Type.Literal("depend"),
+          Type.Literal("report"),
+          Type.Literal("ref"),
+        ]),
+      ),
+    }),
+    execute: async (_toolCallId, params) => {
+      const input = params as {
+        fromEmployeeId: number;
+        toEmployeeId: number;
+        label?: string;
+        kind?: "collab" | "depend" | "report" | "ref";
+      };
+      const link = dbDepartments.addEmployeeLink({
+        fromEmployeeId: input.fromEmployeeId,
+        toEmployeeId: input.toEmployeeId,
+        label: input.label,
+        kind: input.kind,
+      });
+      sendToRenderer("departments:changed", {});
+      return toolResult({ id: link.id });
+    },
+  };
+}
+
+/** `imb_list_departments` — read the current canvas structure before changing it. */
+function listDepartmentsTool(): AnyPiTool {
+  return {
+    name: "imb_list_departments",
+    label: "List departments",
+    description:
+      "List the department board: every department (id, name, kind, members with their reporting line) and every link " +
+      "(department-to-department and person-to-person). Call this before organizing the canvas to see the current structure.",
+    promptSnippet: "read the department canvas",
+    parameters: Type.Object({}),
+    execute: async () => {
+      const graph = dbDepartments.getGraph();
+      return toolResult({
+        departments: graph.departments.map((department) => ({
+          id: department.id,
+          name: department.name,
+          kind: department.kind,
+          charter: department.charter,
+          members: department.members.map((member) => ({
+            employeeId: member.employeeId,
+            roleInDept: member.roleInDept,
+            isLead: member.isLead,
+            reportsTo: member.reportsTo,
+          })),
+        })),
+        edges: graph.edges.map((edge) => ({
+          id: edge.id,
+          fromDepartmentId: edge.fromDeptId,
+          toDepartmentId: edge.toDeptId,
+          label: edge.label,
+        })),
+        personLinks: graph.personLinks.map((link) => ({
+          id: link.id,
+          fromEmployeeId: link.fromEmployeeId,
+          toEmployeeId: link.toEmployeeId,
+          label: link.label,
+        })),
+      });
+    },
+  };
+}
+
 export function createTeamToolDefinitions(
   options: TeamToolOptions,
 ): AnyPiTool[] {
@@ -934,6 +1129,10 @@ export function createTeamToolDefinitions(
   const tools: AnyPiTool[] = [];
   if (isAssistant) {
     tools.push(setEmployeesTool());
+    tools.push(setDepartmentsTool());
+    tools.push(connectDepartmentsTool());
+    tools.push(connectEmployeesTool());
+    tools.push(listDepartmentsTool());
     tools.push(createChatTool(env, chatId));
     tools.push(addParticipantTool(env));
     tools.push(listEmployeesTool());
