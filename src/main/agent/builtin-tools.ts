@@ -565,7 +565,11 @@ function createChatTool(
       "passing their ids in `notify` to wake them.",
     promptSnippet: "new team chat",
     parameters: Type.Object({
-      title: Type.String({ minLength: 1, maxLength: 200 }),
+      title: Type.String({
+        minLength: 1,
+        maxLength: 200,
+        description: "Descriptive title for the new chat summarizing the assigned work.",
+      }),
       participants: Type.Array(Type.Integer({ minimum: 1 }), { minItems: 1 }),
     }),
     execute: async (_toolCallId, params) => {
